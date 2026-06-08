@@ -11,6 +11,7 @@ const ASSET_URL = "/google_assistant_manual/assets";
 
 let _entryId = null;
 let _entryIdPromise = null;
+var _gaManualEnabled = true;
 
 // ---------------------------------------------------------------------------
 // Logging helpers
@@ -235,9 +236,12 @@ async function patchExposePage() {
       get: function () {
         try {
           var result = orig.call(this);
-          return Array.isArray(result) && !result.includes(ASSISTANT_ID)
-            ? result.concat(ASSISTANT_ID)
-            : result;
+          if (!Array.isArray(result)) return result;
+          if (!_gaManualEnabled) {
+            var filtered = result.filter(function (id) { return id !== ASSISTANT_ID; });
+            return filtered;
+          }
+          return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
         } catch (e) {
           _error("Error in _availableAssistants getter: " + e.message);
           return orig.call(this);
@@ -681,10 +685,11 @@ function _enableIntegration(card, globalSwitch, settingsRows) {
       entry_id: entryId,
     }).then(function () {
       _info("Google Assistant enabled successfully");
+      _gaManualEnabled = true;
+      _refreshExposePage();
       for (var i = 0; i < settingsRows.length; i++) {
         settingsRows[i].style.display = "";
       }
-      // Refresh the full card state after enabling
       refreshExposeToggle(card);
     }).catch(function (err) {
       _error("Failed to enable Google Assistant: " + (err.message || err.error || err.code || String(err)));
@@ -717,6 +722,8 @@ function _disableIntegration(card, globalSwitch, settingsRows) {
       entry_id: entryId,
     }).then(function () {
       _info("Google Assistant disabled successfully");
+      _gaManualEnabled = false;
+      _refreshExposePage();
       for (var i = 0; i < settingsRows.length; i++) {
         settingsRows[i].style.display = "none";
       }
@@ -753,6 +760,9 @@ function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, p
       entry_id: entryId,
     }).then(function (config) {
       _debug("refreshCardState received config: enabled=" + config.enabled + " report_state=" + config.report_state);
+
+      _gaManualEnabled = config.enabled;
+      _refreshExposePage();
 
       globalSwitch.checked = config.enabled;
 
@@ -911,6 +921,20 @@ function injectIntoAllAssistantsElements() {
 // ---------------------------------------------------------------------------
 // WS-backed toggle handlers
 // ---------------------------------------------------------------------------
+
+function _refreshExposePage() {
+  try {
+    var el = findExposeElement(document.documentElement);
+    if (!el) return;
+    if (el._fetchEntities) {
+      el._fetchEntities();
+    } else if (el.requestUpdate) {
+      el.requestUpdate();
+    }
+  } catch (e) {
+    _debug("_refreshExposePage: " + e.message);
+  }
+}
 
 function refreshExposeToggle(card) {
   var hass = getHass();
