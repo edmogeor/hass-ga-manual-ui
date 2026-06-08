@@ -238,8 +238,7 @@ async function patchExposePage() {
           var result = orig.call(this);
           if (!Array.isArray(result)) return result;
           if (!_gaManualEnabled) {
-            var filtered = result.filter(function (id) { return id !== ASSISTANT_ID; });
-            return filtered;
+            return result.filter(function (id) { return id !== ASSISTANT_ID; });
           }
           return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
         } catch (e) {
