@@ -130,6 +130,23 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Handle removal of a config entry — purge all entity exposure settings."""
+    remaining = hass.config_entries.async_entries(DOMAIN)
+    if len(remaining) > 1:
+        _LOGGER.debug(
+            "Skipping exposure cleanup: %d other entries remain for domain",
+            len(remaining) - 1,
+        )
+        return
+
+    _LOGGER.info(
+        "Last config entry removed for '%s'. Cleaning up entity exposure data.",
+        DOMAIN,
+    )
+    _purge_entity_exposure(hass)
+
+
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Reload the config entry."""
     _LOGGER.debug(
@@ -341,6 +358,73 @@ def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         entry, options={**entry.options, "enabled": False}
     )
     _LOGGER.info("Core GA disabled for project '%s'", project_id)
+
+
+# ---------------------------------------------------------------------------
+# Entity exposure cleanup
+# ---------------------------------------------------------------------------
+
+
+def _purge_entity_exposure(hass: HomeAssistant) -> None:
+    """Remove all entity exposure settings for this assistant."""
+    _LOGGER.info("Purging entity exposure settings for assistant '%s'", ASSISTANT_ID)
+
+    try:
+        from homeassistant.components.homeassistant import const as ha_const
+        from homeassistant.helpers import entity_registry as er
+
+        exposed_entities = hass.data.get(ha_const.DATA_EXPOSED_ENTITIES)
+
+        # 1. Remove "expose new entities" preference
+        if exposed_entities is not None:
+            if ASSISTANT_ID in exposed_entities._assistants:
+                del exposed_entities._assistants[ASSISTANT_ID]
+                _LOGGER.debug("Removed '%s' from expose-new-entities preferences", ASSISTANT_ID)
+                exposed_entities._async_schedule_save()
+
+            # 2. Remove from legacy entity settings
+            cleaned = 0
+            for entity_id in list(exposed_entities.entities):
+                entity = exposed_entities.entities[entity_id]
+                if ASSISTANT_ID in entity.assistants:
+                    assistants = dict(entity.assistants)
+                    del assistants[ASSISTANT_ID]
+                    if assistants:
+                        exposed_entities.entities[entity_id] = type(entity)(assistants)
+                    else:
+                        del exposed_entities.entities[entity_id]
+                    cleaned += 1
+            if cleaned:
+                _LOGGER.debug(
+                    "Removed '%s' from %d legacy entity settings",
+                    ASSISTANT_ID,
+                    cleaned,
+                )
+                exposed_entities._async_schedule_save()
+
+        # 3. Remove from entity registry options
+        ent_reg = er.async_get(hass)
+        cleaned = 0
+        for entity_id, entry in list(ent_reg.entities.items()):
+            if ASSISTANT_ID in entry.options:
+                options = dict(entry.options)
+                del options[ASSISTANT_ID]
+                ent_reg.async_update_entity_options(entity_id, options)
+                cleaned += 1
+        if cleaned:
+            _LOGGER.info(
+                "Removed '%s' assistant options from %d entity registry entries",
+                ASSISTANT_ID,
+                cleaned,
+            )
+    except Exception as exc:
+        _LOGGER.warning(
+            "Could not fully purge entity exposure for '%s': %s",
+            ASSISTANT_ID,
+            exc,
+        )
+
+    _LOGGER.info("Entity exposure cleanup for '%s' complete", ASSISTANT_ID)
 
 
 # ---------------------------------------------------------------------------
