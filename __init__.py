@@ -370,17 +370,18 @@ def _purge_entity_exposure(hass: HomeAssistant) -> None:
     _LOGGER.info("Purging entity exposure settings for assistant '%s'", ASSISTANT_ID)
 
     try:
-        from homeassistant.components.homeassistant import const as ha_const
+        from homeassistant.components.homeassistant.const import (
+            DATA_EXPOSED_ENTITIES,
+        )
         from homeassistant.helpers import entity_registry as er
 
-        exposed_entities = hass.data.get(ha_const.DATA_EXPOSED_ENTITIES)
+        exposed_entities = hass.data.get(DATA_EXPOSED_ENTITIES)
 
         # 1. Remove "expose new entities" preference
         if exposed_entities is not None:
             if ASSISTANT_ID in exposed_entities._assistants:
                 del exposed_entities._assistants[ASSISTANT_ID]
                 _LOGGER.debug("Removed '%s' from expose-new-entities preferences", ASSISTANT_ID)
-                exposed_entities._async_schedule_save()
 
             # 2. Remove from legacy entity settings
             cleaned = 0
@@ -400,7 +401,8 @@ def _purge_entity_exposure(hass: HomeAssistant) -> None:
                     ASSISTANT_ID,
                     cleaned,
                 )
-                exposed_entities._async_schedule_save()
+
+            exposed_entities._async_schedule_save()
 
         # 3. Remove from entity registry options
         ent_reg = er.async_get(hass)
