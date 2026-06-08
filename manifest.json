@@ -1,0 +1,12 @@
+{
+  "domain": "google_assistant_manual",
+  "name": "Google Assistant (Manual)",
+  "after_dependencies": ["homeassistant"],
+  "codeowners": [],
+  "dependencies": ["frontend"],
+  "documentation": "https://github.com/home-assistant/core/tree/dev/homeassistant/components/google_assistant_manual",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "quality_scale": "internal",
+  "version": "1.0.0"
+}
