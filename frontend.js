@@ -9,8 +9,113 @@ const ASSISTANT_NAME = "Google Assistant (Manual)";
 const SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
 const ASSET_URL = "/google_assistant_manual/assets";
 
+let _entryId = null;
+let _entryIdPromise = null;
+
+// ---------------------------------------------------------------------------
+// Logging helpers
+// ---------------------------------------------------------------------------
+
+function _log(level, message, data) {
+  try {
+    if (data !== undefined) {
+      console[level]("[GA Manual] " + message, data);
+    } else {
+      console[level]("[GA Manual] " + message);
+    }
+  } catch (_) {
+    /* console might be unavailable */
+  }
+}
+
+function _debug(msg, data) { _log("debug", msg, data); }
+function _info(msg, data) { _log("info", msg, data); }
+function _warn(msg, data) { _log("warn", msg, data); }
+function _error(msg, data) { _log("error", msg, data); }
+
+// ---------------------------------------------------------------------------
+// User-facing toast notifications (HA-style)
+// ---------------------------------------------------------------------------
+
+function _showToast(message, isError) {
+  try {
+    var hass = getHass();
+    if (!hass || !hass.callService) return;
+    hass.callService("persistent_notification", "create", {
+      title: ASSISTANT_NAME + (isError ? " — Error" : " — Notice"),
+      message: message,
+      notification_id: "google_assistant_manual_notification",
+    });
+  } catch (e) {
+    _error("Failed to show toast: " + e.message);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Entry ID resolution
+// ---------------------------------------------------------------------------
+
 function getBrandIconUrl() {
-  return `${ASSET_URL}/icon.png`;
+  return ASSET_URL + "/icon.png";
+}
+
+function getHass() {
+  var homeAssistant = document.querySelector("home-assistant");
+  return homeAssistant && homeAssistant.hass;
+}
+
+function getEntryId() {
+  if (_entryId) return Promise.resolve(_entryId);
+  if (_entryIdPromise) return _entryIdPromise;
+  _entryIdPromise = _fetchEntryId().then(
+    function (id) {
+      _entryId = id;
+      _entryIdPromise = null;
+      _debug("Resolved entry_id=" + id);
+      return id;
+    },
+    function (err) {
+      _entryIdPromise = null;
+      throw err;
+    }
+  );
+  return _entryIdPromise;
+}
+
+function _fetchEntryId() {
+  var hass = getHass();
+  if (!hass) {
+    var err = new Error(
+      "Home Assistant not yet loaded. The Google Assistant (Manual) card " +
+      "will retry when the page finishes loading."
+    );
+    _warn(err.message);
+    return Promise.reject(err);
+  }
+
+  _debug("Fetching entry_id via WS");
+  return hass.callWS({
+    type: "google_assistant_manual/get_entry_id",
+  }).then(
+    function (result) {
+      if (!result || !result.entry_id) {
+        throw new Error(
+          "Server returned no entry_id. The integration must be added via " +
+          "Settings → Devices & Services → Add Integration first."
+        );
+      }
+      return result.entry_id;
+    },
+    function (err) {
+      _error(
+        "Failed to get entry_id from server: " +
+        (err.message || err.error || err.code || String(err)) + ". " +
+        "Add the integration via Settings → Devices & Services → " +
+        "Add Integration → Google Assistant (Manual)."
+      );
+      throw err;
+    }
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -18,26 +123,36 @@ function getBrandIconUrl() {
 // ---------------------------------------------------------------------------
 
 function patchVoiceAssistants() {
-  const origKeys = Object.keys;
-  const seen = new WeakSet();
+  try {
+    var origKeys = Object.keys;
+    var seen = new WeakSet();
 
-  Object.keys = function (obj) {
-    if (
-      obj &&
-      typeof obj === "object" &&
-      !Array.isArray(obj) &&
-      !seen.has(obj) &&
-      "conversation" in obj &&
-      "cloud.alexa" in obj &&
-      "cloud.google_assistant" in obj
-    ) {
-      seen.add(obj);
-      if (!(ASSISTANT_ID in obj)) {
-        obj[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
+    Object.keys = function (obj) {
+      try {
+        if (
+          obj &&
+          typeof obj === "object" &&
+          !Array.isArray(obj) &&
+          !seen.has(obj) &&
+          "conversation" in obj &&
+          "cloud.alexa" in obj &&
+          "cloud.google_assistant" in obj
+        ) {
+          seen.add(obj);
+          if (!(ASSISTANT_ID in obj)) {
+            obj[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
+            _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
+          }
+        }
+      } catch (e) {
+        _error("Error in Object.keys interceptor: " + e.message);
       }
-    }
-    return origKeys(obj);
-  };
+      return origKeys(obj);
+    };
+    _debug("Patch 1/4 applied: voiceAssistants (Object.keys)");
+  } catch (e) {
+    _error("Failed to apply patch 1/4 (voiceAssistants): " + e.message);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -45,18 +160,28 @@ function patchVoiceAssistants() {
 // ---------------------------------------------------------------------------
 
 function patchSortKey() {
-  const origForEach = Array.prototype.forEach;
+  try {
+    var origForEach = Array.prototype.forEach;
 
-  Array.prototype.forEach = function (callback, thisArg) {
-    if (
-      this.length === SORT_TARGET.length &&
-      SORT_TARGET.every((v, i) => this[i] === v) &&
-      !this.includes(ASSISTANT_ID)
-    ) {
-      this.push(ASSISTANT_ID);
-    }
-    return origForEach.call(this, callback, thisArg);
-  };
+    Array.prototype.forEach = function (callback, thisArg) {
+      try {
+        if (
+          this.length === SORT_TARGET.length &&
+          SORT_TARGET.every(function (v, i) { return this[i] === v; }, this) &&
+          !this.includes(ASSISTANT_ID)
+        ) {
+          this.push(ASSISTANT_ID);
+          _info("Injected " + ASSISTANT_ID + " into sort-order array");
+        }
+      } catch (e) {
+        _error("Error in Array.forEach interceptor: " + e.message);
+      }
+      return origForEach.call(this, callback, thisArg);
+    };
+    _debug("Patch 2/4 applied: sort key (Array.forEach)");
+  } catch (e) {
+    _error("Failed to apply patch 2/4 (sort key): " + e.message);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -68,42 +193,68 @@ function findExposeElement(root) {
   if (root.nodeType !== 1 && root.nodeType !== 11) return null;
   if (root.nodeName === "HA-CONFIG-VOICE-ASSISTANTS-EXPOSE") return root;
   if (root.shadowRoot) {
-    const found = findExposeElement(root.shadowRoot);
+    var found = findExposeElement(root.shadowRoot);
     if (found) return found;
   }
-  const children = root.children || [];
-  for (const child of children) {
-    const found = findExposeElement(child);
+  var children = root.children || [];
+  for (var i = 0; i < children.length; i++) {
+    var found = findExposeElement(children[i]);
     if (found) return found;
   }
   return null;
 }
 
 async function patchExposePage() {
-  await customElements.whenDefined("ha-config-voice-assistants-expose");
-  const cls = customElements.get("ha-config-voice-assistants-expose");
-  if (!cls) return;
+  try {
+    await customElements.whenDefined("ha-config-voice-assistants-expose");
+    var cls = customElements.get("ha-config-voice-assistants-expose");
+    if (!cls) {
+      _warn(
+        "ha-config-voice-assistants-expose element not found. " +
+        "The expose page may not have been loaded yet. " +
+        "The patch will be attempted when the element first renders."
+      );
+      return;
+    }
 
-  const desc = Object.getOwnPropertyDescriptor(
-    cls.prototype,
-    "_availableAssistants"
-  );
-  if (!desc || !desc.get) return;
+    var desc = Object.getOwnPropertyDescriptor(
+      cls.prototype,
+      "_availableAssistants"
+    );
+    if (!desc || !desc.get) {
+      _warn(
+        "_availableAssistants getter not found on expose element. " +
+        "HA may have renamed this property — exposure dropdown may not " +
+        "include " + ASSISTANT_ID + "."
+      );
+      return;
+    }
 
-  const orig = desc.get;
-  Object.defineProperty(cls.prototype, "_availableAssistants", {
-    get() {
-      const result = orig.call(this);
-      return Array.isArray(result) && !result.includes(ASSISTANT_ID)
-        ? [...result, ASSISTANT_ID]
-        : result;
-    },
-  });
+    var orig = desc.get;
+    Object.defineProperty(cls.prototype, "_availableAssistants", {
+      get: function () {
+        try {
+          var result = orig.call(this);
+          return Array.isArray(result) && !result.includes(ASSISTANT_ID)
+            ? result.concat(ASSISTANT_ID)
+            : result;
+        } catch (e) {
+          _error("Error in _availableAssistants getter: " + e.message);
+          return orig.call(this);
+        }
+      },
+    });
+    _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
 
-  const el =
-    document.querySelector("ha-config-voice-assistants-expose") ||
-    findExposeElement(document.documentElement);
-  if (el) el.requestUpdate();
+    var el =
+      document.querySelector("ha-config-voice-assistants-expose") ||
+      findExposeElement(document.documentElement);
+    if (el) {
+      try { el.requestUpdate(); } catch (e) { _debug("requestUpdate failed: " + e.message); }
+    }
+  } catch (e) {
+    _error("Failed to apply patch 3/4 (expose page): " + e.message);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -111,156 +262,203 @@ async function patchExposePage() {
 // ---------------------------------------------------------------------------
 
 function _patchAssistantsPageProto(proto) {
-  const origConnected = proto.connectedCallback;
-  const origFirstUpdated = proto.firstUpdated;
-  const origUpdated = proto.updated;
+  try {
+    var origConnected = proto.connectedCallback;
+    var origFirstUpdated = proto.firstUpdated;
+    var origUpdated = proto.updated;
 
-  // connectedCallback is the most reliable hook — Lit lifecycle hooks may
-  // have already fired before our patches ran (common on hard refresh).
-  proto.connectedCallback = function () {
-    if (origConnected) origConnected.call(this);
-    const self = this;
-    // Defer so shadowRoot and initial render have settled
-    requestAnimationFrame(function () {
-      injectCardInto(self);
-    });
-  };
+    proto.connectedCallback = function () {
+      try {
+        if (origConnected) origConnected.call(this);
+      } catch (e) {
+        _error("Error in original connectedCallback: " + e.message);
+      }
+      var self = this;
+      requestAnimationFrame(function () {
+        try { injectCardInto(self); } catch (e) {
+          _error("Error injecting card in connectedCallback: " + e.message);
+        }
+      });
+    };
 
-  proto.firstUpdated = function (changedProps) {
-    origFirstUpdated.call(this, changedProps);
-    injectCardInto(this);
-  };
-  proto.updated = function (changedProps) {
-    origUpdated.call(this, changedProps);
-    injectCardInto(this);
-  };
+    proto.firstUpdated = function (changedProps) {
+      try { origFirstUpdated.call(this, changedProps); } catch (e) {
+        _error("Error in original firstUpdated: " + e.message);
+      }
+      try { injectCardInto(this); } catch (e) {
+        _error("Error injecting card in firstUpdated: " + e.message);
+      }
+    };
+    proto.updated = function (changedProps) {
+      try { origUpdated.call(this, changedProps); } catch (e) {
+        _error("Error in original updated: " + e.message);
+      }
+      try { injectCardInto(this); } catch (e) {
+        _error("Error injecting card in updated: " + e.message);
+      }
+    };
+  } catch (e) {
+    _error("Failed to patch assistants page proto: " + e.message);
+  }
 }
 
 function _renderManualBrandIcon() {
-  const root = this.shadowRoot || this;
-  if (root.querySelector("img[data-ga-manual]")) return;
-  root.innerHTML = "";
-  const img = document.createElement("img");
-  img.dataset.gaManual = "1";
-  img.className = "logo";
-  img.alt = ASSISTANT_NAME;
-  img.src = getBrandIconUrl();
-  img.crossOrigin = "anonymous";
-  img.referrerPolicy = "no-referrer";
-  root.appendChild(img);
+  try {
+    var root = this.shadowRoot || this;
+    if (root.querySelector("img[data-ga-manual]")) return;
+    root.innerHTML = "";
+    var img = document.createElement("img");
+    img.dataset.gaManual = "1";
+    img.className = "logo";
+    img.alt = ASSISTANT_NAME;
+    img.src = getBrandIconUrl();
+    img.crossOrigin = "anonymous";
+    img.referrerPolicy = "no-referrer";
+    img.onerror = function () {
+      _warn("Brand icon failed to load from " + getBrandIconUrl());
+    };
+    root.appendChild(img);
+  } catch (e) {
+    _error("Error rendering manual brand icon: " + e.message);
+  }
 }
 
 function _patchBrandIconProto(proto) {
-  const origRender = proto.render;
-  const origFirstUpdated = proto.firstUpdated;
-  const origUpdated = proto.updated;
-  proto.render = function () {
-    if (this.voiceAssistantId === ASSISTANT_ID) return null;
-    return origRender.call(this);
-  };
-  proto.firstUpdated = function (changedProps) {
-    if (this.voiceAssistantId === ASSISTANT_ID) {
-      _renderManualBrandIcon.call(this);
-    } else {
-      origFirstUpdated.call(this, changedProps);
-    }
-  };
-  proto.updated = function (changedProps) {
-    if (this.voiceAssistantId === ASSISTANT_ID) {
-      _renderManualBrandIcon.call(this);
-    } else {
-      origUpdated.call(this, changedProps);
-    }
-  };
+  try {
+    var origRender = proto.render;
+    var origFirstUpdated = proto.firstUpdated;
+    var origUpdated = proto.updated;
+    proto.render = function () {
+      if (this.voiceAssistantId === ASSISTANT_ID) return null;
+      return origRender.call(this);
+    };
+    proto.firstUpdated = function (changedProps) {
+      if (this.voiceAssistantId === ASSISTANT_ID) {
+        _renderManualBrandIcon.call(this);
+      } else {
+        origFirstUpdated.call(this, changedProps);
+      }
+    };
+    proto.updated = function (changedProps) {
+      if (this.voiceAssistantId === ASSISTANT_ID) {
+        _renderManualBrandIcon.call(this);
+      } else {
+        origUpdated.call(this, changedProps);
+      }
+    };
+  } catch (e) {
+    _error("Failed to patch brand icon proto: " + e.message);
+  }
 }
 
 function _renderManualExposeIcon() {
-  const root = this.shadowRoot || this;
-  if (root.querySelector("[data-ga-manual]")) return;
-  root.innerHTML = "";
+  try {
+    var root = this.shadowRoot || this;
+    if (root.querySelector("[data-ga-manual]")) return;
+    root.innerHTML = "";
 
-  const containerId = (this.id || "ga") + "-" + ASSISTANT_ID;
-  const container = document.createElement("div");
-  container.className = "container";
-  container.id = containerId;
-  container.dataset.gaManual = "1";
+    var containerId = (this.id || "ga") + "-" + ASSISTANT_ID;
+    var container = document.createElement("div");
+    container.className = "container";
+    container.id = containerId;
+    container.dataset.gaManual = "1";
 
-  const icon = document.createElement("voice-assistant-brand-icon");
-  icon.voiceAssistantId = ASSISTANT_ID;
-  icon.hass = this.hass;
-  if (this.manual) icon.style.filter = "grayscale(100%)";
-  container.appendChild(icon);
+    var icon = document.createElement("voice-assistant-brand-icon");
+    icon.voiceAssistantId = ASSISTANT_ID;
+    icon.hass = this.hass;
+    if (this.manual) icon.style.filter = "grayscale(100%)";
+    container.appendChild(icon);
 
-  if (this.unsupported) {
-    const alertIcon = document.createElement("ha-icon");
-    alertIcon.icon = "mdi:alert-circle";
-    alertIcon.classList.add("unsupported");
-    container.appendChild(alertIcon);
+    if (this.unsupported) {
+      var alertIcon = document.createElement("ha-icon");
+      alertIcon.icon = "mdi:alert-circle";
+      alertIcon.classList.add("unsupported");
+      container.appendChild(alertIcon);
+    }
+    root.appendChild(container);
+
+    var tooltip = document.createElement("ha-tooltip");
+    tooltip.setAttribute("for", containerId);
+    tooltip.setAttribute("placement", "left");
+    if (!this.unsupported && !this.manual) tooltip.setAttribute("disabled", "");
+
+    var localize = this.hass && this.hass.localize;
+    if (this.unsupported) {
+      tooltip.appendChild(document.createTextNode(
+        localize ? localize("ui.panel.config.voice_assistants.expose.not_supported") : ""
+      ));
+      if (this.manual) tooltip.appendChild(document.createElement("br"));
+    }
+    if (this.manual) {
+      tooltip.appendChild(document.createTextNode(
+        localize ? localize("ui.panel.config.voice_assistants.expose.manually_configured") : ""
+      ));
+    }
+    root.appendChild(tooltip);
+  } catch (e) {
+    _error("Error rendering manual expose icon: " + e.message);
   }
-  root.appendChild(container);
-
-  const tooltip = document.createElement("ha-tooltip");
-  tooltip.setAttribute("for", containerId);
-  tooltip.setAttribute("placement", "left");
-  if (!this.unsupported && !this.manual) tooltip.setAttribute("disabled", "");
-
-  const localize = this.hass && this.hass.localize;
-  if (this.unsupported) {
-    tooltip.appendChild(document.createTextNode(
-      localize ? localize("ui.panel.config.voice_assistants.expose.not_supported") : ""
-    ));
-    if (this.manual) tooltip.appendChild(document.createElement("br"));
-  }
-  if (this.manual) {
-    tooltip.appendChild(document.createTextNode(
-      localize ? localize("ui.panel.config.voice_assistants.expose.manually_configured") : ""
-    ));
-  }
-  root.appendChild(tooltip);
 }
 
 function _patchExposeAssistantIconProto(proto) {
-  const origRender = proto.render;
-  const origFirstUpdated = proto.firstUpdated;
-  const origUpdated = proto.updated;
-  proto.render = function () {
-    if (this.assistant === ASSISTANT_ID) return null;
-    return origRender.call(this);
-  };
-  proto.firstUpdated = function (changedProps) {
-    if (this.assistant === ASSISTANT_ID) {
-      _renderManualExposeIcon.call(this);
-    } else {
-      origFirstUpdated.call(this, changedProps);
-    }
-  };
-  proto.updated = function (changedProps) {
-    if (this.assistant === ASSISTANT_ID) {
-      _renderManualExposeIcon.call(this);
-    } else {
-      origUpdated.call(this, changedProps);
-    }
-  };
+  try {
+    var origRender = proto.render;
+    var origFirstUpdated = proto.firstUpdated;
+    var origUpdated = proto.updated;
+    proto.render = function () {
+      if (this.assistant === ASSISTANT_ID) return null;
+      return origRender.call(this);
+    };
+    proto.firstUpdated = function (changedProps) {
+      if (this.assistant === ASSISTANT_ID) {
+        _renderManualExposeIcon.call(this);
+      } else {
+        origFirstUpdated.call(this, changedProps);
+      }
+    };
+    proto.updated = function (changedProps) {
+      if (this.assistant === ASSISTANT_ID) {
+        _renderManualExposeIcon.call(this);
+      } else {
+        origUpdated.call(this, changedProps);
+      }
+    };
+  } catch (e) {
+    _error("Failed to patch expose assistant icon proto: " + e.message);
+  }
 }
 
-const PATCHERS = {
+var PATCHERS = {
   "ha-config-voice-assistants-assistants": _patchAssistantsPageProto,
   "voice-assistant-brand-icon": _patchBrandIconProto,
   "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto,
 };
 
 function patchCustomElements() {
-  const origDefine = customElements.define;
+  try {
+    var origDefine = customElements.define;
 
-  customElements.define = function (name, constructor, options) {
-    const patcher = PATCHERS[name];
-    if (patcher) patcher(constructor.prototype);
-    return origDefine.call(this, name, constructor, options);
-  };
+    customElements.define = function (name, constructor, options) {
+      try {
+        var patcher = PATCHERS[name];
+        if (patcher) patcher(constructor.prototype);
+      } catch (e) {
+        _error("Error in customElements.define interceptor for '" + name + "': " + e.message);
+      }
+      return origDefine.call(this, name, constructor, options);
+    };
 
-  for (const name in PATCHERS) {
-    const cls = customElements.get(name);
-    if (cls) PATCHERS[name](cls.prototype);
+    for (var name in PATCHERS) {
+      try {
+        var cls = customElements.get(name);
+        if (cls) PATCHERS[name](cls.prototype);
+      } catch (e) {
+        _error("Error patching already-defined element '" + name + "': " + e.message);
+      }
+    }
+    _debug("Patch 4/4 applied: custom elements (" + Object.keys(PATCHERS).join(", ") + ")");
+  } catch (e) {
+    _error("Failed to apply patch 4/4 (custom elements): " + e.message);
   }
 }
 
@@ -273,9 +471,9 @@ function patchCustomElements() {
 // injectCardInto is idempotent — safe at any lifecycle stage.
 // ---------------------------------------------------------------------------
 
-const _observerActive = new WeakSet();
+var _observerActive = new WeakSet();
 
-const INSERTION_LOOKUP = [
+var INSERTION_LOOKUP = [
   { selector: "assist-pref", before: false },
   { selector: "assist-current-device-pref", before: false },
   { selector: "cloud-discover", before: true },
@@ -283,21 +481,26 @@ const INSERTION_LOOKUP = [
 ];
 
 function findInsertionPoint(content) {
-  for (const { selector, before } of INSERTION_LOOKUP) {
-    const el = content.querySelector(selector);
-    if (el) return { ref: el, before };
+  for (var i = 0; i < INSERTION_LOOKUP.length; i++) {
+    var item = INSERTION_LOOKUP[i];
+    try {
+      var el = content.querySelector(item.selector);
+      if (el) return { ref: el, before: item.before };
+    } catch (e) {
+      _debug("querySelector('" + item.selector + "') failed: " + e.message);
+    }
   }
   return { ref: null, before: false };
 }
 
 function makeSettingItem(hass, headlineKey, supportKey, headlineFallback, supportFallback) {
-  const item = document.createElement("ha-md-list-item");
-  item.style.cssText = `--md-list-item-leading-space:0;--md-list-item-trailing-space:0;--md-item-overflow:visible`;
-  const headline = document.createElement("span");
+  var item = document.createElement("ha-md-list-item");
+  item.style.cssText = "--md-list-item-leading-space:0;--md-list-item-trailing-space:0;--md-item-overflow:visible";
+  var headline = document.createElement("span");
   headline.slot = "headline";
   headline.textContent = (hass && hass.localize(headlineKey)) || headlineFallback;
   item.appendChild(headline);
-  const support = document.createElement("span");
+  var support = document.createElement("span");
   support.slot = "supporting-text";
   support.textContent = (hass && hass.localize(supportKey)) || supportFallback;
   item.appendChild(support);
@@ -305,145 +508,279 @@ function makeSettingItem(hass, headlineKey, supportKey, headlineFallback, suppor
 }
 
 function makeSwitchSettingItem(hass, headlineKey, supportKey, headlineFallback, supportFallback, handler) {
-  const item = makeSettingItem(hass, headlineKey, supportKey, headlineFallback, supportFallback);
-  const sw = document.createElement("ha-switch");
+  var item = makeSettingItem(hass, headlineKey, supportKey, headlineFallback, supportFallback);
+  var sw = document.createElement("ha-switch");
   sw.slot = "end";
   if (handler) sw.addEventListener("change", handler);
   item.appendChild(sw);
   return item;
 }
 
+var _pinTimer = null;
+
 function buildCard() {
-  const homeAssistant = document.querySelector("home-assistant");
-  const hass = homeAssistant && homeAssistant.hass;
+  try {
+    var hass = getHass();
 
-  const brandIcon = document.createElement("voice-assistant-brand-icon");
-  brandIcon.voiceAssistantId = ASSISTANT_ID;
-  brandIcon.hass = hass;
-  brandIcon.style.cssText = `height:28px;margin-right:16px;margin-inline-end:16px;margin-inline-start:initial`;
+    var brandIcon = document.createElement("voice-assistant-brand-icon");
+    brandIcon.voiceAssistantId = ASSISTANT_ID;
+    brandIcon.hass = hass;
+    brandIcon.style.cssText = "height:28px;margin-right:16px;margin-inline-end:16px;margin-inline-start:initial";
 
-  const card = document.createElement("ha-card");
-  card.setAttribute("outlined", "");
-  card.setAttribute("data-ga-manual-card", "1");
+    var card = document.createElement("ha-card");
+    card.setAttribute("outlined", "");
+    card.setAttribute("data-ga-manual-card", "1");
 
-  const header = document.createElement("h1");
-  header.className = "card-header";
-  header.style.cssText = `display:flex;align-items:center;position:relative`;
-  header.appendChild(brandIcon);
-  header.appendChild(document.createTextNode(ASSISTANT_NAME));
-  card.appendChild(header);
+    var header = document.createElement("h1");
+    header.className = "card-header";
+    header.style.cssText = "display:flex;align-items:center;position:relative";
+    header.appendChild(brandIcon);
+    header.appendChild(document.createTextNode(ASSISTANT_NAME));
+    card.appendChild(header);
 
-  const headerActions = document.createElement("div");
-  headerActions.style.cssText = `position:absolute;right:24px;inset-inline-end:24px;inset-inline-start:initial;top:50%;transform:translateY(-50%);display:flex;flex-direction:row;align-items:center`;
-  const helpBtn = document.createElement("ha-icon-button");
-  helpBtn.label = "Learn how it works";
-  helpBtn.href = "https://www.home-assistant.io/integrations/google_assistant/";
-  helpBtn.target = "_blank";
-  helpBtn.rel = "noreferrer";
-  helpBtn.style.cssText = `display:flex;align-items:center;margin-right:8px;margin-inline-end:8px;margin-inline-start:initial;direction:var(--direction);color:var(--secondary-text-color)`;
-  const helpIcon = document.createElement("ha-icon");
-  helpIcon.icon = "mdi:help-circle-outline";
-  helpIcon.style.display = "block";
-  helpBtn.appendChild(helpIcon);
-  headerActions.appendChild(helpBtn);
+    var headerActions = document.createElement("div");
+    headerActions.style.cssText = "position:absolute;right:24px;inset-inline-end:24px;inset-inline-start:initial;top:50%;transform:translateY(-50%);display:flex;flex-direction:row;align-items:center";
+    var helpBtn = document.createElement("ha-icon-button");
+    helpBtn.label = "Learn how it works";
+    helpBtn.href = "https://www.home-assistant.io/integrations/google_assistant/";
+    helpBtn.target = "_blank";
+    helpBtn.rel = "noreferrer";
+    helpBtn.style.cssText = "display:flex;align-items:center;margin-right:8px;margin-inline-end:8px;margin-inline-start:initial;direction:var(--direction);color:var(--secondary-text-color)";
+    var helpIcon = document.createElement("ha-icon");
+    helpIcon.icon = "mdi:help-circle-outline";
+    helpIcon.style.display = "block";
+    helpBtn.appendChild(helpIcon);
+    headerActions.appendChild(helpBtn);
 
-  const globalSwitch = document.createElement("ha-switch");
-  headerActions.appendChild(globalSwitch);
+    var globalSwitch = document.createElement("ha-switch");
+    headerActions.appendChild(globalSwitch);
 
-  header.appendChild(headerActions);
+    header.appendChild(headerActions);
 
-  const body = document.createElement("div");
-  body.className = "card-content";
+    var body = document.createElement("div");
+    body.className = "card-content";
 
-  const desc = document.createElement("p");
-  desc.textContent =
-    (hass && hass.localize("ui.panel.config.cloud.account.google.info") || "")
-      .replace(/\s*Cloud\b/g, "") ||
-    "With the Google Assistant integration for Home Assistant, you'll be able to control all your Home Assistant devices via any Google Assistant-enabled device.";
-  body.appendChild(desc);
+    var desc = document.createElement("p");
+    desc.textContent =
+      (hass && hass.localize("ui.panel.config.cloud.account.google.info") || "")
+        .replace(/\s*Cloud\b/g, "") ||
+      "With the Google Assistant integration for Home Assistant, you'll be able to control all your Home Assistant devices via any Google Assistant-enabled device.";
+    body.appendChild(desc);
 
-  const settingsRows = [];
+    var settingsRows = [];
+    var reportStateSwitch = null;
+    var pinInput = null;
 
-  function addSetting(el) {
-    settingsRows.push(el);
-    body.appendChild(el);
-  }
+    function addSetting(el) {
+      settingsRows.push(el);
+      body.appendChild(el);
+    }
 
-  addSetting(
-    makeSwitchSettingItem(
+    var exposeItem = makeSwitchSettingItem(
       hass,
       "ui.panel.config.voice_assistants.expose.expose_new_entities",
       "ui.panel.config.voice_assistants.expose.expose_new_entities_info",
       "Expose new entities",
       "Should new entities be exposed? Exposes supported devices that are not classified as security devices.",
       onExposeToggle
-    )
-  );
+    );
+    addSetting(exposeItem);
 
-  addSetting(
-    makeSwitchSettingItem(
+    var reportStateItem = makeSwitchSettingItem(
       hass,
       "ui.panel.config.cloud.account.google.enable_state_reporting",
       "ui.panel.config.cloud.account.google.info_state_reporting",
       "Enable state reporting",
       "If you enable state reporting, Home Assistant will send all state changes of exposed entities to Google. This speeds up voice commands and allows you to always see the latest states in the Google app.",
-      null
-    )
-  );
+      onReportStateToggle
+    );
+    reportStateSwitch = reportStateItem.querySelector("ha-switch");
+    addSetting(reportStateItem);
 
-  addSetting(
-    makeSettingItem(
+    var securityItem = makeSettingItem(
       hass,
       "ui.panel.config.cloud.account.google.security_devices",
       "ui.panel.config.cloud.account.google.enter_pin_info",
       "Security devices",
       "Please enter a PIN to interact with security devices. Security devices are doors, garage doors, and locks. You will be asked to say/enter this PIN when interacting with security devices via Google Assistant."
-    )
-  );
+    );
+    addSetting(securityItem);
 
-  const pinInput = document.createElement("ha-input");
-  pinInput.label =
-    (hass && hass.localize("ui.panel.config.cloud.account.google.devices_pin")) ||
-    "Security devices PIN";
-  pinInput.placeholder =
-    (hass && hass.localize("ui.panel.config.cloud.account.google.enter_pin_hint")) ||
-    "Enter a PIN to use security devices";
-  pinInput.style.cssText = `width:250px;margin-top:8px`;
-  addSetting(pinInput);
+    pinInput = document.createElement("ha-input");
+    pinInput.label =
+      (hass && hass.localize("ui.panel.config.cloud.account.google.devices_pin")) ||
+      "Security devices PIN";
+    pinInput.placeholder =
+      (hass && hass.localize("ui.panel.config.cloud.account.google.enter_pin_hint")) ||
+      "Enter a PIN to use security devices";
+    pinInput.style.cssText = "width:250px;margin-top:8px";
+    pinInput.addEventListener("input", onPinChanged);
+    addSetting(pinInput);
 
-  globalSwitch.addEventListener("change", function () {
-    const visible = globalSwitch.checked;
-    for (let i = 0; i < settingsRows.length; i++) {
-      settingsRows[i].style.display = visible ? "" : "none";
+    card.appendChild(body);
+
+    var actions = document.createElement("div");
+    actions.className = "card-actions";
+    actions.style.cssText = "display:flex";
+
+    var exposeLink = document.createElement("a");
+    exposeLink.href = "/config/voice-assistants/expose?assistants=" + ASSISTANT_ID + "&historyBack";
+    exposeLink.style.textDecoration = "none";
+
+    var exposeBtn = document.createElement("ha-button");
+    exposeBtn.setAttribute("appearance", "plain");
+    exposeBtn.textContent = "Exposed entities";
+    exposeBtn.setAttribute("data-ga-count", "");
+    exposeLink.appendChild(exposeBtn);
+    actions.appendChild(exposeLink);
+
+    card.appendChild(actions);
+
+    settingsRows.push(actions);
+
+    // Global toggle: calls enable/disable WS commands
+    globalSwitch.addEventListener("change", function () {
+      if (globalSwitch.checked) {
+        _enableIntegration(card, globalSwitch, settingsRows);
+      } else {
+        _disableIntegration(card, globalSwitch, settingsRows);
+      }
+    });
+
+    // Default: hidden until state is fetched
+    for (var i = 0; i < settingsRows.length; i++) {
+      settingsRows[i].style.display = "none";
     }
-  });
 
-  card.appendChild(body);
+    // Fetch initial config state
+    refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput);
 
-  const actions = document.createElement("div");
-  actions.className = "card-actions";
-  actions.style.cssText = "display:flex";
-
-  const exposeLink = document.createElement("a");
-  exposeLink.href = `/config/voice-assistants/expose?assistants=${ASSISTANT_ID}&historyBack`;
-  exposeLink.style.textDecoration = "none";
-
-  const exposeBtn = document.createElement("ha-button");
-  exposeBtn.setAttribute("appearance", "plain");
-  exposeBtn.textContent = "Exposed entities";
-  exposeBtn.setAttribute("data-ga-count", "");
-  exposeLink.appendChild(exposeBtn);
-  actions.appendChild(exposeLink);
-
-  card.appendChild(actions);
-
-  settingsRows.push(actions);
-
-  for (let i = 0; i < settingsRows.length; i++) {
-    settingsRows[i].style.display = "none";
+    return card;
+  } catch (e) {
+    _error("Failed to build card: " + e.message);
+    return null;
   }
+}
 
-  return card;
+// ---------------------------------------------------------------------------
+// Enable/disable integration
+// ---------------------------------------------------------------------------
+
+function _enableIntegration(card, globalSwitch, settingsRows) {
+  getEntryId().then(function (entryId) {
+    var hass = getHass();
+    if (!hass) {
+      _warn("_enableIntegration: Home Assistant not loaded");
+      globalSwitch.checked = false;
+      return;
+    }
+
+    _info("Enabling Google Assistant for entry_id=" + entryId);
+    hass.callWS({
+      type: "google_assistant_manual/enable",
+      entry_id: entryId,
+    }).then(function () {
+      _info("Google Assistant enabled successfully");
+      for (var i = 0; i < settingsRows.length; i++) {
+        settingsRows[i].style.display = "";
+      }
+      // Refresh the full card state after enabling
+      refreshExposeToggle(card);
+    }).catch(function (err) {
+      _error("Failed to enable Google Assistant: " + (err.message || err.error || err.code || String(err)));
+      globalSwitch.checked = false;
+      _showToast(
+        "Failed to enable Google Assistant. " +
+        (err.message || err.error || "Check Home Assistant logs for details.") +
+        "\n\nTry reloading the integration from Settings → Devices & Services.",
+        true
+      );
+    });
+  }).catch(function (err) {
+    _error("_enableIntegration: " + err.message);
+    globalSwitch.checked = false;
+  });
+}
+
+function _disableIntegration(card, globalSwitch, settingsRows) {
+  getEntryId().then(function (entryId) {
+    var hass = getHass();
+    if (!hass) {
+      _warn("_disableIntegration: Home Assistant not loaded");
+      globalSwitch.checked = true;
+      return;
+    }
+
+    _info("Disabling Google Assistant for entry_id=" + entryId);
+    hass.callWS({
+      type: "google_assistant_manual/disable",
+      entry_id: entryId,
+    }).then(function () {
+      _info("Google Assistant disabled successfully");
+      for (var i = 0; i < settingsRows.length; i++) {
+        settingsRows[i].style.display = "none";
+      }
+    }).catch(function (err) {
+      _error("Failed to disable Google Assistant: " + (err.message || err.error || err.code || String(err)));
+      globalSwitch.checked = true;
+      _showToast(
+        "Failed to disable Google Assistant. " +
+        (err.message || err.error || "Check Home Assistant logs for details.") +
+        "\n\nTry removing the integration from Settings → Devices & Services.",
+        true
+      );
+    });
+  }).catch(function (err) {
+    _error("_disableIntegration: " + err.message);
+    globalSwitch.checked = true;
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Card state refresh
+// ---------------------------------------------------------------------------
+
+function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput) {
+  getEntryId().then(function (entryId) {
+    var hass = getHass();
+    if (!hass) {
+      _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
+      return;
+    }
+
+    hass.callWS({
+      type: "google_assistant_manual/get_config",
+      entry_id: entryId,
+    }).then(function (config) {
+      _debug("refreshCardState received config: enabled=" + config.enabled + " report_state=" + config.report_state);
+
+      globalSwitch.checked = config.enabled;
+
+      for (var i = 0; i < settingsRows.length; i++) {
+        settingsRows[i].style.display = config.enabled ? "" : "none";
+      }
+
+      if (reportStateSwitch) {
+        reportStateSwitch.checked = config.report_state;
+        reportStateSwitch.disabled = !config.enabled;
+      }
+
+      if (pinInput) {
+        if (config.secure_devices_pin) {
+          pinInput.value = config.secure_devices_pin;
+        }
+        pinInput.disabled = !config.enabled;
+      }
+
+      // Also refresh expose toggle + entity count
+      refreshExposeToggle(card);
+    }).catch(function (err) {
+      _error("Failed to fetch card state: " + (err.message || err.error || err.code || String(err)));
+      // Keep defaults — card will show with toggles off
+    });
+  }).catch(function (err) {
+    _error("refreshCardState: " + err.message);
+  });
 }
 
 /**
@@ -453,44 +790,67 @@ function buildCard() {
 function injectCardInto(el) {
   if (!el) return;
 
-  const root = el.shadowRoot || el;
-  const content = root.querySelector(".content");
-  if (!content) return;
-
-  if (content.querySelector("[data-ga-manual-card]")) {
-    _observerActive.delete(el);
-    return;
-  }
-
-  if (content.children.length === 0) {
-    if (!_observerActive.has(el)) {
-      _observerActive.add(el);
-      const obs = new MutationObserver(function () {
-        if (content.children.length > 0) {
-          obs.disconnect();
-          _observerActive.delete(el);
-          injectCardInto(el);
-        }
-      });
-      obs.observe(content, { childList: true });
+  try {
+    var root = el.shadowRoot || el;
+    var content = root.querySelector(".content");
+    if (!content) {
+      _debug("injectCardInto: no .content in shadowRoot of " + el.nodeName);
+      return;
     }
-    return;
+
+    if (content.querySelector("[data-ga-manual-card]")) {
+      _observerActive.delete(el);
+      return;
+    }
+
+    if (content.children.length === 0) {
+      if (!_observerActive.has(el)) {
+        _observerActive.add(el);
+        _debug("injectCardInto: .content is empty, waiting via MutationObserver");
+        var obs = new MutationObserver(function () {
+          if (content.children.length > 0) {
+            obs.disconnect();
+            _observerActive.delete(el);
+            injectCardInto(el);
+          }
+        });
+        obs.observe(content, { childList: true });
+      }
+      return;
+    }
+
+    _info("Injecting card into " + el.nodeName);
+
+    var card = buildCard();
+    if (!card) {
+      _error("buildCard returned null, card injection aborted");
+      return;
+    }
+
+    var point = findInsertionPoint(content);
+
+    try {
+      if (point.ref && point.before) {
+        point.ref.insertAdjacentElement("beforebegin", card);
+        _debug("Card inserted before '" + point.ref.nodeName.toLowerCase() + "'");
+      } else if (point.ref) {
+        point.ref.insertAdjacentElement("afterend", card);
+        _debug("Card inserted after '" + point.ref.nodeName.toLowerCase() + "'");
+      } else {
+        content.appendChild(card);
+        _debug("Card appended to .content (no insertion point match)");
+      }
+    } catch (e) {
+      _error("DOM insertion failed: " + e.message + ". Falling back to appendChild.");
+      try {
+        content.appendChild(card);
+      } catch (e2) {
+        _error("Fallback appendChild also failed: " + e2.message);
+      }
+    }
+  } catch (e) {
+    _error("injectCardInto failed: " + e.message);
   }
-
-  console.log("[GA Manual] injecting card");
-
-  const card = buildCard();
-  const point = findInsertionPoint(content);
-
-  if (point.ref && point.before) {
-    point.ref.insertAdjacentElement("beforebegin", card);
-  } else if (point.ref) {
-    point.ref.insertAdjacentElement("afterend", card);
-  } else {
-    content.appendChild(card);
-  }
-
-  refreshExposeToggle(card);
 }
 
 /**
@@ -498,7 +858,7 @@ function injectCardInto(el) {
  * ha-config-voice-assistants-assistants elements.
  */
 function findAllAssistantsElements(root) {
-  const results = [];
+  var results = [];
   if (!root) return results;
   if (root.nodeType !== 1 && root.nodeType !== 11) return results;
 
@@ -507,12 +867,24 @@ function findAllAssistantsElements(root) {
   }
 
   if (root.shadowRoot) {
-    results.push(...findAllAssistantsElements(root.shadowRoot));
+    try {
+      results.push.apply(results, findAllAssistantsElements(root.shadowRoot));
+    } catch (e) {
+      _debug("Could not traverse shadowRoot of " + root.nodeName + ": " + e.message);
+    }
   }
 
-  const children = root.children || root.childNodes || [];
-  for (let i = 0; i < children.length; i++) {
-    results.push(...findAllAssistantsElements(children[i]));
+  try {
+    var children = root.children || root.childNodes || [];
+    for (var i = 0; i < children.length; i++) {
+      try {
+        results.push.apply(results, findAllAssistantsElements(children[i]));
+      } catch (e) {
+        /* skip problem children */
+      }
+    }
+  } catch (e) {
+    /* children access may fail on some nodes */
   }
 
   return results;
@@ -523,78 +895,176 @@ function findAllAssistantsElements(root) {
  * elements and inject the card into each.
  */
 function injectIntoAllAssistantsElements() {
-  const elements = findAllAssistantsElements(document.documentElement);
-  for (let i = 0; i < elements.length; i++) {
-    injectCardInto(elements[i]);
+  try {
+    var elements = findAllAssistantsElements(document.documentElement);
+    _debug("Found " + elements.length + " assistants page elements to inject into");
+    for (var i = 0; i < elements.length; i++) {
+      try { injectCardInto(elements[i]); } catch (e) {
+        _error("Error injecting card into element " + i + ": " + e.message);
+      }
+    }
+  } catch (e) {
+    _error("injectIntoAllAssistantsElements failed: " + e.message);
   }
 }
 
+// ---------------------------------------------------------------------------
+// WS-backed toggle handlers
+// ---------------------------------------------------------------------------
+
 function refreshExposeToggle(card) {
-  const homeAssistant = document.querySelector("home-assistant");
-  const hass = homeAssistant && homeAssistant.hass;
+  var hass = getHass();
   if (!hass) return;
-  const sw = card.querySelector("ha-switch");
-  const btn = card.querySelector("[data-ga-count]");
+  var sw = card.querySelector("ha-switch");
+  var btn = card.querySelector("[data-ga-count]");
+
   Promise.all([
     hass.callWS({ type: "homeassistant/expose_new_entities/get", assistant: ASSISTANT_ID }),
     hass.callWS({ type: "homeassistant/expose_entity/list" }),
   ]).then(function (results) {
     if (sw) sw.checked = results[0].expose_new;
     if (!btn) return;
-    const count = Object.values(results[1].exposed_entities).filter(function (s) {
-      return s[ASSISTANT_ID];
-    }).length;
+    var exposedEntities = results[1].exposed_entities || {};
+    var count = 0;
+    try {
+      count = Object.values(exposedEntities).filter(function (s) {
+        return s && s[ASSISTANT_ID];
+      }).length;
+    } catch (e) {
+      _debug("Error counting exposed entities: " + e.message);
+    }
     btn.textContent = hass.localize
       ? hass.localize("ui.panel.config.voice_assistants.assistants.pipeline.exposed_entities", { number: count })
-      : `${count} exposed entities`;
+      : count + " exposed entities";
+  }).catch(function (err) {
+    _error("Failed to refresh expose toggle: " + (err.message || err.error || String(err)));
   });
 }
 
 function onExposeToggle(e) {
-  const homeAssistant = document.querySelector("home-assistant");
-  const hass = homeAssistant && homeAssistant.hass;
+  var hass = getHass();
   if (!hass) return;
-  const checked = e.target.checked;
+  var checked = e.target.checked;
   hass.callWS({
     type: "homeassistant/expose_new_entities/set",
     assistant: ASSISTANT_ID,
     expose_new: checked,
-  }).catch(function () {
+  }).catch(function (err) {
+    _error("Failed to set expose_new_entities: " + (err.message || err.error || String(err)));
     e.target.checked = !checked;
   });
 }
 
+function onReportStateToggle(e) {
+  var hass = getHass();
+  if (!hass) return;
+  var checked = e.target.checked;
+
+  getEntryId().then(function (entryId) {
+    hass.callWS({
+      type: "google_assistant_manual/update_config",
+      entry_id: entryId,
+      data: { report_state: checked },
+    }).catch(function (err) {
+      _error("Failed to update report_state: " + (err.message || err.error || String(err)));
+      e.target.checked = !checked;
+      _showToast(
+        "Failed to " + (checked ? "enable" : "disable") + " state reporting. " +
+        "Try toggling the integration off and on, or check Home Assistant logs.",
+        true
+      );
+    });
+  }).catch(function (err) {
+    _error("onReportStateToggle entry resolution: " + err.message);
+    e.target.checked = !checked;
+  });
+}
+
+function onPinChanged(e) {
+  var hass = getHass();
+  if (!hass) return;
+  var value = e.target.value;
+
+  if (_pinTimer) clearTimeout(_pinTimer);
+  _pinTimer = setTimeout(function () {
+    getEntryId().then(function (entryId) {
+      hass.callWS({
+        type: "google_assistant_manual/update_config",
+        entry_id: entryId,
+        data: { secure_devices_pin: value },
+      }).catch(function (err) {
+        _error("Failed to update secure_devices_pin: " + (err.message || err.error || String(err)));
+      });
+    }).catch(function (err) {
+      _error("onPinChanged entry resolution: " + err.message);
+    });
+  }, 500);
+}
+
 // ---------------------------------------------------------------------------
-// Init
+// Init — apply all patches, inject cards, start observers
 // ---------------------------------------------------------------------------
 
 function init() {
-  console.log("[GA Manual] companion JS loaded, applying patches");
-  patchVoiceAssistants();
-  patchSortKey();
-  patchCustomElements();
+  _info("Companion JS loaded, applying patches (version 0.1.0)");
 
-  injectIntoAllAssistantsElements();
+  // Apply each patch independently — one failing does not block the rest
+  try { patchVoiceAssistants(); } catch (e) {
+    _error("patchVoiceAssistants threw: " + e.message);
+  }
+  try { patchSortKey(); } catch (e) {
+    _error("patchSortKey threw: " + e.message);
+  }
+  try { patchCustomElements(); } catch (e) {
+    _error("patchCustomElements threw: " + e.message);
+  }
 
-  const docObserver = new MutationObserver(function (mutations) {
-    for (let i = 0; i < mutations.length; i++) {
-      const addedNodes = mutations[i].addedNodes;
-      for (let j = 0; j < addedNodes.length; j++) {
-        const node = addedNodes[j];
-        if (node.nodeType !== 1) continue;
-        const elements = findAllAssistantsElements(node);
-        for (let k = 0; k < elements.length; k++) {
-          injectCardInto(elements[k]);
+  // Initial card injection
+  try { injectIntoAllAssistantsElements(); } catch (e) {
+    _error("injectIntoAllAssistantsElements threw: " + e.message);
+  }
+
+  // Watch for dynamically added assistants page elements
+  try {
+    var docObserver = new MutationObserver(function (mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        var addedNodes = mutations[i].addedNodes;
+        for (var j = 0; j < addedNodes.length; j++) {
+          var node = addedNodes[j];
+          if (node.nodeType !== 1) continue;
+          try {
+            var elements = findAllAssistantsElements(node);
+            for (var k = 0; k < elements.length; k++) {
+              try { injectCardInto(elements[k]); } catch (e) {
+                _error("Error injecting card into dynamically added element: " + e.message);
+              }
+            }
+          } catch (e) {
+            _debug("Error scanning dynamically added node: " + e.message);
+          }
         }
       }
+    });
+    var target = document.body || document.documentElement;
+    if (target) {
+      docObserver.observe(target, {
+        childList: true,
+        subtree: true,
+      });
+      _debug("MutationObserver active on " + (target === document.body ? "document.body" : "documentElement"));
+    } else {
+      _warn("Cannot start MutationObserver: no document.body or documentElement");
     }
-  });
-  docObserver.observe(document.body || document.documentElement, {
-    childList: true,
-    subtree: true,
-  });
+  } catch (e) {
+    _error("Failed to start MutationObserver: " + e.message);
+  }
 
-  patchExposePage();
+  // Expose page patch (async, runs when element is defined)
+  try { patchExposePage(); } catch (e) {
+    _error("patchExposePage threw: " + e.message);
+  }
+
+  _info("Init complete — all patches applied");
 }
 
 if (document.readyState === "loading") {

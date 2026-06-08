@@ -2,12 +2,14 @@
 
 ## Overview
 
-A Home Assistant custom integration that adds a "Google Assistant (Manual)" entry to the voice assistants UI, enabling GUI-based entity exposure for the [manual Google Assistant integration](https://www.home-assistant.io/integrations/google_assistant/) (service-account-based, no Nabu Casa Cloud subscription required).
+A Home Assistant custom integration that provides UI-based configuration for the manual
+Google Assistant integration, reaching feature parity with the Nabu Casa Cloud Google Assistant.
 
 **Domain:** `google_assistant_manual`
 **Assistant ID:** `google_assistant_manual`
 **Type:** HA custom integration (Python 3 + vanilla JS)
 **Install:** Place this entire project folder as `custom_components/google_assistant_manual/` in HA config, then restart.
+**Version:** 0.1.0
 
 ## Problem Solved
 
@@ -16,7 +18,58 @@ HA core hardcodes three voice assistants for entity exposure:
 - `cloud.alexa` (requires Nabu Casa Cloud)
 - `cloud.google_assistant` (requires Nabu Casa Cloud)
 
-Users running the manual Google Assistant integration had to use YAML config for entity exposure — there was no GUI option. This integration adds a fourth assistant ID so exposure can be managed entirely through the UI.
+Users running the manual Google Assistant integration had to use YAML config — no GUI option. This integration adds a fourth assistant ID so everything is managed through the UI.
+
+## Terminology
+
+**Core GA**:
+The built-in Home Assistant `google_assistant` component. Provides webhook handling, state
+reporting, request syncing, and device trait mapping. Its `async_setup()` is a no-op when
+no YAML config exists — this design property enables setup-phase re-triggering.
+_Avoid_: built-in GA, upstream GA, google_assistant component
+
+**Assistant card**:
+The settings panel injected into the voice assistants configuration page by `frontend.js`.
+Modeled after `cloud-google-pref`. Surfaces toggles for expose-new-entities, report state,
+and secure devices PIN. Appears as a `ha-card` under `ha-config-voice-assistants-assistants`.
+_Avoid_: preferences card, GA settings panel
+
+**Assistant ID**:
+The string `"google_assistant_manual"`. Registered in `KNOWN_ASSISTANTS` to make the
+integration appear in entity exposure tables and WS command validation. Distinct from
+core GA's domain `"google_assistant"`.
+_Avoid_: domain (that's `google_assistant_manual`)
+
+**Config layer**:
+This integration is a config management layer on top of core GA. It does not re-implement
+webhooks, state reporting, or device syncing. It stores configuration in a `ConfigEntry`
+and bridges it to core GA's expected config dict format.
+_Avoid_: wrapper, proxy
+
+**Setup-phase re-trigger**:
+The mechanism by which this integration activates core GA after it has returned from
+`async_setup()` as a no-op. Stores the config in `hass.data["google_assistant"]`,
+constructs a fake `ConfigEntry` for the `google_assistant` domain via `SimpleNamespace`,
+and directly calls core GA's `async_setup_entry()`. Avoids load-order issues and manifest patching.
+
+**WebSocket bridge**:
+WS commands (`google_assistant_manual/get_config`, `google_assistant_manual/update_config`,
+`google_assistant_manual/enable`, `google_assistant_manual/disable`)
+that the assistant card uses to read/write settings. These wrap `ConfigEntry.options`
+updates. On `update_config`, live property patches on `GoogleConfig` are triggered
+(for `report_state` enable/disable) without requiring a full ConfigEntry reload.
+On `enable`/`disable`, the core GA ConfigEntry is loaded/unloaded entirely — matching
+the `google_enabled` toggle behavior of the cloud card.
+
+**YAML import**:
+An `async_step_import` in the config flow. When `google_assistant:` exists in
+`configuration.yaml`, the flow reads top-level settings (`project_id`, `service_account`,
+`report_state`, `expose_by_default`, `exposed_domains`, `secure_devices_pin`) as defaults.
+Per-entity `entity_config` is explicitly *not* imported — those settings move to the
+entity exposure UI. After import, the ConfigEntry takes precedence and YAML is superseded.
+
+> "google_assistant" can mean the core HA component, the Google cloud platform, or
+> the Nabu Casa Cloud integration — always use **core GA** for the HA component.
 
 ## Architecture
 
@@ -24,24 +77,31 @@ Two-layer monkey-patching approach. Neither layer modifies core HA files on disk
 
 ### Layer 1: Python Backend
 
-**Files:** `__init__.py`, `const.py`, `frontend.py`
+**Files:** `__init__.py`, `config_flow.py`, `const.py`, `frontend.py`
 
 On `async_setup()`:
 1. Patches `KNOWN_ASSISTANTS` tuple in `homeassistant.components.homeassistant.exposed_entities` to include `"google_assistant_manual"`.
 2. Walks the Voluptuous schemas for three WebSocket commands and injects the new assistant ID into any `vol.In` validator that contains `"conversation"`.
 3. Registers static HTTP paths to serve `frontend.js` and `assets/icon.png`.
 4. Registers `frontend.js` as an extra JS module so the HA frontend loads it.
+5. Registers the `get_entry_id` WS discovery command.
 
-**Patched WS commands:**
+On `async_setup_entry()`:
+1. Builds config dict from `entry.data` + `entry.options`.
+2. Sets `hass.data["google_assistant"]["config"]`.
+3. Imports and calls core GA's `async_setup_entry` with a `SimpleNamespace`-based fake entry.
+4. Stores `GoogleConfig` reference in `entry.runtime_data`.
+5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
+6. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
+
+**Patched WS commands (entity exposure):**
 - `homeassistant/expose_entity` — set per-entity exposure
 - `homeassistant/expose_new_entities/get` — read "expose new entities" toggle
 - `homeassistant/expose_new_entities/set` — write "expose new entities" toggle
 
-**No config entries, no entities, no services, no storage.** Fully stateless — all state lives in HA core's `exposed_entities` storage.
-
 ### Layer 2: JavaScript Frontend Companion
 
-**File:** `frontend.js` (604 lines, vanilla JS, no framework, no bundler)
+**File:** `frontend.js` (~1100 lines, vanilla JS, no framework, no bundler)
 
 Four patching mechanisms applied at `init()`:
 
@@ -66,18 +126,18 @@ Four patching mechanisms applied at `init()`:
     "Google Assistant (Manual)"
     <div> (header actions)
       <ha-icon-button> (help link to integration docs)
-      <ha-switch> (global toggle)
+      <ha-switch> (global toggle → enable/disable WS)
   <div.card-content>
     <p> (description text)
     <ha-md-list-item> "Expose new entities" + <ha-switch>
     <ha-md-list-item> "Enable state reporting" + <ha-switch>
     <ha-md-list-item> "Security devices" (info text)
-    <ha-input> (PIN input for security devices)
+    <ha-input> (PIN input for security devices, debounced 500ms)
   <div.card-actions>
     <a> → "Exposed entities" <ha-button> (with live count)
 ```
 
-All settings rows are hidden by default. The global toggle shows/hides them.
+All settings rows hidden by default. State fetched via `get_config` WS on mount. Global toggle shows/hides them and calls `enable`/`disable` WS.
 
 **Card injection (`injectCardInto()`):**
 - Idempotent — guarded by `[data-ga-manual-card]` marker
@@ -89,6 +149,75 @@ All settings rows are hidden by default. The global toggle shows/hides them.
 **DOM scanning:**
 - `findAllAssistantsElements()` recursively walks the DOM including all shadow roots
 - Called at init and via a document-level `MutationObserver` to catch dynamically loaded elements
+
+## Relationships
+
+- The **config flow** produces a **ConfigEntry** for `google_assistant_manual`.
+- The **ConfigEntry** bridges to **core GA** via setup-phase re-trigger, populating `hass.data["google_assistant"]` and calling `async_setup_entry`.
+- The **assistant card** reads/writes settings through the **WebSocket bridge**, which updates the **ConfigEntry** and triggers live patches on **core GA**'s `GoogleConfig` instance.
+- The assistant card's **global toggle** enables/disables core GA entirely via `enable`/`disable` WS commands — unloading the core GA tears down the webhook and stops `report_state`; re-enabling re-runs setup-phase re-trigger.
+- Entity exposure is handled by core's `KNOWN_ASSISTANTS` (patched at startup) and the per-entity expose page (patched by `frontend.js`).
+
+## Data Flow
+
+```
+HA starts
+  → async_setup() called
+    → _patch_core_assistants(): adds ID to KNOWN_ASSISTANTS + WS schemas
+    → async_setup_frontend(): registers static paths + extra JS URL
+    → _register_entry_discovery(): get_entry_id WS command
+  → Integration ready
+
+User adds integration via UI:
+  → config_flow: project_id → service_account (JSON textarea)
+    → ConfigEntry created for domain "google_assistant_manual"
+      → async_setup_entry() fires:
+        1. Populates hass.data["google_assistant"]["config"]
+        2. Constructs fake ConfigEntry for "google_assistant" domain
+        3. Calls core GA's async_setup_entry()
+        4. Patches GoogleConfig.should_report_state → entry.options
+        5. Patches GoogleConfig.secure_devices_pin → entry.options
+        6. Registers WS commands (get_config/update_config/enable/disable)
+
+Browser loads HA frontend
+  → HA loads /google_assistant_manual/frontend.js as extra module
+  → init() runs immediately (or on DOMContentLoaded)
+    → patchVoiceAssistants(): intercepts Object.keys
+    → patchSortKey(): intercepts Array.forEach
+    → patchCustomElements(): wraps customElements.define + patches existing
+    → injectIntoAllAssistantsElements(): scans DOM for assistants elements
+    → Document MutationObserver starts watching for dynamic elements
+    → patchExposePage(): wraps _availableAssistants getter
+
+User visits voice assistants config page
+  → ha-config-voice-assistants-assistants renders
+  → connectedCallback fires → injectCardInto(el)
+  → Card calls hass.callWS() for:
+      - google_assistant_manual/get_entry_id (discover entry)
+      - google_assistant_manual/get_config (enabled, report_state, PIN)
+      - homeassistant/expose_new_entities/get (populate "expose new" toggle)
+      - homeassistant/expose_entity/list (populate entity count badge)
+
+User toggles global enable/disable in card header:
+  → JS calls google_assistant_manual/enable or /disable
+  → enable: re-runs setup-phase re-trigger (steps 1-5 above)
+  → disable: unloads GoogleConfig, tears down webhook/report_state
+
+User changes settings in card (when enabled):
+  → JS calls google_assistant_manual/update_config
+  → Python handler:
+    - Updates entry.options
+    - If report_state changed: calls GoogleConfig.async_enable/disable_report_state()
+    - If PIN changed: no action needed (live property patch)
+```
+
+## Example dialogue
+
+> **Dev:** "When the user changes the report state toggle in the assistant card, does core GA get reloaded?"
+> **Domain expert:** "No — the ConfigEntry options are updated via WS, and a live monkey-patch on `GoogleConfig.should_report_state` reads the new value. If enabling, `async_enable_report_state()` is called directly on the `GoogleConfig` instance. A full reload (tearing down webhooks) only happens when `project_id` or `service_account` changes, or when the global toggle disables and re-enables the entire integration."
+
+> **Dev:** "What happens when the user flips the global toggle off on the assistant card?"
+> **Domain expert:** "The core GA instance is unloaded — webhook unregistered, report_state subscriptions torn down, token cache cleared. Our ConfigEntry stays loaded so the card is still visible, just with settings rows hidden. Flipping it back on re-runs the full setup-phase re-trigger."
 
 ## Key Constants
 
@@ -112,13 +241,22 @@ All source files live at repo root for development. For deployment, users create
 
 ```
 ./
-├── __init__.py          # Integration entry point, patches core assistants + WS schemas
-├── const.py             # DOMAIN and ASSISTANT_ID constants
-├── frontend.py          # Serves JS and static assets via HA HTTP
-├── frontend.js          # 604-line JS companion that patches the HA frontend UI
-├── manifest.json        # HA integration manifest
-└── assets/
-    └── icon.png         # Google Assistant brand icon
+├── __init__.py          # Integration entry point, core GA bridge, WS commands, property patches, schema patching
+├── config_flow.py       # Two-step config flow (project_id → service_account) + YAML import
+├── const.py             # DOMAIN, ASSISTANT_ID, CONF_* keys, WS command name constants
+├── frontend.py          # Serves frontend.js and assets/icon.png via HA HTTP
+├── frontend.js          # ~1100-line vanilla JS companion that patches the HA frontend UI
+├── manifest.json        # HA integration manifest (domain, config_flow, version, dependencies)
+├── hacs.json            # HACS dashboard metadata
+├── strings.json         # Config flow translation keys (source of truth)
+├── translations/
+│   └── en.json          # Generated English translations
+├── assets/
+│   └── icon.png         # Google Assistant brand icon
+└── docs/
+    ├── PLAN.md          # Original implementation plan and decisions
+    ├── adr/             # Architecture Decision Records
+    └── combined-reference.md
 
 references/              # READ-ONLY reference copies (not project code)
 ├── core-dev/            # Snapshot of home-assistant/core repo
@@ -127,40 +265,6 @@ references/              # READ-ONLY reference copies (not project code)
 │       └── homeassistant/exposed_entities.py  # Defines KNOWN_ASSISTANTS tuple
 └── frontend-dev/        # Snapshot of home-assistant/frontend repo
     └── ...              # Lit/TypeScript frontend source (for reference)
-```
-
-## Data Flow
-
-```
-HA starts
-  → async_setup() called
-    → _patch_core_assistants(): adds ID to KNOWN_ASSISTANTS + WS schemas
-    → async_setup_frontend(): registers static paths + extra JS URL
-  → Integration ready
-
-Browser loads HA frontend
-  → HA loads /google_assistant_manual/frontend.js as extra module
-  → init() runs immediately (or on DOMContentLoaded)
-    → patchVoiceAssistants(): intercepts Object.keys
-    → patchSortKey(): intercepts Array.forEach
-    → patchCustomElements(): wraps customElements.define + patches existing
-    → injectIntoAllAssistantsElements(): scans DOM for assistants elements
-    → Document MutationObserver starts watching for dynamic elements
-    → patchExposePage(): wraps _availableAssistants getter
-
-User visits voice assistants config page
-  → ha-config-voice-assistants-assistants renders
-  → connectedCallback fires → injectCardInto(el)
-  → Card calls hass.callWS() for:
-      - homeassistant/expose_new_entities/get (populate "expose new" toggle)
-      - homeassistant/expose_entity/list (populate entity count badge)
-
-User toggles "Expose new entities"
-  → hass.callWS({ type: "homeassistant/expose_new_entities/set", ... })
-
-User clicks "Exposed entities"
-  → navigates to /config/voice-assistants/expose?assistants=google_assistant_manual
-  → Expose page shows google_assistant_manual as a voice assistant option
 ```
 
 ## Dependencies
@@ -174,6 +278,7 @@ User clicks "Exposed entities"
 - **None.** Vanilla JS only. Targets the HA frontend which uses Lit/Material Web.
 - Uses `hass.callWS()` for WebSocket calls (provided by HA frontend).
 - Uses `hass.localize()` for i18n where available, with English fallbacks.
+- Uses `hass.callService("persistent_notification", ...)` for user-facing error toasts.
 
 ## Build / Deployment
 
@@ -195,41 +300,49 @@ Then go to Settings → Devices & Services → Add Integration → Google Assist
 
 3. **Idempotent card injection.** The card injection is designed to be called from multiple lifecycle hooks (`connectedCallback`, `firstUpdated`, `updated`, DOM scans, MutationObservers) without creating duplicates. The `[data-ga-manual-card]` marker ensures only one card exists.
 
-4. **Defensive patching.** The Python side wraps `KNOWN_ASSISTANTS` patching in try/except. The JS side checks for already-patched objects via `WeakSet` and checks element existence before patching.
+4. **Defensive patching with comprehensive logging.** Every patch, WS call, and DOM operation is wrapped in try/except (Python) or try/catch (JS). All failures are logged with `[GA Manual]` prefix, full tracebacks, and actionable messages. The JS side surfaces critical errors via `persistent_notification` toasts so users can see them without opening browser dev tools.
 
-5. **Schema walking for WS patches.** Rather than manually updating each Voluptuous schema, `_walk()` recursively finds all `vol.In` validators containing `"conversation"` and adds the new ID. This means the patching adapts if HA adds/removes WS parameters.
+5. **Schema walking for WS patches.** Rather than manually updating each Voluptuous schema, `_walk()` recursively finds all `vol.In` validators containing `"conversation"` and adds the new ID. Each walked node is tracked by path for targeted error reporting if the schema structure changes.
 
-## Known Limitations / Caveats
+6. **Config layer architecture.** This integration is a config management layer on top of core GA. It stores configuration in a `ConfigEntry.options` and bridges to core GA via setup-phase re-trigger + live property monkey-patches. Settings changes take effect immediately without requiring a full reload — only the global toggle or credential changes trigger a full teardown/re-setup cycle.
 
-1. **HA version coupling.** If HA core renames `KNOWN_ASSISTANTS`, moves `exposed_entities`, changes WebSocket command schemas, or renames custom element tags, patches will silently fail. The `_LOGGER` will log errors.
+## Known Limitations
 
-2. **WebSocket handler availability.** `_patch_core_assistants()` accesses `hass.data["websocket_api"]`, which may not be populated yet during `async_setup`. The code logs a debug message and skips WS patching if handlers are unavailable.
+1. **HA version coupling.** If HA core renames `KNOWN_ASSISTANTS`, moves `exposed_entities`, changes WebSocket command schemas, or renames custom element tags, patches may fail. All failures are logged with detailed context to assist debugging.
 
-3. **Settings rows are cosmetic.** The "Enable state reporting" toggle, "Security devices" section, and PIN input are displayed but do not actually configure anything — they are UI placeholders. Only the "Expose new entities" toggle has a working WebSocket handler.
+2. **WebSocket handler availability.** `_patch_core_assistants()` accesses `hass.data["websocket_api"]`, which may not be populated yet during `async_setup`. The code logs a warning and skips WS patching if handlers are unavailable — the patching will be attempted on the first WS call that triggers validation.
 
-4. **No actual Google Assistant configuration.** This integration only handles entity *exposure* in the UI. Users must still configure the manual Google Assistant integration separately (service account, YAML config for `google_assistant:` domain).
+3. **Sort key injection is fragile.** `patchSortKey()` detects the sort array by exact content match `["conversation", "cloud.alexa", "cloud.google_assistant"]`. If HA changes the sort order, the patch won't fire and the card will appear at the bottom.
 
-5. **Sort key injection is fragile.** `patchSortKey()` detects the sort array by exact content match `["conversation", "cloud.alexa", "cloud.google_assistant"]`. If HA changes the sort order, the patch won't fire.
+4. **Single-entry assumption.** The integration is designed for one Google Assistant project. Multiple entries are not tested. The JS fetches the first entry via `get_entry_id` WS.
+
+5. **Core GA availability.** This integration requires the built-in `google_assistant` component to be available. If import fails, setup raises a descriptive `RuntimeError`.
+
+6. **Route cleanup.** HTTP routes registered by core GA are tracked via snapshot diffing and removed via `_routes.remove()`. This accesses aiohttp internals and may break on major aiohttp version bumps.
 
 ## How to Extend
 
 ### Adding a new setting to the card
 
-1. In `buildCard()` (~line 316), add a new `makeSwitchSettingItem()` or `makeSettingItem()` call.
-2. If it needs a toggle handler, add the handler function and attach it in the `sw.addEventListener("change", handler)` call.
-3. If it needs to read/write state via WebSocket, use `hass.callWS()` pattern from `refreshExposeToggle()` or `onExposeToggle()`.
+1. In `buildCard()`, add a new `makeSwitchSettingItem()` or `makeSettingItem()` call.
+2. If it needs a toggle handler, add the handler function and attach it in `sw.addEventListener("change", handler)`.
+3. If it needs to read/write state via WebSocket, use the `hass.callWS()` pattern from `onReportStateToggle()`.
+4. Add the setting key to `WS_CONFIG_SCHEMA` in `__init__.py`.
+5. Handle the new key in `ws_update_config`.
+6. Return the new key in `ws_get_config`.
 
 ### Adding a new custom element to patch
 
-1. Add the element tag name and patcher function to the `PATCHERS` object (~line 246).
+1. Add the element tag name and patcher function to the `PATCHERS` object.
 2. Write a patcher function following the `_patchXxxProto()` pattern.
-3. The custom elements infrastructure handles both new definitions (via `customElements.define` interceptor) and already-defined elements (via the fallback loop at lines 261-264).
+3. The custom elements infrastructure handles both new definitions (via `customElements.define` interceptor) and already-defined elements (via the fallback loop).
 
 ### Changing the assistant name or icon
 
 - Update `ASSISTANT_ID` and `ASSISTANT_NAME` in both `const.py` and `frontend.js`.
 - Replace `assets/icon.png`.
 - Ensure `manifest.json` name and domain stay consistent.
+- Update `strings.json` and `translations/en.json` if the displayed name changes.
 
 ## Reference Materials
 

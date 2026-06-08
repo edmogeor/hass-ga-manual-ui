@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manual)",
+        "description": "Enter your Google Cloud Platform project ID. Find it at https://console.cloud.google.com.",
+        "data": {
+          "project_id": "Project ID"
+        },
+        "data_description": {
+          "project_id": "The GCP project ID where your Google Actions project lives"
+        }
+      },
+      "service_account": {
+        "title": "Service Account",
+        "description": "Paste the JSON key for your service account. You can create one at {docs_url}.",
+        "data": {
+          "service_account": "Service account JSON"
+        },
+        "data_description": {
+          "service_account": "Paste the entire contents of the downloaded JSON key file"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Project ID is required",
+      "invalid_project_id": "Project ID must be 6-30 characters: lowercase letters, numbers, or hyphens",
+      "service_account_required": "Service account JSON is required",
+      "Invalid JSON": "The text is not valid JSON",
+      "Missing 'client_email'": "The JSON is missing the 'client_email' field",
+      "Missing 'private_key'": "The JSON is missing the 'private_key' field"
+    },
+    "abort": {
+      "empty_config": "No valid Google Assistant configuration found in YAML",
+      "missing_project_id": "YAML configuration is missing project_id"
+    }
+  }
+}

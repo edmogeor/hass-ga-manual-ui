@@ -1,20 +1,43 @@
 """Google Assistant Manual integration.
 
 Adds a "Google Assistant (Manual)" entry under voice assistants when exposing
-a device, without requiring Nabu Casa Cloud.
+a device, without requiring Nabu Casa Cloud. Provides UI-based configuration
+for the manual Google Assistant integration.
 """
 
 import logging
+from types import SimpleNamespace
+from typing import Any
+from uuid import uuid4
 
 import voluptuous as vol
 
-from homeassistant.core import HomeAssistant
+from homeassistant.components import websocket_api
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_PROJECT_ID
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.typing import ConfigType
 
-from .const import ASSISTANT_ID, DOMAIN
+from .const import (
+    ASSISTANT_ID,
+    CONF_CLIENT_EMAIL,
+    CONF_PRIVATE_KEY,
+    CONF_REPORT_STATE,
+    CONF_SECURE_DEVICES_PIN,
+    CONF_SERVICE_ACCOUNT,
+    CORE_GA_DATA_CONFIG,
+    CORE_GA_DOMAIN,
+    DOMAIN,
+    WS_DISABLE,
+    WS_ENABLE,
+    WS_GET_CONFIG,
+    WS_UPDATE_CONFIG,
+)
 from .frontend import async_setup_frontend
 
 _LOGGER = logging.getLogger(__name__)
+
+_VERSION: str | None = None
 
 _WSC_PATCH_TARGETS = (
     "homeassistant/expose_entity",
@@ -23,64 +46,883 @@ _WSC_PATCH_TARGETS = (
 )
 
 
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def _project_id(entry: ConfigEntry) -> str:
+    """Return the project_id from a config entry (or '<missing>')."""
+    return entry.data.get(CONF_PROJECT_ID, "<missing>")
+
+
+# ---------------------------------------------------------------------------
+# Setup / teardown lifecycle
+# ---------------------------------------------------------------------------
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Google Assistant Manual integration."""
+    _LOGGER.debug("async_setup starting for %s v%s", DOMAIN, _get_version())
     hass.data.setdefault(DOMAIN, {})
 
     _patch_core_assistants(hass)
 
     await async_setup_frontend(hass)
 
-    _LOGGER.info("Google Assistant (Manual) is set up")
+    _register_entry_discovery(hass)
+
+    _LOGGER.info("Google Assistant (Manual) setup complete (version %s)", _get_version())
     return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up from a config entry — bridge to core GA."""
+    _LOGGER.debug(
+        "async_setup_entry starting for project='%s' entry_id=%s",
+        _project_id(entry),
+        entry.entry_id,
+    )
+
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = entry
+
+    _register_ws_commands(hass, entry)
+
+    if entry.options.get("enabled", True):
+        try:
+            await _setup_core_ga(hass, entry)
+        except Exception:
+            _LOGGER.exception(
+                "Failed to bridge to core GA for project='%s'. "
+                "Integration will appear as disabled until re-enabled. "
+                "Check that project_id and service_account are valid.",
+                _project_id(entry),
+            )
+            entry.runtime_data = None
+            return True
+
+    _LOGGER.info(
+        "Config entry set up for project='%s' (enabled=%s)",
+        _project_id(entry),
+        entry.options.get("enabled", True),
+    )
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload a config entry — tear down core GA."""
+    _LOGGER.debug(
+        "async_unload_entry for project='%s' entry_id=%s",
+        _project_id(entry),
+        entry.entry_id,
+    )
+
+    try:
+        _teardown_core_ga(hass, entry)
+    except Exception:
+        _LOGGER.exception(
+            "Error during core GA teardown for project='%s'",
+            _project_id(entry),
+        )
+
+    hass.data[DOMAIN].pop(entry.entry_id, None)
+    return True
+
+
+async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the config entry."""
+    _LOGGER.debug(
+        "async_reload_entry for project='%s'",
+        _project_id(entry),
+    )
+    await async_unload_entry(hass, entry)
+    await async_setup_entry(hass, entry)
+
+
+# ---------------------------------------------------------------------------
+# Core GA bridge
+# ---------------------------------------------------------------------------
+
+
+def _build_core_config(entry: ConfigEntry) -> dict[str, Any]:
+    """Build the config dict that core GA expects (GOOGLE_ASSISTANT_SCHEMA).
+
+    Raises ValueError if entry.data is missing CONF_PROJECT_ID
+    (should never happen since config flow validates it).
+    """
+    project_id = entry.data.get(CONF_PROJECT_ID)
+    if not project_id:
+        raise ValueError(
+            "Config entry data is missing 'project_id'. "
+            "This indicates a corrupt entry — delete and re-add the integration."
+        )
+
+    config: dict[str, Any] = {
+        CONF_PROJECT_ID: project_id,
+    }
+
+    sa = entry.data.get(CONF_SERVICE_ACCOUNT, {})
+    if sa:
+        if not isinstance(sa, dict):
+            _LOGGER.warning(
+                "service_account in entry data is not a dict (type=%s), ignoring",
+                type(sa).__name__,
+            )
+        else:
+            config[CONF_SERVICE_ACCOUNT] = {
+                CONF_CLIENT_EMAIL: sa.get(CONF_CLIENT_EMAIL, ""),
+                CONF_PRIVATE_KEY: sa.get(CONF_PRIVATE_KEY, ""),
+            }
+            config[CONF_REPORT_STATE] = entry.options.get(CONF_REPORT_STATE, False)
+    else:
+        config[CONF_REPORT_STATE] = False
+
+    pin = entry.options.get(CONF_SECURE_DEVICES_PIN)
+    if pin:
+        config[CONF_SECURE_DEVICES_PIN] = pin
+
+    _LOGGER.debug("Built core GA config with project_id='%s'", project_id)
+    return config
+
+
+def _make_core_entry(entry: ConfigEntry) -> SimpleNamespace:
+    """Create a minimal fake ConfigEntry for the core GA domain."""
+    fake = SimpleNamespace()
+    fake.version = 1
+    fake.domain = CORE_GA_DOMAIN
+    fake.title = entry.data[CONF_PROJECT_ID]
+    fake.data = entry.data
+    fake.entry_id = uuid4().hex
+    fake.source = "user"
+    fake.options = {}
+    fake.runtime_data = None
+    fake.disabled_by = None
+    fake.pref_disable_new_entities = False
+    fake.pref_disable_polling = False
+    fake.unique_id = None
+    fake.minor_version = 1
+    return fake
+
+
+async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Bridge config to core GA and activate it.
+
+    Raises on failure — caller (async_setup_entry or ws_enable) must handle.
+    """
+    project_id = _project_id(entry)
+    _LOGGER.debug("Bridging to core GA for project='%s'", project_id)
+
+    try:
+        config = _build_core_config(entry)
+    except ValueError as exc:
+        _LOGGER.error("Cannot build core GA config: %s", exc)
+        raise
+
+    if CORE_GA_DOMAIN not in hass.data:
+        hass.data[CORE_GA_DOMAIN] = {}
+    hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG] = config
+
+    # Import core GA's async_setup_entry
+    try:
+        from homeassistant.components.google_assistant import (
+            async_setup_entry as core_async_setup_entry,
+        )
+    except ImportError as exc:
+        _LOGGER.error(
+            "Cannot import core Google Assistant integration. "
+            "Is the 'google_assistant' integration available? Error: %s",
+            exc,
+        )
+        raise RuntimeError(
+            "Core Google Assistant integration is not available. "
+            "This integration requires the built-in 'google_assistant' component."
+        ) from exc
+
+    core_entry = _make_core_entry(entry)
+
+    # Snapshot registered views before setup so we can find the new one
+    try:
+        views_before = set(hass.http.app.router.routes())
+    except Exception as exc:
+        _LOGGER.warning(
+            "Could not snapshot HTTP routes before core GA setup: %s. "
+            "Route cleanup on disable may not fully work.",
+            exc,
+        )
+        views_before = set()
+
+    _LOGGER.debug("Calling core GA async_setup_entry with fake entry_id=%s", core_entry.entry_id)
+    await core_async_setup_entry(hass, core_entry)
+
+    # Find newly registered routes
+    try:
+        new_routes = [
+            r for r in hass.http.app.router.routes() if r not in views_before
+        ]
+        _LOGGER.debug("Core GA registered %d new HTTP routes", len(new_routes))
+    except Exception as exc:
+        _LOGGER.warning("Could not detect new HTTP routes: %s", exc)
+        new_routes = []
+
+    google_config = core_entry.runtime_data
+
+    if google_config is None:
+        _LOGGER.error(
+            "Core GA async_setup_entry returned but google_config is None. "
+            "The Google Assistant functionality will not be available. "
+            "Check that your service account credentials are valid."
+        )
+        raise RuntimeError(
+            "Core GA setup did not produce a GoogleConfig instance. "
+            "Check the Home Assistant logs for errors from the 'google_assistant' component."
+        )
+
+    entry.runtime_data = {
+        "core_entry": core_entry,
+        "registered_routes": new_routes,
+    }
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "enabled": True}
+    )
+
+    _patch_google_config_properties(google_config, entry)
+    entry.runtime_data["google_config"] = google_config
+
+    _LOGGER.info("Core GA successfully loaded for project '%s'", project_id)
+
+
+def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Tear down core GA — webhook, report_state, HTTP view."""
+    project_id = _project_id(entry)
+    runtime = entry.runtime_data
+    if not runtime:
+        _LOGGER.debug("_teardown_core_ga: no runtime_data, already torn down")
+        return
+
+    if not isinstance(runtime, dict):
+        _LOGGER.warning(
+            "_teardown_core_ga: runtime_data is not a dict (type=%s), skipping teardown",
+            type(runtime).__name__,
+        )
+        entry.runtime_data = None
+        return
+
+    google_config = runtime.get("google_config")
+    if google_config is not None:
+        try:
+            google_config.async_deinitialize()
+            _LOGGER.debug("Core GA deinitialized for project='%s'", project_id)
+        except Exception:
+            _LOGGER.exception(
+                "Error deinitializing GoogleConfig for project='%s'. "
+                "Some event listeners or webhook registrations may remain.",
+                project_id,
+            )
+
+    routes_to_remove = runtime.get("registered_routes", [])
+    if routes_to_remove:
+        removed = 0
+        for route in routes_to_remove:
+            try:
+                hass.http.app.router._routes.remove(route)
+                removed += 1
+            except ValueError:
+                _LOGGER.debug("Route already removed: %s", route)
+            except Exception as exc:
+                _LOGGER.warning(
+                    "Could not remove HTTP route %s: %s", route, exc
+                )
+        if removed:
+            _LOGGER.debug("Removed %d/%d core GA HTTP routes", removed, len(routes_to_remove))
+
+    entry.runtime_data = None
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "enabled": False}
+    )
+    _LOGGER.info("Core GA disabled for project '%s'", project_id)
+
+
+# ---------------------------------------------------------------------------
+# GoogleConfig live property patches
+# ---------------------------------------------------------------------------
+
+_ORIGINAL_GOOGLE_CONFIG_PROPS: dict[str, Any] = {}
+
+
+def _patch_google_config_properties(
+    google_config: Any, entry: ConfigEntry
+) -> None:
+    """Monkey-patch GoogleConfig properties to read from our ConfigEntry options.
+
+    Safe to call multiple times — original property getters are cached once.
+    """
+    gc_type = type(google_config)
+    gc_type_name = gc_type.__name__ if hasattr(gc_type, "__name__") else str(gc_type)
+
+    # Cache original getters (only on first call to avoid chaining)
+    if "should_report_state" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
+        try:
+            desc = gc_type.should_report_state
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"] = desc.fget
+            _LOGGER.debug("Cached original GoogleConfig.should_report_state getter")
+        except AttributeError:
+            _LOGGER.warning(
+                "GoogleConfig (%s) has no should_report_state property. "
+                "The 'Enable state reporting' toggle will not work correctly.",
+                gc_type_name,
+            )
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"] = None
+
+    if "secure_devices_pin" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
+        try:
+            desc = gc_type.secure_devices_pin
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"] = desc.fget
+            _LOGGER.debug("Cached original GoogleConfig.secure_devices_pin getter")
+        except AttributeError:
+            _LOGGER.warning(
+                "GoogleConfig (%s) has no secure_devices_pin property. "
+                "The 'Security devices PIN' feature will not work correctly.",
+                gc_type_name,
+            )
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"] = None
+
+    orig_srs = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"]
+    orig_sdp = _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"]
+
+    def _should_report_state(self: Any) -> bool:
+        if self is google_config:
+            options = entry.options
+            return bool(options.get(CONF_REPORT_STATE))
+        if orig_srs:
+            return orig_srs(self)
+        return False
+
+    def _secure_devices_pin(self: Any) -> str | None:
+        if self is google_config:
+            options = entry.options
+            return options.get(CONF_SECURE_DEVICES_PIN)
+        if orig_sdp:
+            return orig_sdp(self)
+        return None
+
+    try:
+        gc_type.should_report_state = property(_should_report_state)
+        gc_type.secure_devices_pin = property(_secure_devices_pin)
+        _LOGGER.debug("Successfully patched GoogleConfig properties on %s", gc_type_name)
+    except Exception:
+        _LOGGER.exception(
+            "Failed to patch GoogleConfig properties on %s. "
+            "Report state and PIN settings will require a full reload to take effect.",
+            gc_type_name,
+        )
+
+
+# ---------------------------------------------------------------------------
+# WebSocket commands — entry discovery (always available)
+# ---------------------------------------------------------------------------
+
+
+def _register_entry_discovery(hass: HomeAssistant) -> None:
+    """Register the entry_id discovery WS command (always available)."""
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): "google_assistant_manual/get_entry_id",
+        }
+    )
+    def ws_get_entry_id(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Return the first config entry ID for this integration."""
+        try:
+            entries = _hass.config_entries.async_entries(DOMAIN)
+        except Exception as exc:
+            _LOGGER.exception("Failed to look up config entries in ws_get_entry_id")
+            connection.send_error(
+                msg["id"],
+                "internal_error",
+                f"Failed to look up config entries: {exc}",
+            )
+            return
+
+        if not entries:
+            _LOGGER.debug(
+                "ws_get_entry_id: no config entries found for domain '%s'. "
+                "The integration needs to be added via Settings → Devices & Services.",
+                DOMAIN,
+            )
+            connection.send_error(
+                msg["id"],
+                "not_found",
+                f"No config entry found for {DOMAIN}. "
+                "Add the integration via Settings → Devices & Services → Add Integration.",
+            )
+            return
+
+        entry_id = entries[0].entry_id
+        _LOGGER.debug(
+            "ws_get_entry_id: returning entry_id=%s for project='%s'",
+            entry_id,
+            _project_id(entries[0]),
+        )
+        connection.send_result(msg["id"], {"entry_id": entry_id})
+
+    try:
+        websocket_api.async_register_command(hass, ws_get_entry_id)
+        _LOGGER.debug("Registered WS command: google_assistant_manual/get_entry_id")
+    except Exception:
+        _LOGGER.exception("Failed to register WS command: google_assistant_manual/get_entry_id")
+
+
+# ---------------------------------------------------------------------------
+# WebSocket commands — config entry operations
+# ---------------------------------------------------------------------------
+
+WS_CONFIG_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_REPORT_STATE): bool,
+        vol.Optional(CONF_SECURE_DEVICES_PIN): vol.Any(str, None),
+    }
+)
+
+
+def _safe_get_entry(
+    hass: HomeAssistant,
+    entry_id: str,
+    ws_msg_id: int,
+    ws_connection: websocket_api.ActiveConnection,
+) -> ConfigEntry | None:
+    """Look up a config entry safely, sending an error response on failure.
+
+    Returns the ConfigEntry or None (error already sent).
+    """
+    try:
+        entry = hass.config_entries.async_get_entry(entry_id)
+    except Exception as exc:
+        _LOGGER.exception("Error looking up config entry '%s'", entry_id)
+        ws_connection.send_error(
+            ws_msg_id,
+            "internal_error",
+            f"Failed to look up config entry: {exc}",
+        )
+        return None
+
+    if entry is None:
+        _LOGGER.debug(
+            "WS command referenced unknown entry_id='%s'. "
+            "The entry may have been deleted.",
+            entry_id,
+        )
+        ws_connection.send_error(
+            ws_msg_id,
+            "not_found",
+            "Config entry not found. It may have been deleted. "
+            "Re-add the integration via Settings → Devices & Services.",
+        )
+        return None
+
+    return entry
+
+
+def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Register WebSocket command handlers for the assistant card."""
+
+    # -----------------------------------------------------------------------
+    # get_config
+    # -----------------------------------------------------------------------
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_GET_CONFIG,
+            vol.Required("entry_id"): str,
+        }
+    )
+    def ws_get_config(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Return current config including enabled state."""
+        current_entry = _safe_get_entry(_hass, msg["entry_id"], msg["id"], connection)
+        if current_entry is None:
+            return
+
+        try:
+            runtime = current_entry.runtime_data
+            enabled = bool(
+                isinstance(runtime, dict)
+                and runtime.get("google_config") is not None
+            )
+
+            result = {
+                "enabled": enabled,
+                CONF_REPORT_STATE: current_entry.options.get(CONF_REPORT_STATE, False),
+                CONF_SECURE_DEVICES_PIN: current_entry.options.get(
+                    CONF_SECURE_DEVICES_PIN, ""
+                ),
+            }
+
+            _LOGGER.debug(
+                "ws_get_config for project='%s': enabled=%s report_state=%s",
+                _project_id(current_entry),
+                enabled,
+                result[CONF_REPORT_STATE],
+            )
+            connection.send_result(msg["id"], result)
+        except Exception as exc:
+            _LOGGER.exception("Error building config response for ws_get_config")
+            connection.send_error(
+                msg["id"],
+                "internal_error",
+                f"Failed to read config: {exc}. Check Home Assistant logs for details.",
+            )
+
+    # -----------------------------------------------------------------------
+    # update_config
+    # -----------------------------------------------------------------------
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_UPDATE_CONFIG,
+            vol.Required("entry_id"): str,
+            vol.Required("data"): WS_CONFIG_SCHEMA,
+        }
+    )
+    def ws_update_config(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Update config options and trigger live patches."""
+        current_entry = _safe_get_entry(_hass, msg["entry_id"], msg["id"], connection)
+        if current_entry is None:
+            return
+
+        data: dict[str, Any] = msg["data"]
+        project_id = _project_id(current_entry)
+        _LOGGER.debug(
+            "ws_update_config for project='%s': keys=%s",
+            project_id,
+            list(data.keys()),
+        )
+
+        try:
+            new_options = {**current_entry.options}
+
+            if CONF_REPORT_STATE in data:
+                new_val = data[CONF_REPORT_STATE]
+                new_options[CONF_REPORT_STATE] = new_val
+                _LOGGER.info("Updated report_state=%s for project='%s'", new_val, project_id)
+
+            if CONF_SECURE_DEVICES_PIN in data:
+                pin_val = data[CONF_SECURE_DEVICES_PIN]
+                new_options[CONF_SECURE_DEVICES_PIN] = pin_val
+                _LOGGER.info(
+                    "Updated secure_devices_pin=%s for project='%s'",
+                    "<set>" if pin_val else "<cleared>",
+                    project_id,
+                )
+
+            _hass.config_entries.async_update_entry(current_entry, options=new_options)
+
+            # Live patch: enable/disable report_state without full reload
+            runtime = current_entry.runtime_data
+            google_config = (
+                runtime.get("google_config")
+                if isinstance(runtime, dict)
+                else None
+            )
+
+            if google_config is not None and CONF_REPORT_STATE in data:
+                try:
+                    if data[CONF_REPORT_STATE]:
+                        google_config.async_enable_report_state()
+                        _LOGGER.debug("Live-enabled report_state for project='%s'", project_id)
+                    else:
+                        google_config.async_disable_report_state()
+                        _LOGGER.debug("Live-disabled report_state for project='%s'", project_id)
+                except Exception:
+                    _LOGGER.exception(
+                        "Failed to live-toggle report_state for project='%s'. "
+                        "Toggle the integration off and on to apply.",
+                        project_id,
+                    )
+
+            connection.send_result(msg["id"])
+        except Exception as exc:
+            _LOGGER.exception("Error in ws_update_config for project='%s'", project_id)
+            connection.send_error(
+                msg["id"],
+                "internal_error",
+                f"Failed to update config: {exc}. Check Home Assistant logs for details.",
+            )
+
+    # -----------------------------------------------------------------------
+    # enable
+    # -----------------------------------------------------------------------
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_ENABLE,
+            vol.Required("entry_id"): str,
+        }
+    )
+    def ws_enable(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Enable core GA — re-run setup-phase re-trigger."""
+
+        async def _enable() -> None:
+            current_entry = _safe_get_entry(
+                _hass, msg["entry_id"], msg["id"], connection
+            )
+            if current_entry is None:
+                return
+
+            project_id = _project_id(current_entry)
+            _LOGGER.info("Enabling Google Assistant for project='%s'", project_id)
+
+            try:
+                await _setup_core_ga(_hass, current_entry)
+                _LOGGER.info(
+                    "Successfully enabled Google Assistant for project='%s'",
+                    project_id,
+                )
+                connection.send_result(msg["id"])
+            except RuntimeError as exc:
+                _LOGGER.error(
+                    "Failed to enable Google Assistant for project='%s': %s",
+                    project_id,
+                    exc,
+                )
+                connection.send_error(
+                    msg["id"],
+                    "setup_failed",
+                    str(exc),
+                )
+            except Exception:
+                _LOGGER.exception(
+                    "Unexpected error enabling Google Assistant for project='%s'",
+                    project_id,
+                )
+                connection.send_error(
+                    msg["id"],
+                    "setup_failed",
+                    "An unexpected error occurred while enabling Google Assistant. "
+                    "Check Home Assistant logs for the full traceback.",
+                )
+
+        _hass.async_create_task(_enable())
+
+    # -----------------------------------------------------------------------
+    # disable
+    # -----------------------------------------------------------------------
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_DISABLE,
+            vol.Required("entry_id"): str,
+        }
+    )
+    def ws_disable(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Disable core GA — tear down webhook, stop report_state."""
+        current_entry = _safe_get_entry(_hass, msg["entry_id"], msg["id"], connection)
+        if current_entry is None:
+            return
+
+        project_id = _project_id(current_entry)
+        _LOGGER.info("Disabling Google Assistant for project='%s'", project_id)
+
+        try:
+            _teardown_core_ga(_hass, current_entry)
+            _LOGGER.info(
+                "Successfully disabled Google Assistant for project='%s'",
+                project_id,
+            )
+            connection.send_result(msg["id"])
+        except Exception as exc:
+            _LOGGER.exception(
+                "Error disabling Google Assistant for project='%s'",
+                project_id,
+            )
+            connection.send_error(
+                msg["id"],
+                "teardown_failed",
+                f"Failed to disable integration: {exc}. "
+                "Check Home Assistant logs for details.",
+            )
+
+    # Register all four commands
+    commands = [
+        ("ws_get_config", ws_get_config),
+        ("ws_update_config", ws_update_config),
+        ("ws_enable", ws_enable),
+        ("ws_disable", ws_disable),
+    ]
+    for name, handler in commands:
+        try:
+            websocket_api.async_register_command(hass, handler)
+        except Exception:
+            _LOGGER.exception("Failed to register WS command: %s", name)
+
+
+# ---------------------------------------------------------------------------
+# Core assistant + WS schema patching
+# ---------------------------------------------------------------------------
 
 
 def _patch_core_assistants(hass: HomeAssistant) -> None:
     """Patch core to accept our assistant ID."""
+    # --- Patch KNOWN_ASSISTANTS tuple ---
     try:
         import homeassistant.components.homeassistant.exposed_entities as ee
 
         if ASSISTANT_ID not in ee.KNOWN_ASSISTANTS:
             ee.KNOWN_ASSISTANTS = tuple(list(ee.KNOWN_ASSISTANTS) + [ASSISTANT_ID])
-            _LOGGER.debug("Added %s to KNOWN_ASSISTANTS", ASSISTANT_ID)
-    except Exception as exc:
-        _LOGGER.error("Failed to patch KNOWN_ASSISTANTS: %s", exc)
+            _LOGGER.info(
+                "Added '%s' to KNOWN_ASSISTANTS (now: %s)",
+                ASSISTANT_ID,
+                ee.KNOWN_ASSISTANTS,
+            )
+        else:
+            _LOGGER.debug(
+                "'%s' already in KNOWN_ASSISTANTS, skipping", ASSISTANT_ID
+            )
+    except ImportError as exc:
+        _LOGGER.error(
+            "Cannot import homeassistant.components.homeassistant.exposed_entities: %s. "
+            "The voice assistants entity exposure UI will not include '%s'.",
+            exc,
+            ASSISTANT_ID,
+        )
         return
-
-    handlers: dict = hass.data.get("websocket_api", {})
-
-    if not handlers:
-        _LOGGER.debug(
-            "websocket_api handlers not yet available; "
-            "WS schema patching will be skipped"
+    except Exception as exc:
+        _LOGGER.exception(
+            "Unexpected error patching KNOWN_ASSISTANTS: %s. "
+            "The voice assistants UI may not show '%s'.",
+            exc,
+            ASSISTANT_ID,
         )
         return
 
+    # --- Patch WS command schemas ---
+    handlers: dict = hass.data.get("websocket_api", {})
+
+    if not handlers:
+        _LOGGER.warning(
+            "websocket_api handlers not yet available; "
+            "WS schema patching will be skipped. "
+            "The entity exposure WS commands will not accept '%s'. "
+            "This is expected during early startup; schemas should be patched "
+            "when the frontend first makes an exposure WS call.",
+            ASSISTANT_ID,
+        )
+        return
+
+    patched = 0
     for cmd in _WSC_PATCH_TARGETS:
         if cmd not in handlers:
-            _LOGGER.debug("WS command %s not found in handlers", cmd)
+            _LOGGER.warning(
+                "WS command '%s' not found in handlers. "
+                "Schema will not be patched — the '%s' assistant may not appear "
+                "in entity exposure dropdowns.",
+                cmd,
+                ASSISTANT_ID,
+            )
             continue
-        _handler, schema = handlers[cmd]
-        _add_assistant_to_schema(schema, ASSISTANT_ID)
-        _LOGGER.info("Patched WS schema for %s", cmd)
+
+        try:
+            _handler, schema = handlers[cmd]
+            _add_assistant_to_schema(schema, ASSISTANT_ID)
+            patched += 1
+            _LOGGER.info("Patched WS schema for '%s' to accept '%s'", cmd, ASSISTANT_ID)
+        except Exception:
+            _LOGGER.exception(
+                "Failed to patch WS schema for '%s'. "
+                "The '%s' assistant may not appear in entity exposure dropdowns "
+                "for this command.",
+                cmd,
+                ASSISTANT_ID,
+            )
+
+    _LOGGER.debug(
+        "WS schema patching complete: %d/%d targets patched",
+        patched,
+        len(_WSC_PATCH_TARGETS),
+    )
 
 
 def _add_assistant_to_schema(schema: object, assistant_id: str) -> None:
     """Recursively walk a voluptuous schema and add assistant_id to vol.In validators."""
 
-    def _walk(obj: object) -> None:
-        if isinstance(obj, vol.In):
-            container = getattr(obj, "container", None)
-            if container is not None and "conversation" in container:
-                if assistant_id not in container:
-                    obj.container = list(container) + [assistant_id]
-        elif isinstance(obj, vol.Schema):
-            _walk(obj.schema)
-        elif isinstance(obj, dict):
-            for value in obj.values():
-                _walk(value)
-        elif isinstance(obj, (list, tuple)):
-            for item in obj:
-                _walk(item)
+    def _walk(obj: object, path: str = "root") -> None:
+        try:
+            if isinstance(obj, vol.In):
+                container = getattr(obj, "container", None)
+                if container is not None and "conversation" in container:
+                    if assistant_id not in container:
+                        obj.container = list(container) + [assistant_id]
+                        _LOGGER.debug(
+                            "Schema walk [%s]: added '%s' to vol.In (was: %s)",
+                            path,
+                            assistant_id,
+                            container,
+                        )
+            elif isinstance(obj, vol.Schema):
+                _walk(obj.schema, f"{path}.Schema")
+            elif isinstance(obj, dict):
+                for key, value in obj.items():
+                    _walk(value, f"{path}.{key}")
+            elif isinstance(obj, (list, tuple)):
+                for i, item in enumerate(obj):
+                    _walk(item, f"{path}[{i}]")
+        except Exception:
+            _LOGGER.exception(
+                "Error walking schema at path '%s' (type=%s). "
+                "This may indicate the core WS schema structure has changed. "
+                "Schema patching will continue for other nodes.",
+                path,
+                type(obj).__name__,
+            )
 
     _walk(schema)
+
+
+# ---------------------------------------------------------------------------
+# Version helper
+# ---------------------------------------------------------------------------
+
+
+def _get_version() -> str:
+    """Return the integration version from manifest.json."""
+    global _VERSION
+    if _VERSION is not None:
+        return _VERSION
+    try:
+        import json
+        from pathlib import Path
+
+        manifest_path = Path(__file__).parent / "manifest.json"
+        _VERSION = json.loads(manifest_path.read_text()).get("version", "unknown")
+    except Exception:
+        _VERSION = "unknown"
+    return _VERSION
