@@ -1,0 +1,21 @@
+project-includes = [
+    "*.py",
+]
+
+project-excludes = [
+    "**/references/**",
+    ".venv/**",
+]
+
+search_path = [
+    "..",
+]
+
+disable-search-path-heuristics = true
+
+replace-imports-with-any = [
+    "homeassistant.*",
+    "voluptuous",
+]
+
+preset = "strict"

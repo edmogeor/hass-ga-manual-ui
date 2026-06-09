@@ -1,0 +1,22 @@
+{
+  "name": "google-assistant-manual",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild frontend.ts --bundle --outfile=frontend.js --target=es2020 --format=iife",
+    "build:dist": "npm run build && rm -rf build && mkdir -p build/custom_components/google_assistant_manual && cp __init__.py config_flow.py const.py frontend.py frontend.js manifest.json strings.json hacs.json build/custom_components/google_assistant_manual/ && cp -r assets translations build/custom_components/google_assistant_manual/",
+    "watch": "esbuild frontend.ts --bundle --outfile=frontend.js --target=es2020 --format=iife --watch",
+    "check": "tsc --noEmit && pyrefly check",
+    "lint": "eslint frontend.ts && ruff check . && ruff format --check .",
+    "lint:ts": "eslint frontend.ts",
+    "lint:py": "ruff check . && ruff format --check .",
+    "fix": "eslint --fix frontend.ts && ruff check --fix . && ruff format ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "esbuild": "^0.25.0",
+    "eslint": "^10.4.1",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.61.0"
+  }
+}

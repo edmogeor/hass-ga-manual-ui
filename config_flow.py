@@ -5,7 +5,6 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
@@ -21,10 +20,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_GUIDE_URL = (
-    "https://www.home-assistant.io/integrations/google_assistant/"
-    "#manual-setup"
-)
+_GUIDE_URL = "https://www.home-assistant.io/integrations/google_assistant/#manual-setup"
 
 
 def _parse_service_account_json(raw: str) -> dict[str, str]:
@@ -35,7 +31,12 @@ def _parse_service_account_json(raw: str) -> dict[str, str]:
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        _LOGGER.debug("Service account JSON parse failed at line %s col %s: %s", exc.lineno, exc.colno, exc.msg)
+        _LOGGER.debug(
+            "Service account JSON parse failed at line %s col %s: %s",
+            exc.lineno,
+            exc.colno,
+            exc.msg,
+        )
         raise vol.Invalid(
             f"Invalid JSON (line {exc.lineno}, column {exc.colno}): {exc.msg}"
         ) from exc
@@ -54,7 +55,7 @@ def _parse_service_account_json(raw: str) -> dict[str, str]:
     client_email = data.get("client_email")
     private_key = data.get("private_key")
 
-    missing = []
+    missing: list[str] = []
     if not client_email:
         missing.append("client_email")
     if not private_key:
@@ -72,10 +73,14 @@ def _parse_service_account_json(raw: str) -> dict[str, str]:
         )
 
     if not isinstance(client_email, str):
-        _LOGGER.debug("client_email is not a string (type=%s)", type(client_email).__name__)
+        _LOGGER.debug(
+            "client_email is not a string (type=%s)", type(client_email).__name__
+        )
         raise vol.Invalid("'client_email' must be a string")
     if not isinstance(private_key, str):
-        _LOGGER.debug("private_key is not a string (type=%s)", type(private_key).__name__)
+        _LOGGER.debug(
+            "private_key is not a string (type=%s)", type(private_key).__name__
+        )
         raise vol.Invalid("'private_key' must be a string")
 
     _LOGGER.debug("Successfully parsed service account for '%s'", client_email)
@@ -109,7 +114,9 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.debug("Config flow: empty project_id submitted")
                 errors[CONF_PROJECT_ID] = "project_id_required"
             elif not _is_valid_project_id(project_id):
-                _LOGGER.debug("Config flow: invalid project_id format: '%s'", project_id)
+                _LOGGER.debug(
+                    "Config flow: invalid project_id format: '%s'", project_id
+                )
                 errors[CONF_PROJECT_ID] = "invalid_project_id"
 
             if not errors:
@@ -158,7 +165,9 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                     account = _parse_service_account_json(raw)
                 except vol.Invalid as exc:
                     error_msg = str(exc)
-                    _LOGGER.debug("Config flow: service_account validation failed: %s", error_msg)
+                    _LOGGER.debug(
+                        "Config flow: service_account validation failed: %s", error_msg
+                    )
                     errors[CONF_SERVICE_ACCOUNT] = error_msg
                 else:
                     self._data[CONF_SERVICE_ACCOUNT] = account

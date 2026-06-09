@@ -11,7 +11,6 @@ from typing import Any
 from uuid import uuid4
 
 import voluptuous as vol
-
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PROJECT_ID
@@ -72,7 +71,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     _register_entry_discovery(hass)
 
-    _LOGGER.info("Google Assistant (Manual) setup complete (version %s)", _get_version())
+    _LOGGER.info(
+        "Google Assistant (Manual) setup complete (version %s)", _get_version()
+    )
     return True
 
 
@@ -281,8 +282,9 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         raise
 
     if CORE_GA_DOMAIN not in hass.data:
-        hass.data[CORE_GA_DOMAIN] = {}
-    hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG] = config
+        hass.data[CORE_GA_DOMAIN] = {CORE_GA_DATA_CONFIG: config}
+    else:
+        hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG] = config
 
     # Import core GA's async_setup_entry
     try:
@@ -313,12 +315,14 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         )
         views_before = set()
 
-    _LOGGER.debug("Calling core GA async_setup_entry with fake entry_id=%s", core_entry.entry_id)
+    _LOGGER.debug(
+        "Calling core GA async_setup_entry with fake entry_id=%s", core_entry.entry_id
+    )
     await core_async_setup_entry(hass, core_entry)
 
     # Find newly registered routes
     try:
-        new_routes = [
+        new_routes: list[Any] = [
             r for r in hass.http.app.router.routes() if r not in views_before
         ]
         _LOGGER.debug("Core GA registered %d new HTTP routes", len(new_routes))
@@ -391,11 +395,11 @@ def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
             except ValueError:
                 _LOGGER.debug("Route already removed: %s", route)
             except Exception as exc:
-                _LOGGER.warning(
-                    "Could not remove HTTP route %s: %s", route, exc
-                )
+                _LOGGER.warning("Could not remove HTTP route %s: %s", route, exc)
         if removed:
-            _LOGGER.debug("Removed %d/%d core GA HTTP routes", removed, len(routes_to_remove))
+            _LOGGER.debug(
+                "Removed %d/%d core GA HTTP routes", removed, len(routes_to_remove)
+            )
 
     entry.runtime_data = None
     hass.config_entries.async_update_entry(
@@ -425,7 +429,9 @@ def _purge_entity_exposure(hass: HomeAssistant) -> None:
         if exposed_entities is not None:
             if ASSISTANT_ID in exposed_entities._assistants:
                 del exposed_entities._assistants[ASSISTANT_ID]
-                _LOGGER.debug("Removed '%s' from expose-new-entities preferences", ASSISTANT_ID)
+                _LOGGER.debug(
+                    "Removed '%s' from expose-new-entities preferences", ASSISTANT_ID
+                )
 
             # 2. Remove from legacy entity settings
             cleaned = 0
@@ -480,9 +486,7 @@ def _purge_entity_exposure(hass: HomeAssistant) -> None:
 _ORIGINAL_GOOGLE_CONFIG_PROPS: dict[str, Any] = {}
 
 
-def _patch_google_config_properties(
-    google_config: Any, entry: ConfigEntry
-) -> None:
+def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> None:
     """Monkey-patch GoogleConfig properties to read from our ConfigEntry options.
 
     Safe to call multiple times — original property getters are cached once.
@@ -539,7 +543,9 @@ def _patch_google_config_properties(
     try:
         gc_type.should_report_state = property(_should_report_state)
         gc_type.secure_devices_pin = property(_secure_devices_pin)
-        _LOGGER.debug("Successfully patched GoogleConfig properties on %s", gc_type_name)
+        _LOGGER.debug(
+            "Successfully patched GoogleConfig properties on %s", gc_type_name
+        )
     except Exception:
         _LOGGER.exception(
             "Failed to patch GoogleConfig properties on %s. "
@@ -606,7 +612,9 @@ def _register_entry_discovery(hass: HomeAssistant) -> None:
         websocket_api.async_register_command(hass, ws_get_entry_id)
         _LOGGER.debug("Registered WS command: google_assistant_manual/get_entry_id")
     except Exception:
-        _LOGGER.exception("Failed to register WS command: google_assistant_manual/get_entry_id")
+        _LOGGER.exception(
+            "Failed to register WS command: google_assistant_manual/get_entry_id"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -687,8 +695,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         try:
             runtime = current_entry.runtime_data
             enabled = bool(
-                isinstance(runtime, dict)
-                and runtime.get("google_config") is not None
+                isinstance(runtime, dict) and runtime.get("google_config") is not None
             )
 
             result = {
@@ -752,7 +759,9 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             if CONF_REPORT_STATE in data:
                 new_val = data[CONF_REPORT_STATE]
                 new_options[CONF_REPORT_STATE] = new_val
-                _LOGGER.info("Updated report_state=%s for project='%s'", new_val, project_id)
+                _LOGGER.info(
+                    "Updated report_state=%s for project='%s'", new_val, project_id
+                )
 
             if CONF_SECURE_DEVICES_PIN in data:
                 pin_val = data[CONF_SECURE_DEVICES_PIN]
@@ -768,19 +777,21 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             # Live patch: enable/disable report_state without full reload
             runtime = current_entry.runtime_data
             google_config = (
-                runtime.get("google_config")
-                if isinstance(runtime, dict)
-                else None
+                runtime.get("google_config") if isinstance(runtime, dict) else None
             )
 
             if google_config is not None and CONF_REPORT_STATE in data:
                 try:
                     if data[CONF_REPORT_STATE]:
                         google_config.async_enable_report_state()
-                        _LOGGER.debug("Live-enabled report_state for project='%s'", project_id)
+                        _LOGGER.debug(
+                            "Live-enabled report_state for project='%s'", project_id
+                        )
                     else:
                         google_config.async_disable_report_state()
-                        _LOGGER.debug("Live-disabled report_state for project='%s'", project_id)
+                        _LOGGER.debug(
+                            "Live-disabled report_state for project='%s'", project_id
+                        )
                 except Exception:
                     _LOGGER.exception(
                         "Failed to live-toggle report_state for project='%s'. "
@@ -935,9 +946,7 @@ def _patch_core_assistants(hass: HomeAssistant) -> None:
                 ee.KNOWN_ASSISTANTS,
             )
         else:
-            _LOGGER.debug(
-                "'%s' already in KNOWN_ASSISTANTS, skipping", ASSISTANT_ID
-            )
+            _LOGGER.debug("'%s' already in KNOWN_ASSISTANTS, skipping", ASSISTANT_ID)
     except ImportError as exc:
         _LOGGER.error(
             "Cannot import homeassistant.components.homeassistant.exposed_entities: %s. "
@@ -956,7 +965,7 @@ def _patch_core_assistants(hass: HomeAssistant) -> None:
         return
 
     # --- Patch WS command schemas ---
-    handlers: dict = hass.data.get("websocket_api", {})
+    handlers: dict[str, Any] = hass.data.get("websocket_api", {})
 
     if not handlers:
         _LOGGER.warning(
@@ -1009,15 +1018,18 @@ def _add_assistant_to_schema(schema: object, assistant_id: str) -> None:
         try:
             if isinstance(obj, vol.In):
                 container = getattr(obj, "container", None)
-                if container is not None and "conversation" in container:
-                    if assistant_id not in container:
-                        obj.container = list(container) + [assistant_id]
-                        _LOGGER.debug(
-                            "Schema walk [%s]: added '%s' to vol.In (was: %s)",
-                            path,
-                            assistant_id,
-                            container,
-                        )
+                if (
+                    container is not None
+                    and "conversation" in container
+                    and assistant_id not in container
+                ):
+                    obj.container = list(container) + [assistant_id]
+                    _LOGGER.debug(
+                        "Schema walk [%s]: added '%s' to vol.In (was: %s)",
+                        path,
+                        assistant_id,
+                        container,
+                    )
             elif isinstance(obj, vol.Schema):
                 _walk(obj.schema, f"{path}.Schema")
             elif isinstance(obj, dict):

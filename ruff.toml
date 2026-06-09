@@ -1,0 +1,17 @@
+target-version = "py314"
+
+[lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort (import ordering)
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # simplify
+    "C4",  # flake8-comprehensions
+]
+ignore = ["E501"]  # line-too-long (handled by formatter)
+
+[format]
+quote-style = "double"
+indent-style = "space"
