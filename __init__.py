@@ -89,6 +89,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _register_ws_commands(hass, entry)
 
+    # Neutralise any YAML-based core GA entries so our config takes priority.
+    # Core GA's async_setup() may have already created a SOURCE_IMPORT entry
+    # from google_assistant: in configuration.yaml.
+    _suppress_yaml_config(hass)
+
     if entry.options.get("enabled", True):
         try:
             await _setup_core_ga(hass, entry)
@@ -108,6 +113,45 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.options.get("enabled", True),
     )
     return True
+
+
+def _suppress_yaml_config(hass: HomeAssistant) -> None:
+    """Remove any YAML-based core GA ConfigEntries so ours takes priority."""
+    try:
+        yaml_entries = [
+            e
+            for e in hass.config_entries.async_entries(CORE_GA_DOMAIN)
+            if e.source == "import"
+        ]
+    except Exception as exc:
+        _LOGGER.debug("Could not check for YAML-based core GA entries: %s", exc)
+        return
+
+    if not yaml_entries:
+        return
+
+    _LOGGER.info(
+        "Detected %d YAML-based core GA entries. Removing so %s takes priority.",
+        len(yaml_entries),
+        DOMAIN,
+    )
+
+    for yaml_entry in yaml_entries:
+        try:
+            _LOGGER.debug(
+                "Removing YAML-based core GA entry '%s' (project='%s')",
+                yaml_entry.entry_id,
+                yaml_entry.data.get(CONF_PROJECT_ID, "<missing>"),
+            )
+            hass.async_create_task(
+                hass.config_entries.async_remove(yaml_entry.entry_id)
+            )
+        except Exception as exc:
+            _LOGGER.warning(
+                "Could not remove YAML-based core GA entry '%s': %s",
+                yaml_entry.entry_id,
+                exc,
+            )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

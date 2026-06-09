@@ -15,8 +15,6 @@ from homeassistant.const import CONF_PROJECT_ID
 from .const import (
     CONF_CLIENT_EMAIL,
     CONF_PRIVATE_KEY,
-    CONF_REPORT_STATE,
-    CONF_SECURE_DEVICES_PIN,
     CONF_SERVICE_ACCOUNT,
     DOMAIN,
 )
@@ -91,7 +89,6 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         super().__init__()
         self._data: dict[str, Any] = {}
-        self._imported_options: dict[str, Any] = {}
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -161,38 +158,15 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                     self._data[CONF_SERVICE_ACCOUNT] = account
                     _LOGGER.info(
                         "Config flow: creating entry for project='%s' "
-                        "with client_email='%s'%s",
+                        "with client_email='%s'",
                         project_id,
                         account[CONF_CLIENT_EMAIL],
-                        " (from YAML import)" if self._imported_options else "",
                     )
-
-                    if self._imported_options:
-                        _LOGGER.info(
-                            "YAML import options applied: %s",
-                            {k: v for k, v in self._imported_options.items() if k != CONF_PRIVATE_KEY},
-                        )
-                        return self.async_create_entry(
-                            title=project_id,
-                            data=self._data,
-                            options=self._imported_options,
-                        )
 
                     return self.async_create_entry(
                         title=project_id,
                         data=self._data,
                     )
-
-        default_sa = ""
-        if self._imported_options and CONF_SERVICE_ACCOUNT in self._imported_options:
-            sa = self._imported_options[CONF_SERVICE_ACCOUNT]
-            if isinstance(sa, dict):
-                try:
-                    default_sa = json.dumps(sa, indent=2)
-                    _LOGGER.debug("Pre-filled service_account from YAML import")
-                except Exception:
-                    _LOGGER.debug("Could not serialize imported service_account to JSON")
-                    default_sa = ""
 
         return self.async_show_form(
             step_id="service_account",
@@ -200,7 +174,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(
                         CONF_SERVICE_ACCOUNT,
-                        description={"suggested_value": default_sa},
+                        description={"suggested_value": ""},
                     ): str,
                 }
             ),
@@ -209,80 +183,6 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 "docs_url": "https://console.cloud.google.com/iam-admin/serviceaccounts"
             },
         )
-
-    async def async_step_import(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle importing from YAML configuration."""
-        if not user_input:
-            _LOGGER.debug("YAML import: empty config, aborting")
-            return self.async_abort(reason="empty_config")
-
-        project_id = user_input.get(CONF_PROJECT_ID)
-        if not project_id:
-            _LOGGER.warning(
-                "YAML import: missing project_id in google_assistant config. "
-                "Available keys: %s",
-                list(user_input.keys()) if isinstance(user_input, dict) else "<not a dict>",
-            )
-            return self.async_abort(reason="missing_project_id")
-
-        _LOGGER.info(
-            "YAML import: project_id='%s', keys found: %s",
-            project_id,
-            [k for k in user_input if k != CONF_SERVICE_ACCOUNT and k != CONF_PRIVATE_KEY],
-        )
-
-        self._data[CONF_PROJECT_ID] = project_id
-
-        service_account = user_input.get(CONF_SERVICE_ACCOUNT)
-        if service_account is not None:
-            if isinstance(service_account, dict):
-                self._data[CONF_SERVICE_ACCOUNT] = {
-                    CONF_CLIENT_EMAIL: service_account.get(CONF_CLIENT_EMAIL, ""),
-                    CONF_PRIVATE_KEY: service_account.get(CONF_PRIVATE_KEY, ""),
-                }
-                _LOGGER.debug(
-                    "YAML import: service_account client_email='%s'",
-                    service_account.get(CONF_CLIENT_EMAIL, "<missing>"),
-                )
-            else:
-                _LOGGER.warning(
-                    "YAML import: service_account is not a dict (type=%s), skipping",
-                    type(service_account).__name__,
-                )
-
-        # Transfer top-level options
-        if CONF_REPORT_STATE in user_input:
-            self._imported_options[CONF_REPORT_STATE] = user_input[CONF_REPORT_STATE]
-            _LOGGER.debug("YAML import: report_state=%s", user_input[CONF_REPORT_STATE])
-        if CONF_SECURE_DEVICES_PIN in user_input:
-            self._imported_options[CONF_SECURE_DEVICES_PIN] = user_input[CONF_SECURE_DEVICES_PIN]
-            _LOGGER.debug("YAML import: secure_devices_pin=<present>")
-        if "expose_by_default" in user_input:
-            self._imported_options["expose_by_default"] = user_input["expose_by_default"]
-            _LOGGER.debug("YAML import: expose_by_default=%s", user_input["expose_by_default"])
-        if "exposed_domains" in user_input:
-            domains = user_input["exposed_domains"]
-            self._imported_options["exposed_domains"] = domains
-            _LOGGER.debug("YAML import: exposed_domains=%s", domains)
-
-        # The entity_config key is explicitly not imported — entity exposure
-        # should be managed through the Voice Assistants UI.
-        if "entity_config" in user_input:
-            entity_count = (
-                len(user_input["entity_config"])
-                if isinstance(user_input["entity_config"], dict)
-                else 0
-            )
-            _LOGGER.warning(
-                "YAML import: entity_config found (%d entities) — NOT imported. "
-                "Per-entity settings must be configured via the Voice Assistants → "
-                "Expose page in the UI. The YAML entity_config section will be ignored.",
-                entity_count,
-            )
-
-        return await self.async_step_user()
 
 
 def _is_valid_project_id(value: str) -> bool:

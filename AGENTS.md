@@ -61,12 +61,13 @@ updates. On `update_config`, live property patches on `GoogleConfig` are trigger
 On `enable`/`disable`, the core GA ConfigEntry is loaded/unloaded entirely — matching
 the `google_enabled` toggle behavior of the cloud card.
 
-**YAML import**:
-An `async_step_import` in the config flow. When `google_assistant:` exists in
-`configuration.yaml`, the flow reads top-level settings (`project_id`, `service_account`,
-`report_state`, `expose_by_default`, `exposed_domains`, `secure_devices_pin`) as defaults.
-Per-entity `entity_config` is explicitly *not* imported — those settings move to the
-entity exposure UI. After import, the ConfigEntry takes precedence and YAML is superseded.
+**YAML suppression**:
+When our integration is enabled, any existing `google_assistant:` configuration in
+`configuration.yaml` is neutralised. `_suppress_yaml_config()` removes YAML-based
+core GA `ConfigEntry` instances (with `source == "import"`) before our own setup
+runs. Our `ConfigEntry` is the single authoritative source of truth for Google
+Assistant configuration. Users migrating from YAML should remove the
+`google_assistant:` section from their configuration after installing this integration.
 
 > "google_assistant" can mean the core HA component, the Google cloud platform, or
 > the Nabu Casa Cloud integration — always use **core GA** for the HA component.
@@ -87,12 +88,13 @@ On `async_setup()`:
 5. Registers the `get_entry_id` WS discovery command.
 
 On `async_setup_entry()`:
-1. Builds config dict from `entry.data` + `entry.options`.
-2. Sets `hass.data["google_assistant"]["config"]`.
-3. Imports and calls core GA's `async_setup_entry` with a `SimpleNamespace`-based fake entry.
-4. Stores `GoogleConfig` reference in `entry.runtime_data`.
-5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
-6. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
+1. Neutralises any YAML-based core GA ConfigEntries via `_suppress_yaml_config()`.
+2. Builds config dict from `entry.data` + `entry.options`.
+3. Sets `hass.data["google_assistant"]["config"]`.
+4. Imports and calls core GA's `async_setup_entry` with a `SimpleNamespace`-based fake entry.
+5. Stores `GoogleConfig` reference in `entry.runtime_data`.
+6. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
+7. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
 
 **Patched WS commands (entity exposure):**
 - `homeassistant/expose_entity` — set per-entity exposure
@@ -172,12 +174,13 @@ User adds integration via UI:
   → config_flow: project_id → service_account (JSON textarea)
     → ConfigEntry created for domain "google_assistant_manual"
       → async_setup_entry() fires:
-        1. Populates hass.data["google_assistant"]["config"]
-        2. Constructs fake ConfigEntry for "google_assistant" domain
-        3. Calls core GA's async_setup_entry()
-        4. Patches GoogleConfig.should_report_state → entry.options
-        5. Patches GoogleConfig.secure_devices_pin → entry.options
-        6. Registers WS commands (get_config/update_config/enable/disable)
+        1. Neutralises YAML-based core GA ConfigEntries (source == "import")
+        2. Populates hass.data["google_assistant"]["config"]
+        3. Constructs fake ConfigEntry for "google_assistant" domain
+        4. Calls core GA's async_setup_entry()
+        5. Patches GoogleConfig.should_report_state → entry.options
+        6. Patches GoogleConfig.secure_devices_pin → entry.options
+        7. Registers WS commands (get_config/update_config/enable/disable)
 
 Browser loads HA frontend
   → HA loads /google_assistant_manual/frontend.js as extra module
@@ -242,7 +245,7 @@ All source files live at repo root for development. For deployment, users create
 ```
 ./
 ├── __init__.py          # Integration entry point, core GA bridge, WS commands, property patches, schema patching
-├── config_flow.py       # Two-step config flow (project_id → service_account) + YAML import
+├── config_flow.py       # Two-step config flow (project_id → service_account)
 ├── const.py             # DOMAIN, ASSISTANT_ID, CONF_* keys, WS command name constants
 ├── frontend.py          # Serves frontend.js and assets/icon.png via HA HTTP
 ├── frontend.js          # ~1100-line vanilla JS companion that patches the HA frontend UI

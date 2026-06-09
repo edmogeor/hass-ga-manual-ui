@@ -29,10 +29,6 @@
       "Invalid JSON": "The text is not valid JSON",
       "Missing 'client_email'": "The JSON is missing the 'client_email' field",
       "Missing 'private_key'": "The JSON is missing the 'private_key' field"
-    },
-    "abort": {
-      "empty_config": "No valid Google Assistant configuration found in YAML",
-      "missing_project_id": "YAML configuration is missing project_id"
     }
   }
 }
