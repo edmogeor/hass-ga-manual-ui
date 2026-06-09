@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Google Assistant (Manual)",
-        "description": "Enter your Google Cloud Platform project ID.\n\nFollow the official manual setup guide at {guide_url} (up to and including step 13 \u2014 stop before the YAML configuration section). You will need:\n\n1. A GCP project with the Google Assistant API enabled\n2. A service account with the correct permissions\n\nYou'll paste the service account JSON key in the next step.",
+        "description": "Enter your Google Cloud Platform project ID.\n\nFollow the official manual setup guide at {guide_url} (up to and including step 13 \u2014 stop before the YAML configuration section). You will need:\n\n1. A GCP project with the Google Assistant API enabled\n2. A service account with the correct permissions\n\nIf you already have google_assistant: configured in your configuration.yaml, those settings will be ignored \u2014 this integration replaces YAML configuration entirely.\n\nYou'll paste the service account JSON key in the next step.",
         "data": {
           "project_id": "Project ID"
         },

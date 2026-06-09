@@ -90,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _register_ws_commands(hass, entry)
 
     # Neutralise any YAML-based core GA entries so our config takes priority.
-    await _suppress_yaml_config(hass)
+    await _suppress_yaml_config(hass, entry)
 
     if entry.options.get("enabled", True):
         try:
@@ -113,7 +113,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def _suppress_yaml_config(hass: HomeAssistant) -> None:
+async def _suppress_yaml_config(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove any YAML-based core GA ConfigEntries so ours takes priority."""
     try:
         yaml_entries = [
@@ -148,6 +148,10 @@ async def _suppress_yaml_config(hass: HomeAssistant) -> None:
                 yaml_entry.entry_id,
                 exc,
             )
+
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "yaml_suppressed": True}
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -689,6 +693,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
             result = {
                 "enabled": enabled,
+                "yaml_suppressed": current_entry.options.get("yaml_suppressed", False),
                 CONF_REPORT_STATE: current_entry.options.get(CONF_REPORT_STATE, False),
                 CONF_SECURE_DEVICES_PIN: current_entry.options.get(
                     CONF_SECURE_DEVICES_PIN, ""

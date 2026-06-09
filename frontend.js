@@ -570,6 +570,17 @@ function buildCard() {
       "With the Google Assistant integration for Home Assistant, you'll be able to control all your Home Assistant devices via any Google Assistant-enabled device.";
     body.appendChild(desc);
 
+    var yamlAlert = document.createElement("ha-alert");
+    yamlAlert.setAttribute("alert-type", "info");
+    yamlAlert.style.display = "none";
+    yamlAlert.innerHTML =
+      "The <code>google_assistant:</code> section was detected in your " +
+      "<code>configuration.yaml</code> and has been disabled. " +
+      "This integration now manages your Google Assistant configuration. " +
+      "You can safely remove the <code>google_assistant:</code> section " +
+      "from your YAML configuration.";
+    body.appendChild(yamlAlert);
+
     var settingsRows = [];
     var reportStateSwitch = null;
     var pinInput = null;
@@ -656,7 +667,7 @@ function buildCard() {
     }
 
     // Fetch initial config state
-    refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput);
+    refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
 
     return card;
   } catch (e) {
@@ -746,7 +757,7 @@ function _disableIntegration(card, globalSwitch, settingsRows) {
 // Card state refresh
 // ---------------------------------------------------------------------------
 
-function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput) {
+function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert) {
   getEntryId().then(function (entryId) {
     var hass = getHass();
     if (!hass) {
@@ -764,6 +775,10 @@ function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, p
       _refreshExposePage();
 
       globalSwitch.checked = config.enabled;
+
+      if (yamlAlert) {
+        yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
+      }
 
       for (var i = 0; i < settingsRows.length; i++) {
         settingsRows[i].style.display = config.enabled ? "" : "none";
