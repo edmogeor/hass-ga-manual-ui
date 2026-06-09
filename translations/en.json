@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Google Assistant (Manual)",
-        "description": "Enter your Google Cloud Platform project ID. Find it at https://console.cloud.google.com.",
+        "description": "Enter your Google Cloud Platform project ID.\n\nFollow the official manual setup guide at {guide_url} (up to and including step 13 \u2014 stop before the YAML configuration section). You will need:\n\n1. A GCP project with the Google Assistant API enabled\n2. A service account with the correct permissions\n\nYou'll paste the service account JSON key in the next step.",
         "data": {
           "project_id": "Project ID"
         },
@@ -13,7 +13,7 @@
       },
       "service_account": {
         "title": "Service Account",
-        "description": "Paste the JSON key for your service account. You can create one at {docs_url}.",
+        "description": "Paste the entire contents of the downloaded JSON key file for your service account. You can create one at {docs_url}.\n\nThis is step 12 from the guide at {guide_url}.",
         "data": {
           "service_account": "Service account JSON"
         },

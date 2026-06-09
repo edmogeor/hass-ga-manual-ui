@@ -21,6 +21,11 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+_GUIDE_URL = (
+    "https://www.home-assistant.io/integrations/google_assistant/"
+    "#manual-setup"
+)
+
 
 def _parse_service_account_json(raw: str) -> dict[str, str]:
     """Parse a service account JSON string and return {client_email, private_key}.
@@ -126,6 +131,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
+            description_placeholders={"guide_url": _GUIDE_URL},
         )
 
     async def async_step_service_account(
@@ -180,7 +186,8 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
             description_placeholders={
-                "docs_url": "https://console.cloud.google.com/iam-admin/serviceaccounts"
+                "docs_url": "https://console.cloud.google.com/iam-admin/serviceaccounts",
+                "guide_url": _GUIDE_URL,
             },
         )
 
