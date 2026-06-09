@@ -3,3 +3,4 @@ __pycache__/
 .pyrefly/
 node_modules/
 /build/
+.ruff_cache/

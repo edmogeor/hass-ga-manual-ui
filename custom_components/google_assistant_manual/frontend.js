@@ -23,7 +23,7 @@
       } else {
         console[level]("[GA Manual] " + message);
       }
-    } catch (_) {
+    } catch {
     }
   }
   function _debug(msg, data) {
@@ -222,10 +222,9 @@
         } catch (e) {
           _error("Error in original connectedCallback: " + _errorMessage(e));
         }
-        const self = this;
         requestAnimationFrame(() => {
           try {
-            injectCardInto(self);
+            injectCardInto(this);
           } catch (e) {
             _error("Error injecting card in connectedCallback: " + _errorMessage(e));
           }
@@ -770,10 +769,10 @@
       for (let i = 0; i < children.length; i++) {
         try {
           results.push(...findAllAssistantsElements(children[i]));
-        } catch (_e) {
+        } catch {
         }
       }
-    } catch (_e) {
+    } catch {
     }
     return results;
   }

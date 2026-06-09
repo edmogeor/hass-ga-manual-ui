@@ -1,5 +1,5 @@
 project-includes = [
-    "*.py",
+    "custom_components/google_assistant_manual/*.py",
 ]
 
 project-excludes = [
@@ -8,7 +8,7 @@ project-excludes = [
 ]
 
 search_path = [
-    "..",
+    ".",
 ]
 
 disable-search-path-heuristics = true
