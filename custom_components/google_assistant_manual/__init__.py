@@ -32,6 +32,7 @@ from .const import (
     WS_ENABLE,
     WS_GET_CONFIG,
     WS_GET_ENTITY,
+    WS_GET_ENTRY_ID,
     WS_UPDATE_CONFIG,
     WS_UPDATE_ENTITY,
 )
@@ -85,6 +86,11 @@ def _our_google_config(hass: HomeAssistant) -> Any | None:
     return None
 
 
+def _is_enabled(entry: ConfigEntry) -> bool:
+    """Whether the user's soft-enable toggle is on (defaults to enabled)."""
+    return bool(entry.options.get("enabled", True))
+
+
 def _entity_assistant_options(hass: HomeAssistant, entity_id: str) -> dict[str, Any]:
     """Return our assistant's per-entity option mapping from the registry."""
     try:
@@ -95,7 +101,7 @@ def _entity_assistant_options(hass: HomeAssistant, entity_id: str) -> dict[str, 
 
         try:
             settings = async_get_entity_settings(hass, entity_id)
-        except HomeAssistantError, KeyError:
+        except (HomeAssistantError, KeyError):
             return {}
         return dict(settings.get(ASSISTANT_ID, {}))
     except Exception:
@@ -125,13 +131,13 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
     valid_project_ids = {
         e.data.get(CONF_PROJECT_ID)
         for e in our_entries
-        if e.options.get("enabled", True)
+        if _is_enabled(e)
     }
 
     # 1. Seed DATA_CONFIG early so a boot-time auto-setup of the core entry
     #    has a config to read.
     for e in our_entries:
-        if not e.options.get("enabled", True):
+        if not _is_enabled(e):
             continue
         try:
             hass.data.setdefault(CORE_GA_DOMAIN, {})[CORE_GA_DATA_CONFIG] = (
@@ -209,7 +215,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _register_ws_commands(hass, entry)
 
-    if entry.options.get("enabled", True):
+    if _is_enabled(entry):
         try:
             await _setup_core_ga(hass, entry)
         except Exception:
@@ -225,7 +231,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.info(
         "Config entry set up for project='%s' (enabled=%s)",
         _project_id(entry),
-        entry.options.get("enabled", True),
+        _is_enabled(entry),
     )
     return True
 
@@ -383,10 +389,7 @@ def _register_sync_listeners(
 
     @callback
     def _on_entity_registry_updated(event: Any) -> None:
-        if (
-            not entry.options.get("enabled", True)
-            or hass.state is not CoreState.running
-        ):
+        if not _is_enabled(entry) or hass.state is not CoreState.running:
             return
         data = event.data
         # Ignore updates that don't change anything Google cares about.
@@ -401,10 +404,7 @@ def _register_sync_listeners(
 
     @callback
     def _on_device_registry_updated(event: Any) -> None:
-        if (
-            not entry.options.get("enabled", True)
-            or hass.state is not CoreState.running
-        ):
+        if not _is_enabled(entry) or hass.state is not CoreState.running:
             return
         data = event.data
         if data.get("action") != "update" or "area_id" not in data.get("changes", {}):
@@ -760,11 +760,10 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
 
     def _should_report_state(self: Any) -> bool:
         if self is google_config:
-            options = entry.options
             # A soft-disabled integration reports no state (mirrors cloud, which
             # gates should_report_state on enabled).
-            return bool(options.get("enabled", True)) and bool(
-                options.get(CONF_REPORT_STATE)
+            return _is_enabled(entry) and bool(
+                entry.options.get(CONF_REPORT_STATE)
             )
         if orig_srs:
             return orig_srs(self)
@@ -782,7 +781,7 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
         if self is google_config:
             # Soft-disabled integration exposes nothing (SYNC returns no
             # devices) even though the core entry/view stay registered.
-            if not entry.options.get("enabled", True):
+            if not _is_enabled(entry):
                 return False
             try:
                 from homeassistant.components.homeassistant.exposed_entities import (
@@ -876,7 +875,7 @@ def _register_entry_discovery(hass: HomeAssistant) -> None:
     @websocket_api.require_admin
     @websocket_api.websocket_command(
         {
-            vol.Required("type"): "google_assistant_manual/get_entry_id",
+            vol.Required("type"): WS_GET_ENTRY_ID,
         }
     )
     def ws_get_entry_id(
@@ -920,11 +919,9 @@ def _register_entry_discovery(hass: HomeAssistant) -> None:
 
     try:
         websocket_api.async_register_command(hass, ws_get_entry_id)
-        _LOGGER.debug("Registered WS command: google_assistant_manual/get_entry_id")
+        _LOGGER.debug("Registered WS command: %s", WS_GET_ENTRY_ID)
     except Exception:
-        _LOGGER.exception(
-            "Failed to register WS command: google_assistant_manual/get_entry_id"
-        )
+        _LOGGER.exception("Failed to register WS command: %s", WS_GET_ENTRY_ID)
 
 
 # ---------------------------------------------------------------------------
@@ -1006,7 +1003,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             # enabled is the user's toggle state (entry options), which is the
             # source of truth. The core entry may stay loaded while soft-disabled,
             # so runtime_data presence is not a reliable signal.
-            enabled = bool(current_entry.options.get("enabled", True))
+            enabled = _is_enabled(current_entry)
 
             result = {
                 "enabled": enabled,

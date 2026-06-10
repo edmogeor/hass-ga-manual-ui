@@ -94,6 +94,12 @@ function _errorMessage(e: unknown): string {
   return String(e);
 }
 
+/** Best-effort human-readable message from a websocket error response. */
+function _wsErrorMessage(err: unknown): string {
+  const wsErr = err as WSError;
+  return wsErr.message || wsErr.error || wsErr.code || String(err);
+}
+
 let _entryId: string | null = null;
 let _entryIdPromise: Promise<string> | null = null;
 let _gaManualEnabled = true;
@@ -145,11 +151,12 @@ function _forwardToHaLog(level: "info" | "warn" | "error", message: string): voi
 function _log(level: "debug" | "info" | "warn" | "error", message: string, data?: unknown): void {
   const isProblem = level === "warn" || level === "error";
   if (_DEBUG || isProblem) {
+    const prefixed = "[GA Manual] " + message;
     try {
       if (data !== undefined) {
-        console[level]("[GA Manual] " + message, data);
+        console[level](prefixed, data);
       } else {
-        console[level]("[GA Manual] " + message);
+        console[level](prefixed);
       }
     } catch {
       /* console might be unavailable */
@@ -303,10 +310,9 @@ async function _fetchEntryId(): Promise<string> {
     }
     return result.entry_id;
   } catch (err: unknown) {
-    const wsErr = err as WSError;
     _error(
       "Failed to get entry_id from server: " +
-        (wsErr.message || wsErr.error || wsErr.code || String(err)) +
+        _wsErrorMessage(err) +
         ". " +
         "Add the integration via Settings → Devices & Services → " +
         "Add Integration → Google Assistant (Manual).",
@@ -1144,10 +1150,7 @@ async function _toggleIntegration(
     if (config.showCardOnSuccess) refreshExposeToggle(card);
   } catch (err: unknown) {
     const wsErr = err as WSError;
-    _error(
-      config.failMsg + " " +
-        (wsErr.message || wsErr.error || wsErr.code || String(err)),
-    );
+    _error(config.failMsg + " " + _wsErrorMessage(err));
     (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
     _showToast(
       config.failMsg + " " +
@@ -1221,11 +1224,7 @@ async function refreshCardState(
 
       refreshExposeToggle(card);
     } catch (err: unknown) {
-      const wsErr = err as WSError;
-      _error(
-        "Failed to fetch card state: " +
-          (wsErr.message || wsErr.error || wsErr.code || String(err)),
-      );
+      _error("Failed to fetch card state: " + _wsErrorMessage(err));
     }
   } catch (err: unknown) {
     _error("refreshCardState: " + (err as Error).message);

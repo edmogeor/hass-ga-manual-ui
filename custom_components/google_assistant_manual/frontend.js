@@ -16,6 +16,10 @@
     if (e instanceof Error) return e.message;
     return String(e);
   }
+  function _wsErrorMessage(err) {
+    const wsErr = err;
+    return wsErr.message || wsErr.error || wsErr.code || String(err);
+  }
   var _entryId = null;
   var _entryIdPromise = null;
   var _gaManualEnabled = true;
@@ -40,11 +44,12 @@
   function _log(level, message, data) {
     const isProblem = level === "warn" || level === "error";
     if (_DEBUG || isProblem) {
+      const prefixed = "[GA Manual] " + message;
       try {
         if (data !== void 0) {
-          console[level]("[GA Manual] " + message, data);
+          console[level](prefixed, data);
         } else {
-          console[level]("[GA Manual] " + message);
+          console[level](prefixed);
         }
       } catch {
       }
@@ -162,9 +167,8 @@
       }
       return result.entry_id;
     } catch (err) {
-      const wsErr = err;
       _error(
-        "Failed to get entry_id from server: " + (wsErr.message || wsErr.error || wsErr.code || String(err)) + ". Add the integration via Settings \u2192 Devices & Services \u2192 Add Integration \u2192 Google Assistant (Manual)."
+        "Failed to get entry_id from server: " + _wsErrorMessage(err) + ". Add the integration via Settings \u2192 Devices & Services \u2192 Add Integration \u2192 Google Assistant (Manual)."
       );
       throw err;
     }
@@ -786,9 +790,7 @@
       if (config.showCardOnSuccess) refreshExposeToggle(card);
     } catch (err) {
       const wsErr = err;
-      _error(
-        config.failMsg + " " + (wsErr.message || wsErr.error || wsErr.code || String(err))
-      );
+      _error(config.failMsg + " " + _wsErrorMessage(err));
       globalSwitch.checked = !config.showCardOnSuccess;
       _showToast(
         config.failMsg + " " + (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") + "\n\n" + config.failHint,
@@ -831,10 +833,7 @@
         }
         refreshExposeToggle(card);
       } catch (err) {
-        const wsErr = err;
-        _error(
-          "Failed to fetch card state: " + (wsErr.message || wsErr.error || wsErr.code || String(err))
-        );
+        _error("Failed to fetch card state: " + _wsErrorMessage(err));
       }
     } catch (err) {
       _error("refreshCardState: " + err.message);
