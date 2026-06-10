@@ -12,7 +12,7 @@
       <img src="https://img.shields.io/github/v/release/edmogeor/hass-ga-manual-ui" alt="Latest release"/>
     </a>
     <a href="https://hacs.xyz">
-      <img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS Custom"/>
+      <img src="https://img.shields.io/badge/HACS-Custom-blue.svg" alt="HACS Custom"/>
     </a>
   </p>
 </div>
