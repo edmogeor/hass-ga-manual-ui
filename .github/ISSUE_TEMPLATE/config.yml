@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Home Assistant manual Google Assistant setup
+    url: https://www.home-assistant.io/integrations/google_assistant/#manual-setup
+    about: Guide for setting up a Google Cloud project and service account
