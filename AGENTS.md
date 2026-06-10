@@ -446,7 +446,14 @@ Then go to Settings → Devices & Services → Add Integration → Google Assist
 
 3. **Idempotent card injection.** The card injection is designed to be called from multiple lifecycle hooks (`connectedCallback`, `firstUpdated`, `updated`, DOM scans, MutationObservers) without creating duplicates. The `[data-ga-manual-card]` marker ensures only one card exists.
 
-4. **Defensive patching with comprehensive logging.** Every patch, WS call, and DOM operation is wrapped in try/except (Python) or try/catch (JS). All failures are logged with `[GA Manual]` prefix, full tracebacks, and actionable messages. The JS side surfaces critical errors via `persistent_notification` toasts so users can see them without opening browser dev tools.
+4. **Defensive patching with tiered logging.** Every patch, WS call, and DOM operation is wrapped in try/except (Python) or try/catch (JS). All failures are logged with `[GA Manual]` prefix, full tracebacks, and actionable messages. The JS side surfaces critical errors via `persistent_notification` toasts.
+
+   **Backend logging** uses the standard `_LOGGER`: `.debug()` for verbose tracing (only emitted when the integration's log level is DEBUG) and `.error()`/`.exception()` for problems (always emitted). Users enable verbose logging via the config entry's ⋮ → **Enable debug logging**, or `logger:` in `configuration.yaml` (`custom_components.google_assistant_manual: debug`). No code needed — HA handles it.
+
+   **Frontend logging** mirrors this in three tiers:
+   - `_banner()` — always logged to the console **and** once to the HA logs (via `system_log.write`, logger `google_assistant_manual.frontend`) so the user can confirm the companion loaded without dev tools.
+   - `_warn()`/`_error()` — always logged to the console **and** forwarded to the HA logs.
+   - `_debug()`/`_info()` — verbose; only logged when the debug flag is set: `localStorage.setItem("gaManualDebug", "1")` (or `?gaManualDebug` in the URL), then reload.
 
 5. **Schema walking for WS patches.** Rather than manually updating each Voluptuous schema, `_walk()` recursively finds all `vol.In` validators containing `"conversation"` and adds the new ID. Each walked node is tracked by path for targeted error reporting if the schema structure changes.
 

@@ -104,24 +104,77 @@ let _voiceAssistantsMap: Record<string, unknown> | null = null;
 
 // ---------------------------------------------------------------------------
 // Logging helpers
+//
+// Three tiers:
+//   - _banner(): always shown (console) + a one-time line in the HA logs, so
+//     the user can confirm the companion loaded without opening dev tools.
+//   - _warn()/_error(): always shown in the console AND forwarded to the HA
+//     logs (so problems are visible without dev tools).
+//   - _debug()/_info(): verbose; only shown when the debug flag is set.
+//
+// Enable verbose logging with:  localStorage.setItem("gaManualDebug", "1")
+// (or add ?gaManualDebug to the URL), then reload.
 // ---------------------------------------------------------------------------
 
-function _log(level: "debug" | "info" | "warn" | "error", message: string, data?: unknown): void {
+let _DEBUG = false;
+try {
+  _DEBUG =
+    (typeof localStorage !== "undefined" &&
+      !!localStorage.getItem("gaManualDebug")) ||
+    (typeof location !== "undefined" &&
+      /[?&#]gaManualDebug\b/.test(location.search + location.hash));
+} catch {
+  /* localStorage / location may be unavailable */
+}
+
+function _forwardToHaLog(level: "info" | "warn" | "error", message: string): void {
   try {
-    if (data !== undefined) {
-      console[level]("[GA Manual] " + message, data);
-    } else {
-      console[level]("[GA Manual] " + message);
-    }
-    } catch {
-    /* console might be unavailable */
+    const hass = getHass();
+    if (!hass || !hass.callService) return;
+    hass.callService("system_log", "write", {
+      message: "[GA Manual frontend] " + message,
+      level: level === "warn" ? "warning" : level,
+      logger: "google_assistant_manual.frontend",
+    });
+  } catch {
+    /* never let logging throw or recurse */
   }
+}
+
+function _log(level: "debug" | "info" | "warn" | "error", message: string, data?: unknown): void {
+  const isProblem = level === "warn" || level === "error";
+  if (_DEBUG || isProblem) {
+    try {
+      if (data !== undefined) {
+        console[level]("[GA Manual] " + message, data);
+      } else {
+        console[level]("[GA Manual] " + message);
+      }
+    } catch {
+      /* console might be unavailable */
+    }
+  }
+  if (isProblem) _forwardToHaLog(level, message);
 }
 
 function _debug(msg: string, data?: unknown): void { _log("debug", msg, data); }
 function _info(msg: string, data?: unknown): void { _log("info", msg, data); }
 function _warn(msg: string, data?: unknown): void { _log("warn", msg, data); }
 function _error(msg: string, data?: unknown): void { _log("error", msg, data); }
+
+// Always-visible load banner: console + a single info line in the HA logs.
+let _bannerForwarded = false;
+function _banner(message: string): void {
+  try {
+    console.info("[GA Manual] " + message);
+  } catch {
+    /* console might be unavailable */
+  }
+  if (!_bannerForwarded) {
+    _bannerForwarded = true;
+    _forwardToHaLog("info", message);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // User-facing toast notifications (HA-style)
@@ -1486,7 +1539,7 @@ async function _savePin(value: string, input?: TogglableElement): Promise<void> 
 // ---------------------------------------------------------------------------
 
 function init(): void {
-  _info("Companion JS loaded, applying patches (version 0.1.0)");
+  _banner("Companion JS loaded (version 0.1.0)");
 
   // Apply each patch independently — one failing does not block the rest
   try {

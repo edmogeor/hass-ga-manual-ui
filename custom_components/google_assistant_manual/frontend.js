@@ -20,15 +20,36 @@
   var _entryIdPromise = null;
   var _gaManualEnabled = true;
   var _voiceAssistantsMap = null;
-  function _log(level, message, data) {
+  var _DEBUG = false;
+  try {
+    _DEBUG = typeof localStorage !== "undefined" && !!localStorage.getItem("gaManualDebug") || typeof location !== "undefined" && /[?&#]gaManualDebug\b/.test(location.search + location.hash);
+  } catch {
+  }
+  function _forwardToHaLog(level, message) {
     try {
-      if (data !== void 0) {
-        console[level]("[GA Manual] " + message, data);
-      } else {
-        console[level]("[GA Manual] " + message);
-      }
+      const hass = getHass();
+      if (!hass || !hass.callService) return;
+      hass.callService("system_log", "write", {
+        message: "[GA Manual frontend] " + message,
+        level: level === "warn" ? "warning" : level,
+        logger: "google_assistant_manual.frontend"
+      });
     } catch {
     }
+  }
+  function _log(level, message, data) {
+    const isProblem = level === "warn" || level === "error";
+    if (_DEBUG || isProblem) {
+      try {
+        if (data !== void 0) {
+          console[level]("[GA Manual] " + message, data);
+        } else {
+          console[level]("[GA Manual] " + message);
+        }
+      } catch {
+      }
+    }
+    if (isProblem) _forwardToHaLog(level, message);
   }
   function _debug(msg, data) {
     _log("debug", msg, data);
@@ -41,6 +62,17 @@
   }
   function _error(msg, data) {
     _log("error", msg, data);
+  }
+  var _bannerForwarded = false;
+  function _banner(message) {
+    try {
+      console.info("[GA Manual] " + message);
+    } catch {
+    }
+    if (!_bannerForwarded) {
+      _bannerForwarded = true;
+      _forwardToHaLog("info", message);
+    }
   }
   function _showToast(message, isError) {
     try {
@@ -1046,7 +1078,7 @@
     }
   }
   function init() {
-    _info("Companion JS loaded, applying patches (version 0.1.0)");
+    _banner("Companion JS loaded (version 0.1.0)");
     try {
       patchVoiceAssistants();
     } catch (e) {
