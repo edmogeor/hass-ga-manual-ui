@@ -10,9 +10,11 @@ from google_assistant_manual import (
     WS_CONFIG_SCHEMA,
     _add_assistant_to_schema,
     _build_core_config,
+    _entity_assistant_options,
     _find_core_entry,
     _get_version,
     _make_core_entry,
+    _our_google_config,
     _patch_google_config_properties,
     _project_id,
     _reconcile_core_ga_entries,
@@ -743,6 +745,101 @@ class TestPatchGoogleConfigProperties:
         assert any("no should_expose method" in r.message for r in caplog.records), (
             f"Logs: {[r.message for r in caplog.records]}"
         )
+
+    def test_should_2fa_true_by_default(self, reset_original_props_cache: None) -> None:
+        """No disable_2fa option => ask for PIN (should_2fa True)."""
+        entry = mock_config_entry(options={"enabled": True})
+        gc = FakeGoogleConfig(hass=MagicMock())
+        _patch_google_config_properties(gc, entry)
+
+        state = MagicMock()
+        state.entity_id = "lock.front"
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_get_entity_settings",
+            return_value={ASSISTANT_ID: {}},
+        ):
+            assert gc.should_2fa(state) is True
+
+    def test_should_2fa_false_when_disabled_2fa_set(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """disable_2fa=True => do not ask for PIN (should_2fa False)."""
+        entry = mock_config_entry(options={"enabled": True})
+        gc = FakeGoogleConfig(hass=MagicMock())
+        _patch_google_config_properties(gc, entry)
+
+        state = MagicMock()
+        state.entity_id = "lock.front"
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_get_entity_settings",
+            return_value={ASSISTANT_ID: {"disable_2fa": True}},
+        ):
+            assert gc.should_2fa(state) is False
+
+    def test_should_2fa_false_when_entity_removed(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """Removed entity => should_2fa returns False (mirrors cloud)."""
+        from homeassistant.exceptions import HomeAssistantError
+
+        entry = mock_config_entry(options={"enabled": True})
+        gc = FakeGoogleConfig(hass=MagicMock())
+        _patch_google_config_properties(gc, entry)
+
+        state = MagicMock()
+        state.entity_id = "lock.gone"
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_get_entity_settings",
+            side_effect=HomeAssistantError("removed"),
+        ):
+            assert gc.should_2fa(state) is False
+
+
+# =============================================================================
+# _our_google_config / _entity_assistant_options
+# =============================================================================
+
+
+class TestEntityHelpers:
+    """Tests for _our_google_config and _entity_assistant_options."""
+
+    def test_our_google_config_returns_enabled_config(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        gc = object()
+        entry = mock_config_entry(runtime_data={"google_config": gc})
+        hass.config_entries.async_entries.return_value = [entry]
+        assert _our_google_config(hass) is gc
+
+    def test_our_google_config_none_when_no_runtime(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        entry = mock_config_entry(runtime_data=None)
+        hass.config_entries.async_entries.return_value = [entry]
+        assert _our_google_config(hass) is None
+
+    def test_entity_assistant_options_returns_our_options(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_get_entity_settings",
+            return_value={ASSISTANT_ID: {"disable_2fa": True}},
+        ):
+            assert _entity_assistant_options(hass, "lock.front") == {
+                "disable_2fa": True
+            }
+
+    def test_entity_assistant_options_empty_on_error(self) -> None:
+        from homeassistant.exceptions import HomeAssistantError
+
+        hass = MagicMock(spec=HomeAssistant)
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_get_entity_settings",
+            side_effect=HomeAssistantError("x"),
+        ):
+            assert _entity_assistant_options(hass, "lock.front") == {}
 
 
 # =============================================================================

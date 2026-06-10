@@ -27,10 +27,13 @@ from .const import (
     CORE_GA_DATA_CONFIG,
     CORE_GA_DOMAIN,
     DOMAIN,
+    PREF_DISABLE_2FA,
     WS_DISABLE,
     WS_ENABLE,
     WS_GET_CONFIG,
+    WS_GET_ENTITY,
     WS_UPDATE_CONFIG,
+    WS_UPDATE_ENTITY,
 )
 from .frontend import async_setup_frontend
 
@@ -71,6 +74,33 @@ def _find_core_entry(hass: HomeAssistant, entry: ConfigEntry) -> ConfigEntry | N
         if core_entry.data.get(CONF_PROJECT_ID) == project_id:
             return core_entry
     return None
+
+
+def _our_google_config(hass: HomeAssistant) -> Any | None:
+    """Return the active core GA GoogleConfig for our (single) entry, if enabled."""
+    for e in hass.config_entries.async_entries(DOMAIN):
+        runtime = e.runtime_data
+        if isinstance(runtime, dict) and runtime.get("google_config") is not None:
+            return runtime["google_config"]
+    return None
+
+
+def _entity_assistant_options(hass: HomeAssistant, entity_id: str) -> dict[str, Any]:
+    """Return our assistant's per-entity option mapping from the registry."""
+    try:
+        from homeassistant.components.homeassistant.exposed_entities import (
+            async_get_entity_settings,
+        )
+        from homeassistant.exceptions import HomeAssistantError
+
+        try:
+            settings = async_get_entity_settings(hass, entity_id)
+        except HomeAssistantError, KeyError:
+            return {}
+        return dict(settings.get(ASSISTANT_ID, {}))
+    except Exception:
+        _LOGGER.debug("Could not read assistant options for '%s'", entity_id)
+        return {}
 
 
 async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
@@ -712,9 +742,21 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
             )
             _ORIGINAL_GOOGLE_CONFIG_PROPS["should_expose"] = None
 
+    # should_2fa is a plain method; core GA hard-codes it to True (every secure
+    # device always prompts for the PIN). Bridge it to the per-entity
+    # disable_2fa option in the exposed_entities registry, like cloud does, so
+    # the "Ask for PIN" toggle works.
+    if "should_2fa" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
+        try:
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_2fa"] = gc_type.should_2fa
+            _LOGGER.debug("Cached original GoogleConfig.should_2fa method")
+        except AttributeError:
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_2fa"] = None
+
     orig_srs = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"]
     orig_sdp = _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"]
     orig_se = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_expose"]
+    orig_2fa = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_2fa"]
 
     def _should_report_state(self: Any) -> bool:
         if self is google_config:
@@ -768,9 +810,35 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
             return orig_se(self, entity_id)
         return False
 
+    def _should_2fa(self: Any, state: Any) -> bool:
+        if self is google_config:
+            try:
+                from homeassistant.components.homeassistant.exposed_entities import (
+                    async_get_entity_settings,
+                )
+                from homeassistant.exceptions import HomeAssistantError
+
+                try:
+                    settings = async_get_entity_settings(self.hass, state.entity_id)
+                except HomeAssistantError:
+                    # Entity has been removed.
+                    return False
+                options = settings.get(ASSISTANT_ID, {})
+                return not options.get(PREF_DISABLE_2FA, False)
+            except Exception:
+                _LOGGER.debug("should_2fa resolution failed", exc_info=True)
+                if orig_2fa:
+                    return orig_2fa(self, state)
+                return True
+        if orig_2fa:
+            return orig_2fa(self, state)
+        return True
+
     try:
         gc_type.should_report_state = property(_should_report_state)
         gc_type.secure_devices_pin = property(_secure_devices_pin)
+        if orig_2fa:
+            gc_type.should_2fa = _should_2fa
         if orig_se:
             gc_type.should_expose = _should_expose
             _LOGGER.info(
@@ -1164,12 +1232,115 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
         _hass.async_create_task(_disable())
 
-    # Register all four commands
+    # -----------------------------------------------------------------------
+    # get_entity — mirror cloud/google_assistant/entities/get
+    # -----------------------------------------------------------------------
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_GET_ENTITY,
+            vol.Required("entity_id"): str,
+        }
+    )
+    def ws_get_entity(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Return Google traits / 2FA info for a single entity."""
+        entity_id: str = msg["entity_id"]
+
+        google_config = _our_google_config(_hass)
+        if google_config is None:
+            connection.send_error(
+                msg["id"],
+                websocket_api.ERR_NOT_FOUND,
+                "Google Assistant (Manual) is not enabled.",
+            )
+            return
+
+        state = _hass.states.get(entity_id)
+        if not state:
+            connection.send_error(
+                msg["id"], websocket_api.ERR_NOT_FOUND, f"{entity_id} unknown"
+            )
+            return
+
+        try:
+            from homeassistant.components.google_assistant.helpers import GoogleEntity
+
+            entity = GoogleEntity(_hass, google_config, state)
+            if not entity.is_supported():
+                connection.send_error(
+                    msg["id"],
+                    websocket_api.ERR_NOT_SUPPORTED,
+                    f"{entity_id} not supported by Google Assistant",
+                )
+                return
+
+            options = _entity_assistant_options(_hass, entity_id)
+            connection.send_result(
+                msg["id"],
+                {
+                    "entity_id": entity.entity_id,
+                    "traits": [trait.name for trait in entity.traits()],
+                    "might_2fa": entity.might_2fa_traits(),
+                    PREF_DISABLE_2FA: options.get(PREF_DISABLE_2FA),
+                },
+            )
+        except Exception as exc:
+            _LOGGER.exception("Error in ws_get_entity for '%s'", entity_id)
+            connection.send_error(msg["id"], "internal_error", str(exc))
+
+    # -----------------------------------------------------------------------
+    # update_entity — mirror cloud/google_assistant/entities/update
+    # -----------------------------------------------------------------------
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_UPDATE_ENTITY,
+            vol.Required("entity_id"): str,
+            vol.Optional(PREF_DISABLE_2FA): bool,
+        }
+    )
+    def ws_update_entity(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Update per-entity Google config (disable_2fa) for our assistant."""
+        entity_id: str = msg["entity_id"]
+        try:
+            from homeassistant.components.homeassistant import exposed_entities as ee
+
+            options = _entity_assistant_options(_hass, entity_id)
+            if PREF_DISABLE_2FA in msg:
+                disable_2fa = msg[PREF_DISABLE_2FA]
+                if options.get(PREF_DISABLE_2FA) != disable_2fa:
+                    ee.async_set_assistant_option(
+                        _hass,
+                        ASSISTANT_ID,
+                        entity_id,
+                        PREF_DISABLE_2FA,
+                        disable_2fa,
+                    )
+            connection.send_result(msg["id"])
+        except Exception as exc:
+            _LOGGER.exception("Error in ws_update_entity for '%s'", entity_id)
+            connection.send_error(msg["id"], "internal_error", str(exc))
+
+    # Register all commands
     commands = [
         ("ws_get_config", ws_get_config),
         ("ws_update_config", ws_update_config),
         ("ws_enable", ws_enable),
         ("ws_disable", ws_disable),
+        ("ws_get_entity", ws_get_entity),
+        ("ws_update_entity", ws_update_entity),
     ]
     for name, handler in commands:
         try:

@@ -50,6 +50,19 @@ interface TogglableElement extends HTMLElement {
   placeholder: string;
 }
 
+interface GaEntityInfo {
+  entity_id: string;
+  might_2fa: boolean;
+  disable_2fa?: boolean;
+}
+
+interface EntityVoiceSettingsElement extends HTMLElement, LitLifecycle {
+  hass?: HomeAssistant;
+  entityId?: string;
+  __gaEntityId?: string;
+  __gaInfo?: GaEntityInfo | null;
+}
+
 interface WSError extends Error {
   error?: string;
   code?: string;
@@ -69,6 +82,8 @@ const WS_GET_CONFIG = `${ASSISTANT_ID}/get_config`;
 const WS_UPDATE_CONFIG = `${ASSISTANT_ID}/update_config`;
 const WS_ENABLE = `${ASSISTANT_ID}/enable`;
 const WS_DISABLE = `${ASSISTANT_ID}/disable`;
+const WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
+const WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -569,12 +584,132 @@ function _patchExposeAssistantIconProto(proto: ExposeAssistantIcon): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// entity-voice-settings: inject the "Ask for PIN" (2FA) checkbox into our row.
+//
+// HA only renders this checkbox for cloud.google_assistant (and the whole
+// google-entity fetch is cloud-gated), so for our assistant we replicate it:
+// fetch the entity's 2FA info via our WS, and inject an identical ha-checkbox
+// (same translation key) into our assistant's row, wired to our update WS.
+// ---------------------------------------------------------------------------
+
+function _maybeFetchEntity2fa(el: EntityVoiceSettingsElement): void {
+  const entityId = el.entityId;
+  if (!entityId) return;
+  if (el.__gaEntityId === entityId) return; // already fetched/fetching
+  el.__gaEntityId = entityId;
+  el.__gaInfo = undefined;
+  const hass = el.hass || getHass();
+  if (!hass) return;
+  hass
+    .callWS<GaEntityInfo>({ type: WS_GET_ENTITY, entity_id: entityId })
+    .then((info) => {
+      if (el.__gaEntityId !== entityId) return; // entity changed meanwhile
+      el.__gaInfo = info;
+      _injectAskPin(el);
+    })
+    .catch(() => {
+      if (el.__gaEntityId !== entityId) return;
+      el.__gaInfo = null; // unsupported / not enabled — no checkbox
+      _injectAskPin(el);
+    });
+}
+
+function _findOurAssistantRow(root: ShadowRoot): HTMLElement | null {
+  const items = root.querySelectorAll<HTMLElement>("ha-md-list-item");
+  for (let i = 0; i < items.length; i++) {
+    const icon = items[i].querySelector(
+      "voice-assistant-brand-icon",
+    ) as VoiceAssistantBrandIcon | null;
+    if (icon && icon.voiceAssistantId === ASSISTANT_ID) return items[i];
+  }
+  return null;
+}
+
+function _onAskPinChanged(el: EntityVoiceSettingsElement, cb: TogglableElement): void {
+  const hass = el.hass || getHass();
+  const entityId = el.entityId;
+  if (!hass || !entityId) return;
+  const checked = cb.checked; // checked = ask for PIN; disable_2fa = !checked
+  hass
+    .callWS({ type: WS_UPDATE_ENTITY, entity_id: entityId, disable_2fa: !checked })
+    .then(() => {
+      if (el.__gaInfo) el.__gaInfo.disable_2fa = !checked;
+    })
+    .catch((err: WSError) => {
+      _error("Failed to update disable_2fa: " + (err.message || err.error || String(err)));
+      cb.checked = !checked; // revert on failure (mirrors cloud)
+    });
+}
+
+function _injectAskPin(el: EntityVoiceSettingsElement): void {
+  try {
+    const root = el.shadowRoot;
+    if (!root) return;
+    const row = _findOurAssistantRow(root);
+    if (!row) return;
+
+    const info = el.__gaInfo;
+    const existing = row.querySelector<TogglableElement>("[data-ga-2fa]");
+
+    // Only show for security devices that might require 2FA.
+    if (!info || !info.might_2fa) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) {
+      existing.checked = !info.disable_2fa;
+      return;
+    }
+
+    const hass = el.hass || getHass();
+    const cb = document.createElement("ha-checkbox") as unknown as TogglableElement;
+    cb.setAttribute("slot", "supporting-text");
+    cb.dataset.ga2fa = "1";
+    cb.checked = !info.disable_2fa;
+    cb.textContent =
+      (hass && hass.localize("ui.dialogs.voice-settings.ask_pin")) || "Ask for PIN";
+    cb.addEventListener("change", () => _onAskPinChanged(el, cb));
+    row.appendChild(cb);
+  } catch (e) {
+    _error("Error injecting ask_pin checkbox: " + _errorMessage(e));
+  }
+}
+
+function _patchEntityVoiceSettingsProto(proto: EntityVoiceSettingsElement): void {
+  try {
+    const origFirstUpdated = proto.firstUpdated;
+    const origUpdated = proto.updated;
+    proto.firstUpdated = function (this: EntityVoiceSettingsElement, changedProps: Map<string, unknown>) {
+      try {
+        origFirstUpdated?.call(this, changedProps);
+      } catch (e) {
+        _error("Error in original firstUpdated (entity-voice-settings): " + _errorMessage(e));
+      }
+      _maybeFetchEntity2fa(this);
+      _injectAskPin(this);
+    };
+    proto.updated = function (this: EntityVoiceSettingsElement, changedProps: Map<string, unknown>) {
+      try {
+        origUpdated?.call(this, changedProps);
+      } catch (e) {
+        _error("Error in original updated (entity-voice-settings): " + _errorMessage(e));
+      }
+      _maybeFetchEntity2fa(this);
+      _injectAskPin(this);
+    };
+  } catch (e) {
+    _error("Failed to patch entity-voice-settings proto: " + _errorMessage(e));
+  }
+}
+
 type ProtoPatcher = (proto: HTMLElement & LitLifecycle) => void;
 
 const PATCHERS: Record<string, ProtoPatcher> = {
   "ha-config-voice-assistants-assistants": _patchAssistantsPageProto as ProtoPatcher,
   "voice-assistant-brand-icon": _patchBrandIconProto as ProtoPatcher,
   "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto as ProtoPatcher,
+  "entity-voice-settings": _patchEntityVoiceSettingsProto as ProtoPatcher,
 };
 
 function patchCustomElements(): void {

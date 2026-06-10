@@ -126,6 +126,10 @@ class FakeGoogleConfig:
         """Legacy core-style exposure check (the pre-patch behavior)."""
         return entity_id in self._exposed
 
+    def should_2fa(self, state: object) -> bool:
+        """Core-style 2FA check (the pre-patch behavior: always True)."""
+        return True
+
     def async_enable_report_state(self) -> None:
         self._report_state = True
 

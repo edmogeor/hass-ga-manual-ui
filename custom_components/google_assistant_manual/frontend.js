@@ -10,6 +10,8 @@
   var WS_UPDATE_CONFIG = `${ASSISTANT_ID}/update_config`;
   var WS_ENABLE = `${ASSISTANT_ID}/enable`;
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
+  var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
+  var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
   function _errorMessage(e) {
     if (e instanceof Error) return e.message;
     return String(e);
@@ -401,10 +403,105 @@
       _error("Failed to patch expose assistant icon proto: " + _errorMessage(e));
     }
   }
+  function _maybeFetchEntity2fa(el) {
+    const entityId = el.entityId;
+    if (!entityId) return;
+    if (el.__gaEntityId === entityId) return;
+    el.__gaEntityId = entityId;
+    el.__gaInfo = void 0;
+    const hass = el.hass || getHass();
+    if (!hass) return;
+    hass.callWS({ type: WS_GET_ENTITY, entity_id: entityId }).then((info) => {
+      if (el.__gaEntityId !== entityId) return;
+      el.__gaInfo = info;
+      _injectAskPin(el);
+    }).catch(() => {
+      if (el.__gaEntityId !== entityId) return;
+      el.__gaInfo = null;
+      _injectAskPin(el);
+    });
+  }
+  function _findOurAssistantRow(root) {
+    const items = root.querySelectorAll("ha-md-list-item");
+    for (let i = 0; i < items.length; i++) {
+      const icon = items[i].querySelector(
+        "voice-assistant-brand-icon"
+      );
+      if (icon && icon.voiceAssistantId === ASSISTANT_ID) return items[i];
+    }
+    return null;
+  }
+  function _onAskPinChanged(el, cb) {
+    const hass = el.hass || getHass();
+    const entityId = el.entityId;
+    if (!hass || !entityId) return;
+    const checked = cb.checked;
+    hass.callWS({ type: WS_UPDATE_ENTITY, entity_id: entityId, disable_2fa: !checked }).then(() => {
+      if (el.__gaInfo) el.__gaInfo.disable_2fa = !checked;
+    }).catch((err) => {
+      _error("Failed to update disable_2fa: " + (err.message || err.error || String(err)));
+      cb.checked = !checked;
+    });
+  }
+  function _injectAskPin(el) {
+    try {
+      const root = el.shadowRoot;
+      if (!root) return;
+      const row = _findOurAssistantRow(root);
+      if (!row) return;
+      const info = el.__gaInfo;
+      const existing = row.querySelector("[data-ga-2fa]");
+      if (!info || !info.might_2fa) {
+        if (existing) existing.remove();
+        return;
+      }
+      if (existing) {
+        existing.checked = !info.disable_2fa;
+        return;
+      }
+      const hass = el.hass || getHass();
+      const cb = document.createElement("ha-checkbox");
+      cb.setAttribute("slot", "supporting-text");
+      cb.dataset.ga2fa = "1";
+      cb.checked = !info.disable_2fa;
+      cb.textContent = hass && hass.localize("ui.dialogs.voice-settings.ask_pin") || "Ask for PIN";
+      cb.addEventListener("change", () => _onAskPinChanged(el, cb));
+      row.appendChild(cb);
+    } catch (e) {
+      _error("Error injecting ask_pin checkbox: " + _errorMessage(e));
+    }
+  }
+  function _patchEntityVoiceSettingsProto(proto) {
+    try {
+      const origFirstUpdated = proto.firstUpdated;
+      const origUpdated = proto.updated;
+      proto.firstUpdated = function(changedProps) {
+        try {
+          origFirstUpdated?.call(this, changedProps);
+        } catch (e) {
+          _error("Error in original firstUpdated (entity-voice-settings): " + _errorMessage(e));
+        }
+        _maybeFetchEntity2fa(this);
+        _injectAskPin(this);
+      };
+      proto.updated = function(changedProps) {
+        try {
+          origUpdated?.call(this, changedProps);
+        } catch (e) {
+          _error("Error in original updated (entity-voice-settings): " + _errorMessage(e));
+        }
+        _maybeFetchEntity2fa(this);
+        _injectAskPin(this);
+      };
+    } catch (e) {
+      _error("Failed to patch entity-voice-settings proto: " + _errorMessage(e));
+    }
+  }
   var PATCHERS = {
     "ha-config-voice-assistants-assistants": _patchAssistantsPageProto,
     "voice-assistant-brand-icon": _patchBrandIconProto,
-    "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto
+    "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto,
+    "entity-voice-settings": _patchEntityVoiceSettingsProto
   };
   function patchCustomElements() {
     try {

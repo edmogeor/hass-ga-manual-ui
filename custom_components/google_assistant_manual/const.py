@@ -14,6 +14,11 @@ WS_GET_CONFIG = "google_assistant_manual/get_config"
 WS_UPDATE_CONFIG = "google_assistant_manual/update_config"
 WS_ENABLE = "google_assistant_manual/enable"
 WS_DISABLE = "google_assistant_manual/disable"
+WS_GET_ENTITY = "google_assistant_manual/get_entity"
+WS_UPDATE_ENTITY = "google_assistant_manual/update_entity"
+
+# Per-entity assistant option mirroring cloud's PREF_DISABLE_2FA.
+PREF_DISABLE_2FA = "disable_2fa"
 
 CORE_GA_DOMAIN = "google_assistant"
 CORE_GA_DATA_CONFIG = "config"

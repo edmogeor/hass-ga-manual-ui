@@ -113,7 +113,7 @@ On `async_setup_entry()`:
 2. Sets `hass.data["google_assistant"]["config"]`.
 3. Reuses the existing core GA entry (`_find_core_entry`) if present — setting it up only if not already loaded — otherwise registers a fresh one via `hass.config_entries.async_add()` (which also sets it up). Never calls core GA's `async_setup_entry` directly (that would double-set-up).
 4. Stores `GoogleConfig` reference (from `core_entry.runtime_data`) in `entry.runtime_data`.
-5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
+5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`, and `GoogleConfig.should_2fa` to read the per-entity `disable_2fa` option from the registry (core GA hard-codes `should_2fa` to `True`; cloud reads the option — this powers the "Ask for PIN" toggle).
 6. Monkey-patches `GoogleConfig.should_expose` to delegate to `async_should_expose(hass, "google_assistant_manual", entity_id)` — bridging the core config-entry path (which otherwise uses the legacy YAML `expose_by_default`/`entity_config` model) to the modern `exposed_entities` registry the UI writes to. Without this, SYNC returns zero devices ("Account linked, but no devices found"). When the integration is soft-disabled (`enabled=False`) it returns `False`, so SYNC reports nothing.
 7. Registers Cloud-parity auto-resync listeners (`_register_sync_listeners`): on exposure changes, entity-registry updates (Google-relevant attrs), and device-area changes it calls `GoogleConfig.async_schedule_google_sync_all()` (Google `requestSync`). The core config-entry `GoogleConfig` lacks these; only Nabu Casa Cloud has them. Unsubscribes are stored in `runtime_data["sync_unsubs"]` and removed on teardown.
 8. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
@@ -122,6 +122,10 @@ On `async_setup_entry()`:
 - `homeassistant/expose_entity` — set per-entity exposure
 - `homeassistant/expose_new_entities/get` — read "expose new entities" toggle
 - `homeassistant/expose_new_entities/set` — write "expose new entities" toggle
+
+**Own WS commands for per-entity 2FA (mirror cloud's `cloud/google_assistant/entities/*`):**
+- `google_assistant_manual/get_entity` — returns `{traits, might_2fa, disable_2fa}` for an entity (built from core GA's `GoogleEntity` against our `GoogleConfig`)
+- `google_assistant_manual/update_entity` — writes the `disable_2fa` option under our assistant id via `async_set_assistant_option`
 
 ### Layer 2: JavaScript Frontend Companion
 
@@ -134,13 +138,14 @@ Four patching mechanisms applied at `init()`:
 | 1 | `patchVoiceAssistants()` | Monkey-patch `Object.keys()` | Detects when code iterates the `voiceAssistants` map and injects `{ google_assistant_manual: { domain: "google_assistant", name: "Google Assistant (Manual)" } }` |
 | 2 | `patchSortKey()` | Monkey-patch `Array.prototype.forEach()` | Injects `"google_assistant_manual"` into the sort-order array `["conversation", "cloud.alexa", "cloud.google_assistant"]` so the new assistant appears in the correct position |
 | 3 | `patchExposePage()` | Wrap `_availableAssistants` getter on `ha-config-voice-assistants-expose` | Makes the new assistant ID appear in the per-entity exposure dropdown |
-| 4 | `patchCustomElements()` | Intercept `customElements.define()` and retroactively patch already-defined elements | Patches three custom element prototypes (see below) |
+| 4 | `patchCustomElements()` | Intercept `customElements.define()` and retroactively patch already-defined elements | Patches four custom element prototypes (see below) |
 
 **Patched custom elements:**
 
 - `ha-config-voice-assistants-assistants` — injects lifecycle hooks (`connectedCallback`, `firstUpdated`, `updated`) that call `injectCardInto()` to insert the custom settings card
 - `voice-assistant-brand-icon` — overrides `render()` for our assistant ID to show the custom Google Assistant icon from `assets/icon.png`
 - `voice-assistants-expose-assistant-icon` — overrides `render()` for our assistant ID to show custom expose status icons
+- `entity-voice-settings` — in `updated`/`firstUpdated`, fetches the entity's 2FA info via `get_entity` and injects an identical "Ask for PIN" `ha-checkbox` (same `ui.dialogs.voice-settings.ask_pin` key) into our assistant's row for security devices, wired to `update_entity`. HA only renders this checkbox for `cloud.google_assistant` and gates the data fetch on the cloud component, so we replicate it.
 
 **Card structure (`buildCard()`):**
 ```
@@ -355,7 +360,7 @@ npm install
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
 | `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
 | `npm run fix` | Auto-fix all: `eslint --fix` + `ruff check --fix` + `ruff format` |
-| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (156 Python tests) |
+| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (163 Python tests) |
 
 ### Testing
 
@@ -368,7 +373,7 @@ Two test frameworks serve different parts of the codebase:
 - Runs as `vitest run` (single shot, no watch mode)
 
 **pytest** (`pytest.ini`) — Python tests:
-- 156 tests across 5 files in `tests/`
+- 163 tests across 5 files in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()` — build `ConfigEntry`-like objects for all test scenarios
