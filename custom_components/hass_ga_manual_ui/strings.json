@@ -3,22 +3,22 @@
     "step": {
       "user": {
         "title": "Google Assistant (Manual)",
-        "description": "Enter your Google Cloud Platform project ID.\n\nFollow the official manual setup guide at {guide_url} (up to and including step 13 — stop before the YAML configuration section). You will need:\n\n1. A GCP project with the Google Assistant API enabled\n2. A service account with the correct permissions\n\nIf you already have google_assistant: configured in your configuration.yaml, those settings will be ignored — this integration replaces YAML configuration entirely.\n\nYou'll paste the service account JSON key in the next step.",
+        "description": "Enter your Google Cloud project ID.\n\nFollow the setup guide at {guide_url} (steps 1\u201313). You'll paste your service account JSON key in the next step.\n\nIf you already have google_assistant: in your configuration.yaml, this integration replaces it \u2014 you can remove that section.",
         "data": {
           "project_id": "Project ID"
         },
         "data_description": {
-          "project_id": "The GCP project ID where your Google Actions project lives"
+          "project_id": "Your Google Cloud project ID"
         }
       },
       "service_account": {
         "title": "Service Account",
-        "description": "Paste the entire contents of the downloaded JSON key file for your service account. You can create one at {docs_url}.\n\nThis is step 12 from the guide at {guide_url}.",
+        "description": "Paste your service account JSON key file contents.\n\nCreate one at {docs_url} (step 12 of the guide at {guide_url}).",
         "data": {
           "service_account": "Service account JSON"
         },
         "data_description": {
-          "service_account": "Paste the entire contents of the downloaded JSON key file"
+          "service_account": "Paste your downloaded service account JSON key"
         }
       }
     },
