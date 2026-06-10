@@ -13,7 +13,7 @@ from typing import Any
 import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -326,6 +326,91 @@ def _make_core_entry(entry: ConfigEntry) -> ConfigEntry:
     )
 
 
+def _register_sync_listeners(
+    hass: HomeAssistant, entry: ConfigEntry, google_config: Any
+) -> list[Any]:
+    """Auto-trigger Google requestSync on exposure / area / registry changes.
+
+    Mirrors the Nabu Casa Cloud GoogleConfig, which the core config-entry
+    GoogleConfig does not do. Returns a list of unsubscribe callables.
+    """
+    from homeassistant.components.homeassistant.exposed_entities import (
+        async_listen_entity_updates,
+    )
+    from homeassistant.helpers import device_registry as dr
+    from homeassistant.helpers import entity_registry as er
+
+    @callback
+    def _schedule_sync() -> None:
+        try:
+            google_config.async_schedule_google_sync_all()
+        except Exception:
+            _LOGGER.debug("async_schedule_google_sync_all failed", exc_info=True)
+
+    @callback
+    def _on_exposed_entities_updated() -> None:
+        _schedule_sync()
+
+    @callback
+    def _on_entity_registry_updated(event: Any) -> None:
+        if (
+            not entry.options.get("enabled", True)
+            or hass.state is not CoreState.running
+        ):
+            return
+        data = event.data
+        # Ignore updates that don't change anything Google cares about.
+        if data.get("action") == "update" and not (
+            set(data.get("changes", {})) & er.ENTITY_DESCRIBING_ATTRIBUTES
+        ):
+            return
+        entity_id = data.get("entity_id")
+        if not entity_id or not google_config.should_expose(entity_id):
+            return
+        _schedule_sync()
+
+    @callback
+    def _on_device_registry_updated(event: Any) -> None:
+        if (
+            not entry.options.get("enabled", True)
+            or hass.state is not CoreState.running
+        ):
+            return
+        data = event.data
+        if data.get("action") != "update" or "area_id" not in data.get("changes", {}):
+            return
+        # Only resync if an exposed entity inherits the device's area.
+        ent_reg = er.async_get(hass)
+        if not any(
+            ent.area_id is None and google_config.should_expose(ent.entity_id)
+            for ent in er.async_entries_for_device(ent_reg, data["device_id"])
+        ):
+            return
+        _schedule_sync()
+
+    unsubs: list[Any] = []
+    try:
+        unsubs.append(
+            async_listen_entity_updates(
+                hass, ASSISTANT_ID, _on_exposed_entities_updated
+            )
+        )
+    except Exception:
+        _LOGGER.debug("Could not register exposed-entities listener", exc_info=True)
+    unsubs.append(
+        hass.bus.async_listen(
+            er.EVENT_ENTITY_REGISTRY_UPDATED, _on_entity_registry_updated
+        )
+    )
+    unsubs.append(
+        hass.bus.async_listen(
+            dr.EVENT_DEVICE_REGISTRY_UPDATED, _on_device_registry_updated
+        )
+    )
+    _LOGGER.debug("Registered %d auto-resync listeners", len(unsubs))
+    return unsubs
+
+
 async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Bridge config to core GA and activate it.
 
@@ -421,6 +506,11 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "async_enable_report_state on (re)enable failed", exc_info=True
             )
 
+    # Cloud parity: auto requestSync when exposure/areas/registry change.
+    entry.runtime_data["sync_unsubs"] = _register_sync_listeners(
+        hass, entry, google_config
+    )
+
     _LOGGER.info("Core GA successfully loaded for project '%s'", project_id)
 
 
@@ -455,6 +545,14 @@ async def _teardown_core_ga(
         )
         entry.runtime_data = None
         return
+
+    # Remove auto-resync listeners (re-registered on the next setup/enable).
+    for unsub in runtime.get("sync_unsubs", []):
+        try:
+            unsub()
+        except Exception:
+            _LOGGER.debug("Error removing auto-resync listener", exc_info=True)
+    runtime["sync_unsubs"] = list[Any]()
 
     if not disable:
         # Unload/reload: keep the core GA entry intact, only drop our pointer.

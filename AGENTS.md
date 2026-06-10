@@ -114,8 +114,9 @@ On `async_setup_entry()`:
 3. Reuses the existing core GA entry (`_find_core_entry`) if present — setting it up only if not already loaded — otherwise registers a fresh one via `hass.config_entries.async_add()` (which also sets it up). Never calls core GA's `async_setup_entry` directly (that would double-set-up).
 4. Stores `GoogleConfig` reference (from `core_entry.runtime_data`) in `entry.runtime_data`.
 5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
-6. Monkey-patches `GoogleConfig.should_expose` to delegate to `async_should_expose(hass, "google_assistant_manual", entity_id)` — bridging the core config-entry path (which otherwise uses the legacy YAML `expose_by_default`/`entity_config` model) to the modern `exposed_entities` registry the UI writes to. Without this, SYNC returns zero devices ("Account linked, but no devices found").
-7. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
+6. Monkey-patches `GoogleConfig.should_expose` to delegate to `async_should_expose(hass, "google_assistant_manual", entity_id)` — bridging the core config-entry path (which otherwise uses the legacy YAML `expose_by_default`/`entity_config` model) to the modern `exposed_entities` registry the UI writes to. Without this, SYNC returns zero devices ("Account linked, but no devices found"). When the integration is soft-disabled (`enabled=False`) it returns `False`, so SYNC reports nothing.
+7. Registers Cloud-parity auto-resync listeners (`_register_sync_listeners`): on exposure changes, entity-registry updates (Google-relevant attrs), and device-area changes it calls `GoogleConfig.async_schedule_google_sync_all()` (Google `requestSync`). The core config-entry `GoogleConfig` lacks these; only Nabu Casa Cloud has them. Unsubscribes are stored in `runtime_data["sync_unsubs"]` and removed on teardown.
+8. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
 
 **Patched WS commands (entity exposure):**
 - `homeassistant/expose_entity` — set per-entity exposure
@@ -202,7 +203,8 @@ User adds integration via UI:
         4. Patches GoogleConfig.should_report_state → entry.options
         5. Patches GoogleConfig.secure_devices_pin → entry.options
         6. Patches GoogleConfig.should_expose → async_should_expose(hass, ASSISTANT_ID, entity_id)
-        7. Registers WS commands (get_config/update_config/enable/disable)
+        7. Registers auto-resync listeners (exposure / entity- + device-registry → requestSync)
+        8. Registers WS commands (get_config/update_config/enable/disable)
 
 Browser loads HA frontend
   → HA loads /google_assistant_manual/frontend.js as extra module
@@ -353,7 +355,7 @@ npm install
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
 | `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
 | `npm run fix` | Auto-fix all: `eslint --fix` + `ruff check --fix` + `ruff format` |
-| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (151 Python tests) |
+| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (155 Python tests) |
 
 ### Testing
 
@@ -366,7 +368,7 @@ Two test frameworks serve different parts of the codebase:
 - Runs as `vitest run` (single shot, no watch mode)
 
 **pytest** (`pytest.ini`) — Python tests:
-- 151 tests across 5 files in `tests/`
+- 155 tests across 5 files in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()` — build `ConfigEntry`-like objects for all test scenarios

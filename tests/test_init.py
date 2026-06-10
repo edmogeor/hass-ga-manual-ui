@@ -16,6 +16,7 @@ from google_assistant_manual import (
     _patch_google_config_properties,
     _project_id,
     _reconcile_core_ga_entries,
+    _register_sync_listeners,
     _safe_get_entry,
     _teardown_core_ga,
 )
@@ -824,6 +825,71 @@ class TestTeardownCoreGa:
         await _teardown_core_ga(hass, entry, disable=True)
         call_args = hass.config_entries.async_update_entry.call_args
         assert call_args[1]["options"]["enabled"] is False
+
+    async def test_disable_removes_sync_listeners(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.config_entries.async_update_entry = MagicMock()
+        unsub = MagicMock()
+        entry = mock_config_entry(
+            runtime_data={"google_config": FakeGoogleConfig(), "sync_unsubs": [unsub]}
+        )
+        await _teardown_core_ga(hass, entry, disable=True)
+        unsub.assert_called_once()
+
+    async def test_unload_removes_sync_listeners(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        unsub = MagicMock()
+        entry = mock_config_entry(
+            runtime_data={"google_config": FakeGoogleConfig(), "sync_unsubs": [unsub]}
+        )
+        await _teardown_core_ga(hass, entry, disable=False)
+        unsub.assert_called_once()
+        assert entry.runtime_data is None
+
+
+# =============================================================================
+# _register_sync_listeners
+# =============================================================================
+
+
+class TestRegisterSyncListeners:
+    """Tests for the Cloud-parity auto-resync listeners."""
+
+    def test_registers_three_listeners(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.bus = MagicMock()
+        hass.bus.async_listen = MagicMock(side_effect=lambda *a, **k: MagicMock())
+        entry = mock_config_entry(options={"enabled": True})
+        gc = MagicMock()
+
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_listen_entity_updates",
+            return_value=MagicMock(),
+        ):
+            unsubs = _register_sync_listeners(hass, entry, gc)
+
+        # exposed-entities + entity-registry + device-registry
+        assert len(unsubs) == 3
+        assert hass.bus.async_listen.call_count == 2
+
+    def test_survives_exposed_entities_listener_failure(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.bus = MagicMock()
+        hass.bus.async_listen = MagicMock(side_effect=lambda *a, **k: MagicMock())
+        entry = mock_config_entry(options={"enabled": True})
+        gc = MagicMock()
+
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_listen_entity_updates",
+            side_effect=RuntimeError("boom"),
+        ):
+            unsubs = _register_sync_listeners(hass, entry, gc)
+
+        # The two bus listeners still register even if the exposed-entities
+        # listener could not be set up.
+        assert len(unsubs) == 2
 
 
 # =============================================================================

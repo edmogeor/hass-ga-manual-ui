@@ -26,6 +26,7 @@ users to configure the manual Google Assistant entirely through the UI — no YA
 | 14 | WS API: **get, update, enable, disable** | `google_assistant_manual/get_config` + `update_config` for settings; `enable`/`disable` for the global toggle that loads/unloads core GA |
 | 15 | Config flow: **two steps** — step 1: project_id, step 2: service account textarea | Simple, works with HA's form-based config flows |
 | 16 | Global toggle: **soft enable/disable** (A) | Toggle off = report_state off + `enabled=False` so `should_expose` returns False (SYNC empty); card stays, settings hidden. Toggle on = re-enable. The core GA entry/view/webhook stay registered because core GA has no `async_unload_entry` and registers unremovable aiohttp routes — add/remove churn caused duplicate-webhook errors. _Superseded the original "unload/reload core GA ConfigEntry" plan._ |
+| 17 | Auto-resync (**Cloud parity**) | The core config-entry `GoogleConfig` does NOT auto-trigger Google `requestSync` (only Nabu Casa Cloud does). `_register_sync_listeners` adds listeners on exposure changes, entity-registry updates (Google-relevant attrs), and device-area changes that call `GoogleConfig.async_schedule_google_sync_all()`. So newly exposed/areaed devices propagate to Google without a manual "sync my devices". Note: Google only applies `roomHint` for devices it hasn't seen before, so already-synced unplaced devices still need manual placement or a relink. |
 
 ---
 
