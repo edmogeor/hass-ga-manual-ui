@@ -4,3 +4,5 @@ __pycache__/
 node_modules/
 /build/
 .ruff_cache/
+.claude/
+**/.claude/

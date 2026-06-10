@@ -14,12 +14,12 @@ users to configure the manual Google Assistant entirely through the UI — no YA
 | 1  | Scope: **Full config replacement** (B) | Project_id, service_account, report_state, PIN all in UI |
 | 2  | **Config layer** on top of core GA (B) | Core GA does heavy lifting (webhooks, state reporting); this integration manages config |
 | 3  | Storage: **ConfigEntry with YAML import** (D) | Backwards-compatible; YAML seeds defaults, ConfigEntry is authoritative |
-| 4/5 | **Setup-phase re-trigger** — direct `async_setup_entry` call | Core GA is no-op without YAML; after setup, populate `hass.data["google_assistant"]` and call core GA's `async_setup_entry` directly with constructed ConfigEntry |
+| 4/5 | **Setup-phase re-trigger** — register core entry via `async_add()` | Core GA is no-op without YAML; after setup, populate `hass.data["google_assistant"]` and register a real `ConfigEntry` via `hass.config_entries.async_add()` (which registers, sets up, and persists it). The entry is reused across restarts and only fully removed on disable. _Superseded the original direct `async_setup_entry` call on a `SimpleNamespace` — calling both `async_add()` and `async_setup_entry()` caused duplicate webhook/setup._ |
 | 6  | Config flow: **project_id + service_account only** | Other settings (report_state, PIN, exposure) live in assistants-UI card |
 | 7  | Service account: **textarea paste**, parse JSON on submit | Avoids non-standard file upload; extract `client_email` + `private_key` |
 | 8  | Product: **config_flow.py + hacs.json + translations** | Standard HACS integration shape |
 | 9  | Card settings: **WS + ConfigEntry options** (D) | WS commands wrap ConfigEntry options updates |
-| 10 | `exposed_domains`: **skip** (B) | Cloud version doesn't surface it; YAML import ports it but UI doesn't edit it |
+| 10 | `exposed_domains`: **skip** (B) | Cloud version doesn't surface it; YAML import ports it but UI doesn't edit it. Exposure flows through the modern `exposed_entities` registry instead of the legacy YAML model — `GoogleConfig.should_expose` is monkey-patched to read it under our `ASSISTANT_ID` (see Phase 2 step 7) |
 | 11 | HA version: **target latest, expand later** | `"homeassistant": "2025.6.0"` in manifest |
 | 12 | Load order: **setup-phase re-trigger** | Avoid `open()`/manifest monkey-patching; use core GA's no-YAML-no-op design |
 | 13 | YAML compat: **Import top-level, skip entity_config, warn** (C-mod) | Port project_id, service_account, report_state, expose_by_default, exposed_domains, secure_devices_pin. Skip entity_config. Warn user. ConfigEntry takes precedence after import. |
@@ -156,11 +156,14 @@ User configures via UI
       → ConfigEntry created for "google_assistant_manual"
         → async_setup_entry() fires:
           1. Populates hass.data["google_assistant"]["data_config"]
-          2. Constructs ConfigEntry for "google_assistant" domain
-          3. Calls core GA's async_setup_entry()
+          2. Reuses the existing core GA ConfigEntry, or registers a fresh one
+             via hass.config_entries.async_add() (which ALSO sets it up — no
+             manual second async_setup_entry call)
+          3. Reads GoogleConfig from core_entry.runtime_data
           4. Patches GoogleConfig.should_report_state → entry.options
           5. Patches GoogleConfig.secure_devices_pin → entry.options
-          6. Registers WS commands (get/update/enable/disable)
+          6. Patches GoogleConfig.should_expose → async_should_expose(hass, ASSISTANT_ID, entity_id)
+          7. Registers WS commands (get/update/enable/disable)
 
 User visits Voice Assistants config page
   → Card renders (existing injection mechanism)
@@ -170,8 +173,10 @@ User visits Voice Assistants config page
 
 User toggles global enable/disable in card header
   → JS calls 'google_assistant_manual/enable' or 'disable'
-  → enable:  re-runs setup-phase re-trigger (steps 2-5 above)
-  → disable: unloads core GA ConfigEntry, tears down webhook/report_state
+  → enable:  re-runs setup-phase re-trigger (reuses or creates the core entry)
+  → disable: _teardown_core_ga(remove_entry=True) — deinits GoogleConfig, removes
+             HTTP routes, removes the core GA ConfigEntry
+  (plain unload/reload uses remove_entry=False and keeps the persisted core entry)
 
 User changes settings in card (when enabled)
   → JS calls 'google_assistant_manual/update_config'
@@ -193,8 +198,8 @@ User changes settings in card (when enabled)
 
 ### Phase 2: Core GA Bridge
 5. Implement `async_setup_entry()` in `__init__.py`
-6. Implement core GA ConfigEntry construction and `async_setup_entry` call
-7. Implement `GoogleConfig` property monkey-patches
+6. Register the core GA `ConfigEntry` via `async_add()` (reuse if it already exists; never also call `async_setup_entry` manually), and reconcile/persist it across restarts (`_reconcile_core_ga_entries`, `_find_core_entry`)
+7. Implement `GoogleConfig` property monkey-patches (`should_report_state`, `secure_devices_pin`) plus the `should_expose` method patch that bridges exposure to the `exposed_entities` registry under our `ASSISTANT_ID`
 8. Test: after config flow, core GA is functional (webhook registered, devices appear in Google Home)
 
 ### Phase 3: WS Commands

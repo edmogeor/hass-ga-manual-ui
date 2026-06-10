@@ -12,7 +12,7 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.typing import ConfigType
 
@@ -64,12 +64,55 @@ def _project_id(entry: ConfigEntry) -> str:
     return entry.data.get(CONF_PROJECT_ID, "<missing>")
 
 
-async def _cleanup_core_ga_entries(hass: HomeAssistant) -> None:
-    """Remove all existing core GA config entries so ours takes priority.
+def _find_core_entry(hass: HomeAssistant, entry: ConfigEntry) -> ConfigEntry | None:
+    """Return the registered core GA entry for our project, if one exists."""
+    project_id = entry.data.get(CONF_PROJECT_ID)
+    for core_entry in hass.config_entries.async_entries(CORE_GA_DOMAIN):
+        if core_entry.data.get(CONF_PROJECT_ID) == project_id:
+            return core_entry
+    return None
 
-    This runs during async_setup (before our entries are loaded) to prevent
-    stale entries from crashing with KeyError when HA auto-sets them up.
+
+async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
+    """Prepare core GA entries during async_setup (before they auto-load).
+
+    We keep the framework-registered core GA entry across restarts (it carries
+    the device-registry links), so we must NOT blindly remove it. Instead:
+
+    1. Populate ``hass.data["google_assistant"][DATA_CONFIG]`` from our config
+       entry so that when HA auto-sets-up the persisted core entry on boot, it
+       does not crash with ``KeyError: 'google_assistant'``.
+    2. Prune orphans and duplicates left behind by older versions — keep at most
+       one core entry per enabled project, drop the rest.
     """
+    our_entries: list[ConfigEntry]
+    try:
+        our_entries = list(hass.config_entries.async_entries(DOMAIN))
+    except Exception as exc:
+        _LOGGER.debug("Could not enumerate our config entries: %s", exc)
+        our_entries = []
+
+    valid_project_ids = {
+        e.data.get(CONF_PROJECT_ID)
+        for e in our_entries
+        if e.options.get("enabled", True)
+    }
+
+    # 1. Seed DATA_CONFIG early so a boot-time auto-setup of the core entry
+    #    has a config to read.
+    for e in our_entries:
+        if not e.options.get("enabled", True):
+            continue
+        try:
+            hass.data.setdefault(CORE_GA_DOMAIN, {})[CORE_GA_DATA_CONFIG] = (
+                _build_core_config(e)
+            )
+            break
+        except ValueError as exc:
+            _LOGGER.debug("Skipping DATA_CONFIG seed for an entry: %s", exc)
+
+    # 2. Prune orphan / duplicate core GA entries.
+    seen: set[str | None] = set()
     try:
         core_entries = list(hass.config_entries.async_entries(CORE_GA_DOMAIN))
     except Exception as exc:
@@ -77,19 +120,23 @@ async def _cleanup_core_ga_entries(hass: HomeAssistant) -> None:
         return
 
     for core_entry in core_entries:
+        pid = core_entry.data.get(CONF_PROJECT_ID)
+        if pid in valid_project_ids and pid not in seen:
+            seen.add(pid)
+            _LOGGER.debug(
+                "Keeping core GA entry '%s' (project='%s')", core_entry.entry_id, pid
+            )
+            continue
         try:
             _LOGGER.debug(
-                "Removing stale core GA entry '%s' (project='%s', source=%s)",
+                "Pruning stale/duplicate core GA entry '%s' (project='%s')",
                 core_entry.entry_id,
-                core_entry.data.get(CONF_PROJECT_ID, "<missing>"),
-                core_entry.source,
+                pid,
             )
             await hass.config_entries.async_remove(core_entry.entry_id)
         except Exception as exc:
             _LOGGER.warning(
-                "Could not remove stale core GA entry '%s': %s",
-                core_entry.entry_id,
-                exc,
+                "Could not prune core GA entry '%s': %s", core_entry.entry_id, exc
             )
 
 
@@ -105,7 +152,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     hass.data.setdefault(CORE_GA_DOMAIN, {})
 
-    await _cleanup_core_ga_entries(hass)
+    await _reconcile_core_ga_entries(hass)
 
     _patch_core_assistants(hass)
 
@@ -175,6 +222,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of a config entry — purge all entity exposure settings."""
+    # Remove the matching core GA entry so it doesn't linger as an orphan.
+    core_entry = _find_core_entry(hass, entry)
+    if core_entry is not None:
+        try:
+            await hass.config_entries.async_remove(core_entry.entry_id)
+            _LOGGER.debug(
+                "Removed orphaned core GA entry '%s' on entry removal",
+                core_entry.entry_id,
+            )
+        except Exception as exc:
+            _LOGGER.warning("Could not remove core GA entry on removal: %s", exc)
+
     remaining = hass.config_entries.async_entries(DOMAIN)
     if len(remaining) > 1:
         _LOGGER.debug(
@@ -286,11 +345,10 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
     else:
         hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG] = config
 
-    # Import core GA's async_setup_entry
+    # Verify core GA is available (async_add below relies on it to set up the
+    # registered entry). Fail with an actionable message if it is missing.
     try:
-        from homeassistant.components.google_assistant import (
-            async_setup_entry as core_async_setup_entry,
-        )
+        import homeassistant.components.google_assistant  # noqa: F401
     except ImportError as exc:
         _LOGGER.error(
             "Cannot import core Google Assistant integration. "
@@ -301,13 +359,6 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
             "Core Google Assistant integration is not available. "
             "This integration requires the built-in 'google_assistant' component."
         ) from exc
-
-    core_entry = _make_core_entry(entry)
-
-    await hass.config_entries.async_add(core_entry)
-    _LOGGER.debug(
-        "Registered core GA entry with entry_id=%s", core_entry.entry_id
-    )
 
     # Snapshot registered views before setup so we can find the new one
     try:
@@ -320,10 +371,29 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         )
         views_before = set()
 
-    _LOGGER.debug(
-        "Calling core GA async_setup_entry with entry_id=%s", core_entry.entry_id
-    )
-    await core_async_setup_entry(hass, core_entry)
+    # Reuse the framework-registered core GA entry across restarts when one
+    # already exists (it carries device-registry links). Only create a fresh
+    # one on first enable. async_add() both registers AND sets up the entry, so
+    # we must NOT call core GA's async_setup_entry ourselves — doing both is
+    # what caused duplicate webhook registration and "already been setup".
+    core_entry = _find_core_entry(hass, entry)
+    if core_entry is None:
+        core_entry = _make_core_entry(entry)
+        await hass.config_entries.async_add(core_entry)
+        _LOGGER.debug(
+            "Registered + set up new core GA entry id=%s", core_entry.entry_id
+        )
+    elif core_entry.state is ConfigEntryState.LOADED:
+        _LOGGER.debug("Reusing already-loaded core GA entry id=%s", core_entry.entry_id)
+    else:
+        # Persisted but not loaded (e.g. boot auto-setup failed before our
+        # DATA_CONFIG was ready, or never ran). Drive it now that config exists.
+        _LOGGER.debug(
+            "Setting up existing core GA entry id=%s (state=%s)",
+            core_entry.entry_id,
+            core_entry.state,
+        )
+        await hass.config_entries.async_reload(core_entry.entry_id)
 
     # Find newly registered routes
     try:
@@ -362,8 +432,20 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
     _LOGGER.info("Core GA successfully loaded for project '%s'", project_id)
 
 
-async def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Tear down core GA — webhook, report_state, HTTP view."""
+async def _teardown_core_ga(
+    hass: HomeAssistant, entry: ConfigEntry, *, remove_entry: bool = False
+) -> None:
+    """Tear down core GA.
+
+    ``remove_entry=False`` (a plain unload/reload of our entry): leave the
+    framework-registered core GA entry loaded and persisted so it survives the
+    restart and keeps its device-registry links — just drop our runtime pointer.
+
+    ``remove_entry=True`` (the user disabled the integration): fully tear down —
+    deinitialize the GoogleConfig, remove the HTTP routes (core GA has no
+    async_unload_entry, so nothing else will), remove the core entry, and mark
+    the integration disabled.
+    """
     project_id = _project_id(entry)
     runtime = entry.runtime_data
     if not runtime:
@@ -376,6 +458,15 @@ async def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
             type(runtime).__name__,
         )
         entry.runtime_data = None
+        return
+
+    if not remove_entry:
+        # Unload/reload: keep the core GA entry intact, only drop our pointer.
+        entry.runtime_data = None
+        _LOGGER.debug(
+            "Unloaded our entry for project='%s'; core GA entry left loaded",
+            project_id,
+        )
         return
 
     google_config = runtime.get("google_config")
@@ -410,9 +501,7 @@ async def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
     if core_entry is not None:
         try:
             await hass.config_entries.async_remove(core_entry.entry_id)
-            _LOGGER.debug(
-                "Removed core GA config entry '%s'", core_entry.entry_id
-            )
+            _LOGGER.debug("Removed core GA config entry '%s'", core_entry.entry_id)
         except Exception as exc:
             _LOGGER.warning(
                 "Could not remove core GA config entry '%s': %s",
@@ -540,8 +629,26 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
             )
             _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"] = None
 
+    # should_expose is a plain method (not a property) on the config-entry
+    # GoogleConfig. The core implementation uses the legacy YAML exposure model
+    # (expose_by_default / exposed_domains / entity_config), which our config
+    # dict never populates. Bridge it to the modern exposed_entities registry
+    # under our ASSISTANT_ID — the same key the UI expose page writes to.
+    if "should_expose" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
+        try:
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_expose"] = gc_type.should_expose
+            _LOGGER.debug("Cached original GoogleConfig.should_expose method")
+        except AttributeError:
+            _LOGGER.warning(
+                "GoogleConfig (%s) has no should_expose method. "
+                "Entities exposed via the UI will not be synced to Google.",
+                gc_type_name,
+            )
+            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_expose"] = None
+
     orig_srs = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"]
     orig_sdp = _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"]
+    orig_se = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_expose"]
 
     def _should_report_state(self: Any) -> bool:
         if self is google_config:
@@ -559,9 +666,51 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
             return orig_sdp(self)
         return None
 
+    def _should_expose(self: Any, entity_id: str) -> bool:
+        if self is google_config:
+            try:
+                from homeassistant.components.homeassistant.exposed_entities import (
+                    async_should_expose,
+                )
+
+                result = async_should_expose(self.hass, ASSISTANT_ID, entity_id)
+                _LOGGER.debug(
+                    "should_expose(%s) -> %s (registry key '%s')",
+                    entity_id,
+                    result,
+                    ASSISTANT_ID,
+                )
+                return result
+            except Exception:
+                _LOGGER.exception(
+                    "Failed to resolve exposure for '%s' via exposed_entities "
+                    "registry. Falling back to core GoogleConfig.should_expose.",
+                    entity_id,
+                )
+                if orig_se:
+                    return orig_se(self, entity_id)
+                return False
+        if orig_se:
+            return orig_se(self, entity_id)
+        return False
+
     try:
         gc_type.should_report_state = property(_should_report_state)
         gc_type.secure_devices_pin = property(_secure_devices_pin)
+        if orig_se:
+            gc_type.should_expose = _should_expose
+            _LOGGER.info(
+                "Bridged GoogleConfig.should_expose to exposed_entities registry "
+                "under '%s' on %s",
+                ASSISTANT_ID,
+                gc_type_name,
+            )
+        else:
+            _LOGGER.warning(
+                "GoogleConfig.should_expose NOT bridged (no original method on %s). "
+                "UI-exposed entities will not sync to Google.",
+                gc_type_name,
+            )
         _LOGGER.debug(
             "Successfully patched GoogleConfig properties on %s", gc_type_name
         )
@@ -918,7 +1067,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.info("Disabling Google Assistant for project='%s'", project_id)
 
             try:
-                await _teardown_core_ga(_hass, current_entry)
+                await _teardown_core_ga(_hass, current_entry, remove_entry=True)
                 _LOGGER.info(
                     "Successfully disabled Google Assistant for project='%s'",
                     project_id,

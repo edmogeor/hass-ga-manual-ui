@@ -257,6 +257,49 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
+  describe("global toggle state", () => {
+    it("global toggle stays on after refreshExposeToggle (not clobbered)", async () => {
+      // Regression: refreshExposeToggle did card.querySelector("ha-switch"),
+      // which matched the header's global toggle (first switch in the card)
+      // and reset it to expose_new (false) — instantly reverting the enable.
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "google_assistant_manual/get_entry_id") {
+          return Promise.resolve({ entry_id: "mock-entry" });
+        }
+        if (msg.type === "google_assistant_manual/get_config") {
+          return Promise.resolve({
+            enabled: true,
+            report_state: false,
+            secure_devices_pin: "",
+            yaml_suppressed: false,
+          });
+        }
+        if (msg.type === "homeassistant/expose_new_entities/get") {
+          return Promise.resolve({ expose_new: false });
+        }
+        if (msg.type === "homeassistant/expose_entity/list") {
+          return Promise.resolve({ exposed_entities: {} });
+        }
+        return Promise.resolve({});
+      });
+
+      setupDom(hass);
+      evalFrontend();
+      // Let refreshCardState + refreshExposeToggle (Promise.all) settle.
+      await flushMicrotasks();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      const card = document.querySelector("[data-ga-manual-card]");
+      const globalSwitch = card!.querySelector<HTMLInputElement>(
+        "h1.card-header ha-switch",
+      );
+      expect(globalSwitch).not.toBeNull();
+      expect(globalSwitch!.checked).toBe(true);
+    });
+  });
+
   describe("assistant card idempotency", () => {
     it("evaluating twice does not inject duplicate cards", () => {
       const hass = createMockHass();

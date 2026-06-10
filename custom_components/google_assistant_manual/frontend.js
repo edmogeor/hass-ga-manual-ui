@@ -795,7 +795,7 @@
   function refreshExposeToggle(card) {
     const hass = getHass();
     if (!hass) return;
-    const sw = card.querySelector("ha-switch");
+    const sw = card.querySelector(".card-content ha-switch");
     const btn = card.querySelector("[data-ga-count]");
     Promise.all([
       hass.callWS({

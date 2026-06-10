@@ -1133,7 +1133,10 @@ function _refreshExposePage(): void {
 function refreshExposeToggle(card: HTMLElement): void {
   const hass = getHass();
   if (!hass) return;
-  const sw = card.querySelector<HTMLInputElement>("ha-switch");
+  // Scope to .card-content so we never select the global enable/disable
+  // toggle, which lives in the header (.card-header) and would otherwise be
+  // matched as the first ha-switch — clobbering it back to expose_new (false).
+  const sw = card.querySelector<HTMLInputElement>(".card-content ha-switch");
   const btn = card.querySelector<HTMLElement>("[data-ga-count]");
 
   Promise.all([

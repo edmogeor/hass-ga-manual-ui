@@ -102,9 +102,17 @@ def mock_ws_connection() -> MagicMock:
 class FakeGoogleConfig:
     """Fake GoogleConfig for testing property patches."""
 
-    def __init__(self, report_state: bool = True, pin: str | None = None) -> None:
+    def __init__(
+        self,
+        report_state: bool = True,
+        pin: str | None = None,
+        hass: object | None = None,
+        exposed: set[str] | None = None,
+    ) -> None:
         self._report_state = report_state
         self._pin = pin
+        self.hass = hass
+        self._exposed = exposed or set()
 
     @property
     def should_report_state(self) -> bool:
@@ -113,6 +121,10 @@ class FakeGoogleConfig:
     @property
     def secure_devices_pin(self) -> str | None:
         return self._pin
+
+    def should_expose(self, entity_id: str) -> bool:
+        """Legacy core-style exposure check (the pre-patch behavior)."""
+        return entity_id in self._exposed
 
     def async_enable_report_state(self) -> None:
         self._report_state = True

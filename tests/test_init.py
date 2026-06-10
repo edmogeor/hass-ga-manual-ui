@@ -10,10 +10,12 @@ from google_assistant_manual import (
     WS_CONFIG_SCHEMA,
     _add_assistant_to_schema,
     _build_core_config,
+    _find_core_entry,
     _get_version,
     _make_core_entry,
     _patch_google_config_properties,
     _project_id,
+    _reconcile_core_ga_entries,
     _safe_get_entry,
     _teardown_core_ga,
 )
@@ -24,7 +26,9 @@ from google_assistant_manual.const import (
     CONF_REPORT_STATE,
     CONF_SECURE_DEVICES_PIN,
     CONF_SERVICE_ACCOUNT,
+    CORE_GA_DATA_CONFIG,
     CORE_GA_DOMAIN,
+    DOMAIN,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -587,6 +591,126 @@ class TestPatchGoogleConfigProperties:
             f"Logs: {[r.message for r in caplog.records]}"
         )
 
+    def test_patches_should_expose_delegates_to_registry(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """should_expose delegates to the exposed_entities registry."""
+        entry = mock_config_entry()
+        hass = MagicMock()
+        # exposed empty => the original method would return False
+        gc = FakeGoogleConfig(hass=hass, exposed=set())
+
+        _patch_google_config_properties(gc, entry)
+
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_should_expose",
+            return_value=True,
+        ) as mock_should_expose:
+            result = gc.should_expose("light.kitchen")
+
+        assert result is True
+        mock_should_expose.assert_called_once_with(hass, ASSISTANT_ID, "light.kitchen")
+
+    def test_should_expose_uses_assistant_id_key(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """The registry is queried under our ASSISTANT_ID, not core GA's domain."""
+        entry = mock_config_entry()
+        hass = MagicMock()
+
+        class LocalGC:
+            def __init__(self) -> None:
+                self.hass = hass
+
+            def should_expose(self, entity_id: str) -> bool:
+                return False
+
+        gc = LocalGC()
+        _patch_google_config_properties(gc, entry)
+
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_should_expose",
+            return_value=False,
+        ) as mock_should_expose:
+            gc.should_expose("switch.fan")
+
+        _, assistant_arg, _ = mock_should_expose.call_args.args
+        assert assistant_arg == ASSISTANT_ID
+
+    def test_should_expose_fallback_on_registry_error(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """If the registry lookup raises, fall back to the original method."""
+        entry = mock_config_entry()
+
+        class LocalGC:
+            def __init__(self) -> None:
+                self.hass = MagicMock()
+                self._exposed = {"light.kitchen"}
+
+            def should_expose(self, entity_id: str) -> bool:
+                return entity_id in self._exposed
+
+        gc = LocalGC()
+        _patch_google_config_properties(gc, entry)
+
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_should_expose",
+            side_effect=RuntimeError("registry unavailable"),
+        ):
+            assert gc.should_expose("light.kitchen") is True
+            assert gc.should_expose("light.bedroom") is False
+
+    def test_should_expose_other_instance_uses_original(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """A non-patched instance keeps the original should_expose behavior."""
+        entry = mock_config_entry()
+
+        class LocalGC:
+            def __init__(self, exposed: set[str]) -> None:
+                self.hass = MagicMock()
+                self._exposed = exposed
+
+            def should_expose(self, entity_id: str) -> bool:
+                return entity_id in self._exposed
+
+        gc_patched = LocalGC(exposed=set())
+        _patch_google_config_properties(gc_patched, entry)
+
+        gc_other = LocalGC(exposed={"light.den"})
+        # gc_other is not the patched closure target, so it uses the original.
+        assert gc_other.should_expose("light.den") is True
+        assert gc_other.should_expose("light.attic") is False
+
+    def test_missing_should_expose_method_handled(
+        self, reset_original_props_cache: None, caplog: pytest.LogCaptureFixture
+    ) -> None:
+        """A GoogleConfig without should_expose is handled gracefully."""
+
+        class MinimalGC:
+            @property
+            def should_report_state(self) -> bool:
+                return True
+
+            @property
+            def secure_devices_pin(self) -> str | None:
+                return None
+
+        entry = mock_config_entry()
+        gc = MinimalGC()
+
+        caplog.set_level(logging.WARNING)
+        # Must not raise even though should_expose is absent.
+        _patch_google_config_properties(gc, entry)
+
+        assert any("no should_expose method" in r.message for r in caplog.records), (
+            f"Logs: {[r.message for r in caplog.records]}"
+        )
+
 
 # =============================================================================
 # _teardown_core_ga
@@ -621,7 +745,7 @@ class TestTeardownCoreGa:
         # Mock async_update_entry
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry, remove_entry=True)
         gc.async_deinitialize.assert_called_once()
 
     async def test_teardown_removes_routes(self) -> None:
@@ -638,7 +762,7 @@ class TestTeardownCoreGa:
         )
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry, remove_entry=True)
         assert mock_route not in hass.http.app.router._routes
 
     async def test_teardown_sets_runtime_data_to_none(self) -> None:
@@ -667,7 +791,7 @@ class TestTeardownCoreGa:
         entry.options["enabled"] = True
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry, remove_entry=True)
         call_args = hass.config_entries.async_update_entry.call_args
         assert call_args[1]["options"]["enabled"] is False
 
@@ -685,7 +809,7 @@ class TestTeardownCoreGa:
         )
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry, remove_entry=True)
         assert entry.runtime_data is None
 
     async def test_teardown_handles_route_removal_failure(self) -> None:
@@ -706,7 +830,7 @@ class TestTeardownCoreGa:
         )
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry, remove_entry=True)
 
     async def test_teardown_without_google_config(self) -> None:
         """Runtime data can exist without a google_config key."""
@@ -717,8 +841,153 @@ class TestTeardownCoreGa:
             }
         )
         hass.config_entries.async_update_entry = MagicMock()
-        await _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry, remove_entry=True)
         assert entry.runtime_data is None
+
+    async def test_unload_keeps_core_entry_and_does_not_deinit(self) -> None:
+        """remove_entry=False (plain unload) leaves the core entry untouched."""
+        hass = MagicMock(spec=HomeAssistant)
+        gc = FakeGoogleConfig()
+        gc.async_deinitialize = MagicMock()  # type: ignore[method-assign]
+        mock_route = MagicMock()
+        hass.http.app.router._routes = [mock_route]
+        hass.config_entries.async_update_entry = MagicMock()
+
+        entry = mock_config_entry(
+            runtime_data={
+                "google_config": gc,
+                "registered_routes": [mock_route],
+            }
+        )
+        entry.options["enabled"] = True
+
+        await _teardown_core_ga(hass, entry, remove_entry=False)
+
+        # Pointer dropped, but no destructive teardown happened.
+        assert entry.runtime_data is None
+        gc.async_deinitialize.assert_not_called()
+        assert mock_route in hass.http.app.router._routes
+        hass.config_entries.async_update_entry.assert_not_called()
+
+
+# =============================================================================
+# _find_core_entry / _reconcile_core_ga_entries
+# =============================================================================
+
+
+class TestFindCoreEntry:
+    """Tests for _find_core_entry."""
+
+    def test_finds_matching_core_entry(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        our = mock_config_entry(project_id="proj-a")
+        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
+        hass.config_entries.async_entries.return_value = [core]
+
+        assert _find_core_entry(hass, our) is core
+
+    def test_returns_none_when_no_match(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        our = mock_config_entry(project_id="proj-a")
+        other = mock_config_entry(project_id="proj-b", entry_id="core-b")
+        hass.config_entries.async_entries.return_value = [other]
+
+        assert _find_core_entry(hass, our) is None
+
+    def test_returns_none_when_empty(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        our = mock_config_entry(project_id="proj-a")
+        hass.config_entries.async_entries.return_value = []
+
+        assert _find_core_entry(hass, our) is None
+
+
+class TestReconcileCoreGaEntries:
+    """Tests for _reconcile_core_ga_entries."""
+
+    async def test_seeds_data_config_from_enabled_entry(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        our = mock_config_entry(project_id="proj-a", options={"enabled": True})
+        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
+
+        def _entries(domain: str) -> list[MagicMock]:
+            return [our] if domain == DOMAIN else [core]
+
+        hass.config_entries.async_entries.side_effect = _entries
+
+        await _reconcile_core_ga_entries(hass)
+
+        assert CORE_GA_DATA_CONFIG in hass.data[CORE_GA_DOMAIN]
+        assert hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG][CONF_PROJECT_ID] == (
+            "proj-a"
+        )
+
+    async def test_keeps_matching_core_entry(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        our = mock_config_entry(project_id="proj-a", options={"enabled": True})
+        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
+
+        def _entries(domain: str) -> list[MagicMock]:
+            return [our] if domain == DOMAIN else [core]
+
+        hass.config_entries.async_entries.side_effect = _entries
+        removed: list[str] = []
+
+        async def _remove(entry_id: str) -> None:
+            removed.append(entry_id)
+
+        hass.config_entries.async_remove.side_effect = _remove
+
+        await _reconcile_core_ga_entries(hass)
+
+        assert removed == []  # matching entry preserved
+
+    async def test_prunes_orphan_and_duplicate_core_entries(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        our = mock_config_entry(project_id="proj-a", options={"enabled": True})
+        keep = mock_config_entry(project_id="proj-a", entry_id="core-keep")
+        dup = mock_config_entry(project_id="proj-a", entry_id="core-dup")
+        orphan = mock_config_entry(project_id="proj-z", entry_id="core-orphan")
+
+        def _entries(domain: str) -> list[MagicMock]:
+            return [our] if domain == DOMAIN else [keep, dup, orphan]
+
+        hass.config_entries.async_entries.side_effect = _entries
+        removed: list[str] = []
+
+        async def _remove(entry_id: str) -> None:
+            removed.append(entry_id)
+
+        hass.config_entries.async_remove.side_effect = _remove
+
+        await _reconcile_core_ga_entries(hass)
+
+        assert "core-keep" not in removed
+        assert set(removed) == {"core-dup", "core-orphan"}
+
+    async def test_prunes_core_entry_for_disabled_project(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        our = mock_config_entry(project_id="proj-a", options={"enabled": False})
+        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
+
+        def _entries(domain: str) -> list[MagicMock]:
+            return [our] if domain == DOMAIN else [core]
+
+        hass.config_entries.async_entries.side_effect = _entries
+        removed: list[str] = []
+
+        async def _remove(entry_id: str) -> None:
+            removed.append(entry_id)
+
+        hass.config_entries.async_remove.side_effect = _remove
+
+        await _reconcile_core_ga_entries(hass)
+
+        assert removed == ["core-a"]  # disabled => core entry pruned
 
 
 # =============================================================================

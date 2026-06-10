@@ -49,8 +49,14 @@ _Avoid_: wrapper, proxy
 **Setup-phase re-trigger**:
 The mechanism by which this integration activates core GA after it has returned from
 `async_setup()` as a no-op. Stores the config in `hass.data["google_assistant"]`,
-constructs a fake `ConfigEntry` for the `google_assistant` domain via `SimpleNamespace`,
-and directly calls core GA's `async_setup_entry()`. Avoids load-order issues and manifest patching.
+then registers a real `ConfigEntry` for the `google_assistant` domain via
+`hass.config_entries.async_add()`. `async_add()` **both registers and sets up** the
+entry (it awaits `async_setup` internally) and persists it — so we must NOT also call
+core GA's `async_setup_entry()` ourselves (doing both caused duplicate webhook
+registration and "already been setup" errors). A real registered entry (vs the old
+`SimpleNamespace` fake) is required so the device registry can link devices to it.
+The entry persists across restarts and is reused via `_find_core_entry()` rather than
+recreated each boot, which keeps device-registry links stable.
 
 **WebSocket bridge**:
 WS commands (`google_assistant_manual/get_config`, `google_assistant_manual/update_config`,
@@ -58,16 +64,22 @@ WS commands (`google_assistant_manual/get_config`, `google_assistant_manual/upda
 that the assistant card uses to read/write settings. These wrap `ConfigEntry.options`
 updates. On `update_config`, live property patches on `GoogleConfig` are triggered
 (for `report_state` enable/disable) without requiring a full ConfigEntry reload.
-On `enable`/`disable`, the core GA ConfigEntry is loaded/unloaded entirely — matching
-the `google_enabled` toggle behavior of the cloud card.
+On `enable`, the core GA ConfigEntry is created/loaded; on `disable`, `_teardown_core_ga(..., remove_entry=True)` removes it entirely — matching
+the `google_enabled` toggle behavior of the cloud card. A plain unload/reload of our
+entry (HA shutdown, reload) calls `_teardown_core_ga(..., remove_entry=False)`, which
+leaves the persisted, still-loaded core entry intact and only drops our runtime pointer
+(core GA has **no** `async_unload_entry`, so we never try to unload it on reload).
 
-**Core GA entry cleanup**:
-When our integration loads, `_cleanup_core_ga_entries()` removes ALL existing
-`google_assistant` domain ConfigEntries (not just YAML ones) before our config
-entries are set up. This prevents stale entries from crashing with `KeyError`
-when HA auto-sets them up (the core GA expects `hass.data["google_assistant"]`
-to be pre-populated). `hass.data["google_assistant"]` is also initialised as an
-empty dict early in `async_setup()` as a safety net.
+**Core GA entry reconciliation**:
+When our integration loads, `_reconcile_core_ga_entries()` runs in `async_setup()`. It
+does NOT remove the managed core entry (that carries device-registry links). Instead it
+(1) seeds `hass.data["google_assistant"][DATA_CONFIG]` from our config entry so HA's
+boot-time auto-setup of the persisted core entry doesn't crash with
+`KeyError: 'google_assistant'`, and (2) prunes orphan/duplicate core entries left by
+older versions (keeps one per enabled project). `hass.data["google_assistant"]` is also
+initialised as an empty dict early in `async_setup()` as a safety net. If the boot
+auto-setup still loses the race for `DATA_CONFIG`, `_setup_core_ga()` self-heals by
+reloading the existing core entry once our config is present.
 
 > "google_assistant" can mean the core HA component, the Google cloud platform, or
 > the Nabu Casa Cloud integration — always use **core GA** for the HA component.
@@ -82,7 +94,7 @@ Two-layer monkey-patching approach. Neither layer modifies core HA files on disk
 
 On `async_setup()`:
 1. Initiálises `hass.data["google_assistant"]` as an empty dict (safety for stale entries).
-2. Removes all existing core GA ConfigEntries via `_cleanup_core_ga_entries()`.
+2. Reconciles core GA ConfigEntries via `_reconcile_core_ga_entries()`: seeds `DATA_CONFIG` from our entry (prevents boot `KeyError`) and prunes orphan/duplicate core entries — but keeps the managed one.
 3. Patches `KNOWN_ASSISTANTS` tuple in `homeassistant.components.homeassistant.exposed_entities` to include `"google_assistant_manual"`.
 4. Walks the Voluptuous schemas for three WebSocket commands and injects the new assistant ID into any `vol.In` validator that contains `"conversation"`.
 5. Registers static HTTP paths to serve `frontend.js` and `assets/icon.png`.
@@ -92,10 +104,11 @@ On `async_setup()`:
 On `async_setup_entry()`:
 1. Builds config dict from `entry.data` + `entry.options`.
 2. Sets `hass.data["google_assistant"]["config"]`.
-3. Imports and calls core GA's `async_setup_entry` with a `SimpleNamespace`-based fake entry.
-4. Stores `GoogleConfig` reference in `entry.runtime_data`.
+3. Reuses the existing core GA entry (`_find_core_entry`) if present — setting it up only if not already loaded — otherwise registers a fresh one via `hass.config_entries.async_add()` (which also sets it up). Never calls core GA's `async_setup_entry` directly (that would double-set-up).
+4. Stores `GoogleConfig` reference (from `core_entry.runtime_data`) in `entry.runtime_data`.
 5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
-6. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
+6. Monkey-patches `GoogleConfig.should_expose` to delegate to `async_should_expose(hass, "google_assistant_manual", entity_id)` — bridging the core config-entry path (which otherwise uses the legacy YAML `expose_by_default`/`entity_config` model) to the modern `exposed_entities` registry the UI writes to. Without this, SYNC returns zero devices ("Account linked, but no devices found").
+7. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
 
 **Patched WS commands (entity exposure):**
 - `homeassistant/expose_entity` — set per-entity exposure
@@ -159,7 +172,7 @@ All settings rows hidden by default. State fetched via `get_config` WS on mount.
 - The **ConfigEntry** bridges to **core GA** via setup-phase re-trigger, populating `hass.data["google_assistant"]` and calling `async_setup_entry`.
 - The **assistant card** reads/writes settings through the **WebSocket bridge**, which updates the **ConfigEntry** and triggers live patches on **core GA**'s `GoogleConfig` instance.
 - The assistant card's **global toggle** enables/disables core GA entirely via `enable`/`disable` WS commands — unloading the core GA tears down the webhook and stops `report_state`; re-enabling re-runs setup-phase re-trigger.
-- Entity exposure is handled by core's `KNOWN_ASSISTANTS` (patched at startup) and the per-entity expose page (patched by `frontend.js`).
+- Entity exposure is handled by core's `KNOWN_ASSISTANTS` (patched at startup), the per-entity expose page (patched by `frontend.js`), and the `GoogleConfig.should_expose` monkey-patch that routes core GA's exposure decisions to the `exposed_entities` registry under our assistant ID. The expose page writes exposures into that registry; `should_expose` reads them back at SYNC time, so UI changes take effect without a resync.
 
 ## Data Flow
 
@@ -175,12 +188,13 @@ User adds integration via UI:
   → config_flow: project_id → service_account (JSON textarea)
     → ConfigEntry created for domain "google_assistant_manual"
       → async_setup_entry() fires:
-        1. Neutralises YAML-based core GA ConfigEntries (source == "import")
-        2. Populates hass.data["google_assistant"]["config"]
-        3. Constructs fake ConfigEntry for "google_assistant" domain
-        4. Calls core GA's async_setup_entry()
-        5. Patches GoogleConfig.should_report_state → entry.options
-        6. Patches GoogleConfig.secure_devices_pin → entry.options
+        1. Populates hass.data["google_assistant"]["config"]
+        2. Reuses existing core GA entry (_find_core_entry) or registers a fresh
+           one via async_add() — which also sets it up (no manual second setup)
+        3. Reads GoogleConfig from core_entry.runtime_data
+        4. Patches GoogleConfig.should_report_state → entry.options
+        5. Patches GoogleConfig.secure_devices_pin → entry.options
+        6. Patches GoogleConfig.should_expose → async_should_expose(hass, ASSISTANT_ID, entity_id)
         7. Registers WS commands (get_config/update_config/enable/disable)
 
 Browser loads HA frontend
@@ -204,8 +218,9 @@ User visits voice assistants config page
 
 User toggles global enable/disable in card header:
   → JS calls google_assistant_manual/enable or /disable
-  → enable: re-runs setup-phase re-trigger (steps 1-5 above)
-  → disable: unloads GoogleConfig, tears down webhook/report_state
+  → enable: re-runs setup-phase re-trigger (reuses or creates the core entry)
+  → disable: _teardown_core_ga(remove_entry=True) — deinits GoogleConfig, removes
+             HTTP routes, and removes the core GA config entry
 
 User changes settings in card (when enabled):
   → JS calls google_assistant_manual/update_config
@@ -330,7 +345,7 @@ npm install
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
 | `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
 | `npm run fix` | Auto-fix all: `eslint --fix` + `ruff check --fix` + `ruff format` |
-| `npm test` | Run all tests: `vitest run` (17 TS tests) + `python -m pytest tests/ -q` (139 Python tests) |
+| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (152 Python tests) |
 
 ### Testing
 
@@ -338,20 +353,20 @@ Two test frameworks serve different parts of the codebase:
 
 **Vitest** (`vitest.config.ts`) — TypeScript tests:
 - DOM environment (via `@vitest/environment-dom` / `jsdom`)
-- 17 tests in `tests/frontend.test.ts`
+- 18 tests in `tests/frontend.test.ts`
 - Covers patch logic, card building, DOM manipulation, and WebSocket interactions
 - Runs as `vitest run` (single shot, no watch mode)
 
 **pytest** (`pytest.ini`) — Python tests:
-- 139 tests across 5 files in `tests/`
+- 152 tests across 5 files in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()` — build `ConfigEntry`-like objects for all test scenarios
-  - `FakeGoogleConfig` — stand-in for core GA's `GoogleConfig` with `should_report_state` and `secure_devices_pin` properties
+  - `FakeGoogleConfig` — stand-in for core GA's `GoogleConfig` with `should_report_state` and `secure_devices_pin` properties and a `should_expose` method
   - `mock_ws_connection()` — fake WebSocket connection with `send_result` / `send_error` tracking
   - `reset_version_cache`, `reset_original_props_cache` — autouse fixtures to prevent test pollution
 - Test files:
-  - `test_init.py` — `_build_core_config`, `_make_core_entry`, `_safe_get_entry`, WS schemas, `_add_assistant_to_schema`, `_patch_google_config_properties`, `_teardown_core_ga`, `_patch_core_assistants`
+  - `test_init.py` — `_build_core_config`, `_make_core_entry`, `_find_core_entry`, `_reconcile_core_ga_entries`, `_safe_get_entry`, WS schemas, `_add_assistant_to_schema`, `_patch_google_config_properties`, `_teardown_core_ga` (unload vs disable), `_patch_core_assistants`
   - `test_config_flow.py` — validation, `_parse_service_account_json`, `_is_valid_project_id`, flow steps
   - `test_const.py` — constant values match expectations and don't drift between Python and JS
   - `test_frontend.py` — HTTP path registration, asset serving
