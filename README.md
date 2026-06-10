@@ -21,7 +21,6 @@ It's recommended to have the manual `google_assistant` setup working via YAML fi
 
 ## Features
 
-- **No cloud subscription** — uses your own Google Cloud project
 - **Full UI configuration** — project ID, service account, report state, PIN, all configurable in the UI
 - **Google Assistant card** — appears alongside cloud assistants in the voice assistants panel
 - **Entity exposure** — expose devices to Google just like with Nabu Casa Cloud
@@ -42,11 +41,12 @@ It's recommended to have the manual `google_assistant` setup working via YAML fi
 ### HACS (recommended)
 
 1. Open HACS in Home Assistant
-2. Add this repository as a custom repository:
-   - URL: `https://github.com/edmogeor/hass-ga-manual-ui`
-   - Category: **Integration**
-3. Search for "Google Assistant (Manual)" and install it
-4. Restart Home Assistant
+2. Click **⋮ (menu)** → **Custom repositories**
+3. Paste the repository URL: `https://github.com/edmogeor/hass-ga-manual-ui`
+4. Set the category to **Integration** and click **Add**
+5. Click **+ Explore & Download Repositories** (bottom right)
+6. Search for "Google Assistant (Manual)" and install it
+7. Restart Home Assistant
 
 ### Manual
 
