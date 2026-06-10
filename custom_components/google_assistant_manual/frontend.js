@@ -30,7 +30,7 @@
       const hass = getHass();
       if (!hass || !hass.callService) return;
       hass.callService("system_log", "write", {
-        message: "[GA Manual frontend] " + message,
+        message,
         level: level === "warn" ? "warning" : level,
         logger: "google_assistant_manual.frontend"
       });
@@ -66,7 +66,7 @@
   var _bannerForwarded = false;
   function _banner(message) {
     try {
-      console.info("[GA Manual] " + message);
+      console.info(message);
     } catch {
     }
     if (!_bannerForwarded) {

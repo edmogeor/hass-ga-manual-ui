@@ -131,8 +131,9 @@ function _forwardToHaLog(level: "info" | "warn" | "error", message: string): voi
   try {
     const hass = getHass();
     if (!hass || !hass.callService) return;
+    // The `logger` already namespaces this in the HA logs, so no message prefix.
     hass.callService("system_log", "write", {
-      message: "[GA Manual frontend] " + message,
+      message,
       level: level === "warn" ? "warning" : level,
       logger: "google_assistant_manual.frontend",
     });
@@ -166,7 +167,8 @@ function _error(msg: string, data?: unknown): void { _log("error", msg, data); }
 let _bannerForwarded = false;
 function _banner(message: string): void {
   try {
-    console.info("[GA Manual] " + message);
+    // No "[GA Manual]" prefix — this is the user-facing message.
+    console.info(message);
   } catch {
     /* console might be unavailable */
   }
