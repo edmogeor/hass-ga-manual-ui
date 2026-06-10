@@ -1,6 +1,6 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/edmogeor/hass-ga-manual-ui/master/icon.png" width="140" alt="Google Assistant (Manual) Logo"/>
-  <h1>Google Assistant (Manual)</h1>
+  <img src="https://raw.githubusercontent.com/edmogeor/hass-ga-manual-ui/master/icon.png" width="140" alt="Assistant UI for Google Assistant Manual Setup"/>
+  <h1>Assistant UI for Google Assistant (Manual Setup)</h1>
   <p>
     <a href="https://github.com/edmogeor/hass-ga-manual-ui/actions/workflows/ci.yml">
       <img src="https://github.com/edmogeor/hass-ga-manual-ui/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI"/>
