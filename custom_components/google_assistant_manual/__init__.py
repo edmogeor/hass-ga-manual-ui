@@ -270,11 +270,19 @@ async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
         except Exception as exc:
             _LOGGER.warning("Could not remove core GA entry on removal: %s", exc)
 
-    remaining = hass.config_entries.async_entries(DOMAIN)
-    if len(remaining) > 1:
+    # Core removes the entry from the registry before invoking this hook, so
+    # exclude it explicitly rather than relying on that ordering. Exposure data
+    # is keyed by the shared ASSISTANT_ID, so any surviving entry means we must
+    # not purge it.
+    remaining = [
+        e
+        for e in hass.config_entries.async_entries(DOMAIN)
+        if e.entry_id != entry.entry_id
+    ]
+    if remaining:
         _LOGGER.debug(
             "Skipping exposure cleanup: %d other entries remain for domain",
-            len(remaining) - 1,
+            len(remaining),
         )
         return
 
