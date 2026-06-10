@@ -985,10 +985,6 @@ def _safe_get_entry(
 def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Register WebSocket command handlers for the assistant card."""
 
-    # -----------------------------------------------------------------------
-    # get_config
-    # -----------------------------------------------------------------------
-
     @callback
     @websocket_api.require_admin
     @websocket_api.websocket_command(
@@ -1036,10 +1032,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 "internal_error",
                 f"Failed to read config: {exc}. Check Home Assistant logs for details.",
             )
-
-    # -----------------------------------------------------------------------
-    # update_config
-    # -----------------------------------------------------------------------
 
     @callback
     @websocket_api.require_admin
@@ -1126,10 +1118,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 f"Failed to update config: {exc}. Check Home Assistant logs for details.",
             )
 
-    # -----------------------------------------------------------------------
-    # enable
-    # -----------------------------------------------------------------------
-
     @callback
     @websocket_api.require_admin
     @websocket_api.websocket_command(
@@ -1187,10 +1175,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
         _hass.async_create_task(_enable())
 
-    # -----------------------------------------------------------------------
-    # disable
-    # -----------------------------------------------------------------------
-
     @callback
     @websocket_api.require_admin
     @websocket_api.websocket_command(
@@ -1237,10 +1221,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
         _hass.async_create_task(_disable())
 
-    # -----------------------------------------------------------------------
-    # get_entity — mirror cloud/google_assistant/entities/get
-    # -----------------------------------------------------------------------
-
     @callback
     @websocket_api.require_admin
     @websocket_api.websocket_command(
@@ -1254,7 +1234,10 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         connection: websocket_api.ActiveConnection,
         msg: dict[str, Any],
     ) -> None:
-        """Return Google traits / 2FA info for a single entity."""
+        """Return Google traits / 2FA info for a single entity.
+
+        Mirrors cloud's google_assistant/entities/get.
+        """
         entity_id: str = msg["entity_id"]
 
         google_config = _our_google_config(_hass)
@@ -1299,10 +1282,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.exception("Error in ws_get_entity for '%s'", entity_id)
             connection.send_error(msg["id"], "internal_error", str(exc))
 
-    # -----------------------------------------------------------------------
-    # update_entity — mirror cloud/google_assistant/entities/update
-    # -----------------------------------------------------------------------
-
     @callback
     @websocket_api.require_admin
     @websocket_api.websocket_command(
@@ -1317,7 +1296,10 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         connection: websocket_api.ActiveConnection,
         msg: dict[str, Any],
     ) -> None:
-        """Update per-entity Google config (disable_2fa) for our assistant."""
+        """Update per-entity Google config (disable_2fa) for our assistant.
+
+        Mirrors cloud's google_assistant/entities/update.
+        """
         entity_id: str = msg["entity_id"]
         try:
             from homeassistant.components.homeassistant import exposed_entities as ee
@@ -1338,7 +1320,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.exception("Error in ws_update_entity for '%s'", entity_id)
             connection.send_error(msg["id"], "internal_error", str(exc))
 
-    # Register all commands
     commands = [
         ("ws_get_config", ws_get_config),
         ("ws_update_config", ws_update_config),

@@ -1063,10 +1063,8 @@ function buildCard(): HTMLElement | null {
       _toggleIntegration(cfg, card, globalSwitch, settingsRows);
     });
 
-    // Default: hidden until state is fetched
+    // Hidden until the initial config state is fetched.
     _setRowsVisible(settingsRows, false);
-
-    // Fetch initial config state
     refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
 
     return card;
@@ -1565,7 +1563,6 @@ function init(): void {
     _error("patchCustomElements threw: " + (_errorMessage(e)));
   }
 
-  // Initial card injection
   try {
     injectIntoAllAssistantsElements();
   } catch (e) {
