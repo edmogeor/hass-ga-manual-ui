@@ -1,0 +1,57 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions: {}
+
+env:
+  COMPONENT_DIR: custom_components/hass_ga_manual_ui
+  ZIP_NAME: hass_ga_manual_ui.zip
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Build frontend bundle
+        run: npm run build
+
+      - name: Sync manifest version to release tag
+        shell: bash
+        run: |
+          version="${{ github.ref_name }}"
+          version="${version#v}"
+          tmp="$(mktemp)"
+          jq --arg v "$version" '.version = $v' "$COMPONENT_DIR/manifest.json" > "$tmp"
+          mv "$tmp" "$COMPONENT_DIR/manifest.json"
+          echo "manifest version set to $version"
+
+      - name: Create release ZIP
+        shell: bash
+        run: |
+          cd "$COMPONENT_DIR"
+          zip -r "$GITHUB_WORKSPACE/$ZIP_NAME" . -x '*.pyc' -x '__pycache__/*'
+
+      - name: Create release and attach ZIP
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          generate_release_notes: true
+          files: ${{ env.ZIP_NAME }}

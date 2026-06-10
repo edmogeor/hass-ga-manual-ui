@@ -5,6 +5,12 @@
     <a href="https://github.com/edmogeor/hass-ga-manual-ui/actions/workflows/ci.yml">
       <img src="https://github.com/edmogeor/hass-ga-manual-ui/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI"/>
     </a>
+    <a href="https://github.com/edmogeor/hass-ga-manual-ui/actions/workflows/validate.yml">
+      <img src="https://github.com/edmogeor/hass-ga-manual-ui/actions/workflows/validate.yml/badge.svg?branch=master" alt="Validate"/>
+    </a>
+    <a href="https://github.com/edmogeor/hass-ga-manual-ui/releases/latest">
+      <img src="https://img.shields.io/github/v/release/edmogeor/hass-ga-manual-ui" alt="Latest release"/>
+    </a>
     <a href="https://hacs.xyz">
       <img src="https://img.shields.io/badge/HACS-Custom-orange.svg" alt="HACS Custom"/>
     </a>
