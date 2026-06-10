@@ -719,22 +719,25 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
     if (!row) return;
 
     const info = el.__gaInfo;
-    const existing = row.querySelector<TogglableElement>("[data-ga-2fa]");
+    // Collect any previously-injected checkboxes (self-heal duplicates).
+    const existingAll = row.querySelectorAll<TogglableElement>("[data-ga-2fa]");
 
     // Only show for security devices that might require 2FA.
     if (!info || !info.might_2fa) {
-      if (existing) existing.remove();
+      existingAll.forEach((el2) => el2.remove());
       return;
     }
-    if (existing) {
-      existing.checked = !info.disable_2fa;
+    if (existingAll.length > 0) {
+      // Keep the first, drop any extras, sync its state.
+      for (let i = 1; i < existingAll.length; i++) existingAll[i].remove();
+      existingAll[0].checked = !info.disable_2fa;
       return;
     }
 
     const hass = el.hass || getHass();
     const cb = document.createElement("ha-checkbox") as unknown as TogglableElement;
     cb.setAttribute("slot", "supporting-text");
-    cb.dataset.ga2fa = "1";
+    cb.setAttribute("data-ga-2fa", "1");
     cb.checked = !info.disable_2fa;
     cb.textContent =
       (hass && hass.localize("ui.dialogs.voice-settings.ask_pin")) || "Ask for PIN";

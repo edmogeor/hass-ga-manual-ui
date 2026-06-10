@@ -492,19 +492,20 @@
       const row = _findOurAssistantRow(root);
       if (!row) return;
       const info = el.__gaInfo;
-      const existing = row.querySelector("[data-ga-2fa]");
+      const existingAll = row.querySelectorAll("[data-ga-2fa]");
       if (!info || !info.might_2fa) {
-        if (existing) existing.remove();
+        existingAll.forEach((el2) => el2.remove());
         return;
       }
-      if (existing) {
-        existing.checked = !info.disable_2fa;
+      if (existingAll.length > 0) {
+        for (let i = 1; i < existingAll.length; i++) existingAll[i].remove();
+        existingAll[0].checked = !info.disable_2fa;
         return;
       }
       const hass = el.hass || getHass();
       const cb = document.createElement("ha-checkbox");
       cb.setAttribute("slot", "supporting-text");
-      cb.dataset.ga2fa = "1";
+      cb.setAttribute("data-ga-2fa", "1");
       cb.checked = !info.disable_2fa;
       cb.textContent = hass && hass.localize("ui.dialogs.voice-settings.ask_pin") || "Ask for PIN";
       cb.addEventListener("change", () => _onAskPinChanged(el, cb));
