@@ -236,7 +236,7 @@ User changes settings in card (when enabled):
   → JS calls google_assistant_manual/update_config
   → Python handler:
     - Updates entry.options
-    - If report_state changed: calls GoogleConfig.async_enable/disable_report_state()
+    - If report_state changed: calls GoogleConfig.async_enable/disable_report_state() + async_schedule_google_sync_all() (willReportState is per-device, so Google must be re-synced)
     - If PIN changed: no action needed (live property patch)
 ```
 
@@ -355,7 +355,7 @@ npm install
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
 | `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
 | `npm run fix` | Auto-fix all: `eslint --fix` + `ruff check --fix` + `ruff format` |
-| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (155 Python tests) |
+| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (156 Python tests) |
 
 ### Testing
 
@@ -368,7 +368,7 @@ Two test frameworks serve different parts of the codebase:
 - Runs as `vitest run` (single shot, no watch mode)
 
 **pytest** (`pytest.ini`) — Python tests:
-- 155 tests across 5 files in `tests/`
+- 156 tests across 5 files in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()` — build `ConfigEntry`-like objects for all test scenarios

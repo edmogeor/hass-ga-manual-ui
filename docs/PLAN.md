@@ -185,7 +185,7 @@ User changes settings in card (when enabled)
   → JS calls 'google_assistant_manual/update_config'
   → Python handler:
     - Updates entry.options
-    - If report_state changed: calls GoogleConfig.async_enable/disable_report_state()
+    - If report_state changed: calls GoogleConfig.async_enable/disable_report_state() + async_schedule_google_sync_all() (willReportState is per-device → re-sync)
     - If PIN changed: no action needed (live property patch)
 ```
 

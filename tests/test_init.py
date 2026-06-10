@@ -458,11 +458,24 @@ class TestPatchGoogleConfigProperties:
         self, reset_original_props_cache: None
     ) -> None:
         entry = mock_config_entry()
+        entry.options["enabled"] = True
         entry.options[CONF_REPORT_STATE] = True
         gc = FakeGoogleConfig(report_state=False)
 
         _patch_google_config_properties(gc, entry)
         assert gc.should_report_state is True
+
+    def test_should_report_state_false_when_disabled(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """A soft-disabled integration reports no state even if the option is on."""
+        entry = mock_config_entry()
+        entry.options["enabled"] = False
+        entry.options[CONF_REPORT_STATE] = True
+        gc = FakeGoogleConfig(report_state=True)
+
+        _patch_google_config_properties(gc, entry)
+        assert gc.should_report_state is False
 
     def test_patches_should_report_state_false(
         self, reset_original_props_cache: None
@@ -556,6 +569,7 @@ class TestPatchGoogleConfigProperties:
     ) -> None:
         """The patched instance's class gets the property override."""
         entry = mock_config_entry()
+        entry.options["enabled"] = True
         entry.options[CONF_REPORT_STATE] = True
         gc = FakeGoogleConfig(report_state=False)
 

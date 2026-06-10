@@ -719,7 +719,11 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
     def _should_report_state(self: Any) -> bool:
         if self is google_config:
             options = entry.options
-            return bool(options.get(CONF_REPORT_STATE))
+            # A soft-disabled integration reports no state (mirrors cloud, which
+            # gates should_report_state on enabled).
+            return bool(options.get("enabled", True)) and bool(
+                options.get(CONF_REPORT_STATE)
+            )
         if orig_srs:
             return orig_srs(self)
         return False
@@ -1030,6 +1034,9 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                         _LOGGER.debug(
                             "Live-disabled report_state for project='%s'", project_id
                         )
+                    # willReportState is a per-device attribute in the SYNC
+                    # response, so re-sync to push the new value to Google.
+                    google_config.async_schedule_google_sync_all()
                 except Exception:
                     _LOGGER.exception(
                         "Failed to live-toggle report_state for project='%s'. "
