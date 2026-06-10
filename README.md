@@ -63,10 +63,6 @@ After installation, add the integration:
 
 The Google Assistant card will appear in **Settings → Voice assistants** alongside the cloud assistants.
 
-## Credits
-
-Uses the official [Home Assistant Google Assistant brand icon](https://brands.home-assistant.io/google_assistant/).
-
 ## License
 
 MIT
