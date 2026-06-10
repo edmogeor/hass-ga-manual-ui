@@ -197,6 +197,22 @@ function _invalidateEntryId(): void {
 }
 
 /**
+ * Run a WS call against the resolved entry_id; if it fails because the entry no
+ * longer exists (e.g. the integration was deleted and re-added), drop the
+ * cached id, re-resolve, and retry once.
+ */
+async function _withEntryRetry<T>(fn: (entryId: string) => Promise<T>): Promise<T> {
+  try {
+    return await fn(await getEntryId());
+  } catch (err: unknown) {
+    if (!_isEntryGoneError(err)) throw err;
+    _warn("Cached entry_id was stale; re-resolving and retrying");
+    _invalidateEntryId();
+    return await fn(await getEntryId());
+  }
+}
+
+/**
  * True when a WS error indicates the entry_id no longer exists — e.g. after the
  * integration was deleted and re-added (which assigns a new entry_id) while a
  * stale id was cached.
@@ -1385,62 +1401,83 @@ async function onReportStateToggle(e: Event): Promise<void> {
   const checked = (e.target as TogglableElement).checked;
 
   try {
-    const entryId = await getEntryId();
-    try {
-      await hass.callWS({
+    await _withEntryRetry((entryId) =>
+      hass.callWS({
         type: WS_UPDATE_CONFIG,
         entry_id: entryId,
         data: { report_state: checked },
-      });
-    } catch (err: unknown) {
-      const wsErr = err as WSError;
-      _error(
-        "Failed to update report_state: " +
-          (wsErr.message || wsErr.error || String(err)),
-      );
-      (e.target as TogglableElement).checked = !checked;
-      _showToast(
-        "Failed to " +
-          (checked ? "enable" : "disable") +
-          " state reporting. " +
-          "Try toggling the integration off and on, or check Home Assistant logs.",
-        true,
-      );
-    }
+      }),
+    );
   } catch (err: unknown) {
-    _error("onReportStateToggle entry resolution: " + (err as Error).message);
+    const wsErr = err as WSError;
+    _error(
+      "Failed to update report_state: " +
+        (wsErr.message || wsErr.error || String(err)),
+    );
     (e.target as TogglableElement).checked = !checked;
+    _showToast(
+      "Failed to " +
+        (checked ? "enable" : "disable") +
+        " state reporting. " +
+        "Try toggling the integration off and on, or check Home Assistant logs.",
+      true,
+    );
   }
 }
 
 function onPinChanged(e: Event): void {
   const hass = getHass();
   if (!hass) return;
-  const value = (e.target as TogglableElement).value;
+  const input = e.target as TogglableElement;
+  const value = input.value;
 
   if (_pinTimer) clearTimeout(_pinTimer);
   _pinTimer = setTimeout(() => {
-    _savePin(value);
+    _savePin(value, input);
   }, 500);
 }
 
-async function _savePin(value: string): Promise<void> {
+async function _restorePinValue(input: TogglableElement): Promise<void> {
+  const hass = getHass();
+  if (!hass) return;
+  try {
+    const entryId = await getEntryId();
+    const config = await hass.callWS<{ secure_devices_pin: string }>({
+      type: WS_GET_CONFIG,
+      entry_id: entryId,
+    });
+    input.value = config.secure_devices_pin || "";
+  } catch {
+    /* best-effort revert */
+  }
+}
+
+async function _savePin(value: string, input?: TogglableElement): Promise<void> {
   const hass = getHass();
   if (!hass) return;
 
   try {
-    const entryId = await getEntryId();
-    await hass.callWS({
-      type: WS_UPDATE_CONFIG,
-      entry_id: entryId,
-      data: { secure_devices_pin: value },
-    });
+    await _withEntryRetry((entryId) =>
+      hass.callWS({
+        type: WS_UPDATE_CONFIG,
+        entry_id: entryId,
+        data: { secure_devices_pin: value },
+      }),
+    );
   } catch (err: unknown) {
     const wsErr = err as WSError;
     _error(
       "Failed to update secure_devices_pin: " +
         (wsErr.message || wsErr.error || String(err)),
     );
+    _showToast(
+      (hass.localize("ui.panel.config.cloud.account.google.enter_pin_error") ||
+        "Unable to store the PIN.") +
+        " " +
+        (wsErr.message || wsErr.error || ""),
+      true,
+    );
+    if (input) _restorePinValue(input);
   }
 }
 

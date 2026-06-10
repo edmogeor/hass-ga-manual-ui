@@ -93,6 +93,16 @@
     _entryId = null;
     _entryIdPromise = null;
   }
+  async function _withEntryRetry(fn) {
+    try {
+      return await fn(await getEntryId());
+    } catch (err) {
+      if (!_isEntryGoneError(err)) throw err;
+      _warn("Cached entry_id was stale; re-resolving and retrying");
+      _invalidateEntryId();
+      return await fn(await getEntryId());
+    }
+  }
   function _isEntryGoneError(err) {
     const wsErr = err;
     if (wsErr && wsErr.code === "not_found") return true;
@@ -970,53 +980,69 @@
     if (!hass) return;
     const checked = e.target.checked;
     try {
-      const entryId = await getEntryId();
-      try {
-        await hass.callWS({
+      await _withEntryRetry(
+        (entryId) => hass.callWS({
           type: WS_UPDATE_CONFIG,
           entry_id: entryId,
           data: { report_state: checked }
-        });
-      } catch (err) {
-        const wsErr = err;
-        _error(
-          "Failed to update report_state: " + (wsErr.message || wsErr.error || String(err))
-        );
-        e.target.checked = !checked;
-        _showToast(
-          "Failed to " + (checked ? "enable" : "disable") + " state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
-          true
-        );
-      }
+        })
+      );
     } catch (err) {
-      _error("onReportStateToggle entry resolution: " + err.message);
+      const wsErr = err;
+      _error(
+        "Failed to update report_state: " + (wsErr.message || wsErr.error || String(err))
+      );
       e.target.checked = !checked;
+      _showToast(
+        "Failed to " + (checked ? "enable" : "disable") + " state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
+        true
+      );
     }
   }
   function onPinChanged(e) {
     const hass = getHass();
     if (!hass) return;
-    const value = e.target.value;
+    const input = e.target;
+    const value = input.value;
     if (_pinTimer) clearTimeout(_pinTimer);
     _pinTimer = setTimeout(() => {
-      _savePin(value);
+      _savePin(value, input);
     }, 500);
   }
-  async function _savePin(value) {
+  async function _restorePinValue(input) {
     const hass = getHass();
     if (!hass) return;
     try {
       const entryId = await getEntryId();
-      await hass.callWS({
-        type: WS_UPDATE_CONFIG,
-        entry_id: entryId,
-        data: { secure_devices_pin: value }
+      const config = await hass.callWS({
+        type: WS_GET_CONFIG,
+        entry_id: entryId
       });
+      input.value = config.secure_devices_pin || "";
+    } catch {
+    }
+  }
+  async function _savePin(value, input) {
+    const hass = getHass();
+    if (!hass) return;
+    try {
+      await _withEntryRetry(
+        (entryId) => hass.callWS({
+          type: WS_UPDATE_CONFIG,
+          entry_id: entryId,
+          data: { secure_devices_pin: value }
+        })
+      );
     } catch (err) {
       const wsErr = err;
       _error(
         "Failed to update secure_devices_pin: " + (wsErr.message || wsErr.error || String(err))
       );
+      _showToast(
+        (hass.localize("ui.panel.config.cloud.account.google.enter_pin_error") || "Unable to store the PIN.") + " " + (wsErr.message || wsErr.error || ""),
+        true
+      );
+      if (input) _restorePinValue(input);
     }
   }
   function init() {
