@@ -826,9 +826,7 @@
           reportStateSwitch.disabled = !config.enabled;
         }
         if (pinInput) {
-          if (config.secure_devices_pin) {
-            pinInput.value = config.secure_devices_pin;
-          }
+          pinInput.value = config.secure_devices_pin || "";
           pinInput.disabled = !config.enabled;
         }
         refreshExposeToggle(card);
@@ -977,8 +975,9 @@
       const exposedEntities = results[1].exposed_entities || {};
       let count = 0;
       try {
-        count = Object.values(exposedEntities).filter((s) => {
-          return s && s[ASSISTANT_ID];
+        const states = hass.states || {};
+        count = Object.entries(exposedEntities).filter(([entityId, s]) => {
+          return s && s[ASSISTANT_ID] && entityId in states;
         }).length;
       } catch (e) {
         _debug("Error counting exposed entities: " + _errorMessage(e));
@@ -1079,7 +1078,7 @@
   }
   function init() {
     _banner(
-      ASSISTANT_NAME + " is ready \u2014 manage it under Settings \u2192 Voice assistants (v0.1.0)."
+      ASSISTANT_NAME + " is ready \u2014 manage it under Settings \u2192 Voice assistants."
     );
     try {
       patchVoiceAssistants();

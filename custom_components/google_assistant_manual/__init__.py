@@ -101,7 +101,7 @@ def _entity_assistant_options(hass: HomeAssistant, entity_id: str) -> dict[str, 
 
         try:
             settings = async_get_entity_settings(hass, entity_id)
-        except (HomeAssistantError, KeyError):
+        except HomeAssistantError, KeyError:
             return {}
         return dict(settings.get(ASSISTANT_ID, {}))
     except Exception:
@@ -129,9 +129,7 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
         our_entries = []
 
     valid_project_ids = {
-        e.data.get(CONF_PROJECT_ID)
-        for e in our_entries
-        if _is_enabled(e)
+        e.data.get(CONF_PROJECT_ID) for e in our_entries if _is_enabled(e)
     }
 
     # 1. Seed DATA_CONFIG early so a boot-time auto-setup of the core entry
@@ -770,9 +768,7 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
         if self is google_config:
             # A soft-disabled integration reports no state (mirrors cloud, which
             # gates should_report_state on enabled).
-            return _is_enabled(entry) and bool(
-                entry.options.get(CONF_REPORT_STATE)
-            )
+            return _is_enabled(entry) and bool(entry.options.get(CONF_REPORT_STATE))
         if orig_srs:
             return orig_srs(self)
         return False

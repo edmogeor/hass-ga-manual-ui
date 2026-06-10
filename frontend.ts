@@ -16,6 +16,7 @@ interface HomeAssistant {
   ): void;
   callWS<T = unknown>(msg: Record<string, unknown>): Promise<T>;
   localize(key: string, args?: Record<string, number | string>): string;
+  states?: Record<string, unknown>;
 }
 
 interface LitLifecycle {
@@ -1214,9 +1215,7 @@ async function refreshCardState(
       }
 
       if (pinInput) {
-        if (config.secure_devices_pin) {
-          pinInput.value = config.secure_devices_pin;
-        }
+        pinInput.value = config.secure_devices_pin || "";
         pinInput.disabled = !config.enabled;
       }
 
@@ -1413,8 +1412,11 @@ function refreshExposeToggle(card: HTMLElement): void {
       const exposedEntities = results[1].exposed_entities || {};
       let count = 0;
       try {
-        count = Object.values(exposedEntities).filter((s) => {
-          return s && s[ASSISTANT_ID];
+        // Mirror HA's own count (cloud-google-pref): only entities that still
+        // exist in hass.states, so stale registry records don't inflate it.
+        const states = hass.states || {};
+        count = Object.entries(exposedEntities).filter(([entityId, s]) => {
+          return s && s[ASSISTANT_ID] && entityId in states;
         }).length;
       } catch (e) {
         _debug("Error counting exposed entities: " + (_errorMessage(e)));
@@ -1542,8 +1544,7 @@ async function _savePin(value: string, input?: TogglableElement): Promise<void> 
 
 function init(): void {
   _banner(
-    ASSISTANT_NAME +
-      " is ready — manage it under Settings → Voice assistants (v0.1.0).",
+    ASSISTANT_NAME + " is ready — manage it under Settings → Voice assistants.",
   );
 
   // Apply each patch independently — one failing does not block the rest
