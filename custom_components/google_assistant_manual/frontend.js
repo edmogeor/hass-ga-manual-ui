@@ -76,34 +76,33 @@
     );
     return _entryIdPromise;
   }
-  function _fetchEntryId() {
+  async function _fetchEntryId() {
     const hass = getHass();
     if (!hass) {
       const err = new Error(
         "Home Assistant not yet loaded. The Google Assistant (Manual) card will retry when the page finishes loading."
       );
       _warn(err.message);
-      return Promise.reject(err);
+      throw err;
     }
     _debug("Fetching entry_id via WS");
-    return hass.callWS({
-      type: WS_GET_ENTRY_ID
-    }).then(
-      (result) => {
-        if (!result || !result.entry_id) {
-          throw new Error(
-            "Server returned no entry_id. The integration must be added via Settings \u2192 Devices & Services \u2192 Add Integration first."
-          );
-        }
-        return result.entry_id;
-      },
-      (err) => {
-        _error(
-          "Failed to get entry_id from server: " + (err.message || err.error || err.code || String(err)) + ". Add the integration via Settings \u2192 Devices & Services \u2192 Add Integration \u2192 Google Assistant (Manual)."
+    try {
+      const result = await hass.callWS({
+        type: WS_GET_ENTRY_ID
+      });
+      if (!result || !result.entry_id) {
+        throw new Error(
+          "Server returned no entry_id. The integration must be added via Settings \u2192 Devices & Services \u2192 Add Integration first."
         );
-        throw err;
       }
-    );
+      return result.entry_id;
+    } catch (err) {
+      const wsErr = err;
+      _error(
+        "Failed to get entry_id from server: " + (wsErr.message || wsErr.error || wsErr.code || String(err)) + ". Add the integration via Settings \u2192 Devices & Services \u2192 Add Integration \u2192 Google Assistant (Manual)."
+      );
+      throw err;
+    }
   }
   function patchVoiceAssistants() {
     try {
@@ -595,45 +594,54 @@
       showCardOnSuccess: false
     }
   };
-  function _toggleIntegration(config, card, globalSwitch, settingsRows) {
-    getEntryId().then((entryId) => {
+  async function _toggleIntegration(config, card, globalSwitch, settingsRows) {
+    try {
+      const entryId = await getEntryId();
       const hass = getHass();
       if (!hass) {
         _warn("_toggleIntegration: Home Assistant not loaded");
         globalSwitch.checked = !config.showCardOnSuccess;
         return;
       }
-      _info(config.action.charAt(0).toUpperCase() + config.action.slice(1) + " Google Assistant for entry_id=" + entryId);
-      hass.callWS({ type: config.wsType, entry_id: entryId }).then(() => {
+      _info(
+        config.action.charAt(0).toUpperCase() + config.action.slice(1) + " Google Assistant for entry_id=" + entryId
+      );
+      try {
+        await hass.callWS({ type: config.wsType, entry_id: entryId });
         _info(config.successMsg);
         _gaManualEnabled = config.showCardOnSuccess;
         _refreshExposePage();
         _setRowsVisible(settingsRows, config.showCardOnSuccess);
         if (config.showCardOnSuccess) refreshExposeToggle(card);
-      }).catch((err) => {
-        _error(config.failMsg + " " + (err.message || err.error || err.code || String(err)));
+      } catch (err) {
+        const wsErr = err;
+        _error(
+          config.failMsg + " " + (wsErr.message || wsErr.error || wsErr.code || String(err))
+        );
         globalSwitch.checked = !config.showCardOnSuccess;
         _showToast(
-          config.failMsg + " " + (err.message || err.error || "Check Home Assistant logs for details.") + "\n\n" + config.failHint,
+          config.failMsg + " " + (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") + "\n\n" + config.failHint,
           true
         );
-      });
-    }).catch((err) => {
+      }
+    } catch (err) {
       _error("_toggleIntegration(" + config.action + "): " + err.message);
       globalSwitch.checked = !config.showCardOnSuccess;
-    });
+    }
   }
-  function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert) {
-    getEntryId().then((entryId) => {
+  async function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert) {
+    try {
+      const entryId = await getEntryId();
       const hass = getHass();
       if (!hass) {
         _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
         return;
       }
-      hass.callWS({
-        type: WS_GET_CONFIG,
-        entry_id: entryId
-      }).then((config) => {
+      try {
+        const config = await hass.callWS({
+          type: WS_GET_CONFIG,
+          entry_id: entryId
+        });
         _debug(
           "refreshCardState received config: enabled=" + config.enabled + " report_state=" + config.report_state
         );
@@ -655,14 +663,15 @@
           pinInput.disabled = !config.enabled;
         }
         refreshExposeToggle(card);
-      }).catch((err) => {
+      } catch (err) {
+        const wsErr = err;
         _error(
-          "Failed to fetch card state: " + (err.message || err.error || err.code || String(err))
+          "Failed to fetch card state: " + (wsErr.message || wsErr.error || wsErr.code || String(err))
         );
-      });
-    }).catch((err) => {
+      }
+    } catch (err) {
       _error("refreshCardState: " + err.message);
-    });
+    }
   }
   function injectCardInto(el) {
     if (!el) return;
@@ -832,29 +841,33 @@
       e.target.checked = !checked;
     });
   }
-  function onReportStateToggle(e) {
+  async function onReportStateToggle(e) {
     const hass = getHass();
     if (!hass) return;
     const checked = e.target.checked;
-    getEntryId().then((entryId) => {
-      hass.callWS({
-        type: WS_UPDATE_CONFIG,
-        entry_id: entryId,
-        data: { report_state: checked }
-      }).catch((err) => {
+    try {
+      const entryId = await getEntryId();
+      try {
+        await hass.callWS({
+          type: WS_UPDATE_CONFIG,
+          entry_id: entryId,
+          data: { report_state: checked }
+        });
+      } catch (err) {
+        const wsErr = err;
         _error(
-          "Failed to update report_state: " + (err.message || err.error || String(err))
+          "Failed to update report_state: " + (wsErr.message || wsErr.error || String(err))
         );
         e.target.checked = !checked;
         _showToast(
           "Failed to " + (checked ? "enable" : "disable") + " state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
           true
         );
-      });
-    }).catch((err) => {
+      }
+    } catch (err) {
       _error("onReportStateToggle entry resolution: " + err.message);
       e.target.checked = !checked;
-    });
+    }
   }
   function onPinChanged(e) {
     const hass = getHass();
@@ -862,20 +875,25 @@
     const value = e.target.value;
     if (_pinTimer) clearTimeout(_pinTimer);
     _pinTimer = setTimeout(() => {
-      getEntryId().then((entryId) => {
-        hass.callWS({
-          type: WS_UPDATE_CONFIG,
-          entry_id: entryId,
-          data: { secure_devices_pin: value }
-        }).catch((err) => {
-          _error(
-            "Failed to update secure_devices_pin: " + (err.message || err.error || String(err))
-          );
-        });
-      }).catch((err) => {
-        _error("onPinChanged entry resolution: " + err.message);
-      });
+      _savePin(value);
     }, 500);
+  }
+  async function _savePin(value) {
+    const hass = getHass();
+    if (!hass) return;
+    try {
+      const entryId = await getEntryId();
+      await hass.callWS({
+        type: WS_UPDATE_CONFIG,
+        entry_id: entryId,
+        data: { secure_devices_pin: value }
+      });
+    } catch (err) {
+      const wsErr = err;
+      _error(
+        "Failed to update secure_devices_pin: " + (wsErr.message || wsErr.error || String(err))
+      );
+    }
   }
   function init() {
     _info("Companion JS loaded, applying patches (version 0.1.0)");

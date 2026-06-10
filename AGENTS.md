@@ -264,9 +264,19 @@ Integration files live in `custom_components/google_assistant_manual/` (standard
 │       │   └── icon.png             # Google Assistant brand icon
 │       └── translations/
 │           └── en.json              # Generated English translations
-├── frontend.ts                      # TypeScript source (~1370 lines, strict mode)
+├── tests/                           # Test suites (colocated at repo root)
+│   ├── __init__.py                  # Python test package (imports custom_components)
+│   ├── conftest.py                  # Shared fixtures (mock_config_entry, FakeGoogleConfig, etc.)
+│   ├── test_init.py                 # Tests for __init__.py (bridge, WS, schema walker, teardown)
+│   ├── test_config_flow.py          # Tests for config_flow.py (validation, flow steps)
+│   ├── test_const.py                # Tests for const.py (constant values, no drift)
+│   ├── test_frontend.py             # Tests for frontend.py (static path registration)
+│   └── frontend.test.ts             # Tests for frontend.ts (patch logic, card building, WS)
+├── frontend.ts                      # TypeScript source (~1340 lines, strict mode)
 ├── package.json                     # npm scripts and dev dependencies
 ├── tsconfig.json                    # TypeScript strict config, ES2020/DOM target
+├── vitest.config.ts                 # Vitest runner config (DOM environment)
+├── pytest.ini                       # Pytest config (asyncio mode, markers)
 ├── eslint.config.mjs                # ESLint flat config (typescript-eslint recommended)
 ├── pyrefly.toml                     # Python type checker config (strict preset)
 ├── ruff.toml                        # Python linter + formatter config
@@ -317,8 +327,34 @@ npm install
 | `npm run build:dist` | Build JS + create `build/custom_components/google_assistant_manual/` with only runtime files |
 | `npm run watch` | Rebuild `frontend.js` on every `.ts` change |
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
-| `npm run lint` | Full lint: `eslint frontend.ts` + `ruff check .` + `ruff format --check .` |
+| `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
 | `npm run fix` | Auto-fix all: `eslint --fix` + `ruff check --fix` + `ruff format` |
+| `npm test` | Run all tests: `vitest run` (17 TS tests) + `python -m pytest tests/ -q` (139 Python tests) |
+
+### Testing
+
+Two test frameworks serve different parts of the codebase:
+
+**Vitest** (`vitest.config.ts`) — TypeScript tests:
+- DOM environment (via `@vitest/environment-dom` / `jsdom`)
+- 17 tests in `tests/frontend.test.ts`
+- Covers patch logic, card building, DOM manipulation, and WebSocket interactions
+- Runs as `vitest run` (single shot, no watch mode)
+
+**pytest** (`pytest.ini`) — Python tests:
+- 139 tests across 5 files in `tests/`
+- Async-compatible via `pytest-asyncio` (auto mode)
+- Shared fixtures in `tests/conftest.py`:
+  - `mock_config_entry()` / `mock_config_entry_minimal()` — build `ConfigEntry`-like objects for all test scenarios
+  - `FakeGoogleConfig` — stand-in for core GA's `GoogleConfig` with `should_report_state` and `secure_devices_pin` properties
+  - `mock_ws_connection()` — fake WebSocket connection with `send_result` / `send_error` tracking
+  - `reset_version_cache`, `reset_original_props_cache` — autouse fixtures to prevent test pollution
+- Test files:
+  - `test_init.py` — `_build_core_config`, `_make_core_entry`, `_safe_get_entry`, WS schemas, `_add_assistant_to_schema`, `_patch_google_config_properties`, `_teardown_core_ga`, `_patch_core_assistants`
+  - `test_config_flow.py` — validation, `_parse_service_account_json`, `_is_valid_project_id`, flow steps
+  - `test_const.py` — constant values match expectations and don't drift between Python and JS
+  - `test_frontend.py` — HTTP path registration, asset serving
+  - `frontend.test.ts` — JS patch functions, card DOM structure, WS client calls
 
 ### Tooling
 
@@ -352,9 +388,10 @@ npm install
 npm run lint    # catch style/format issues
 npm run check   # catch type errors
 npm run build   # verify JS compiles
+npm test        # verify tests pass
 ```
 
-Both `lint` and `check` must pass with zero errors before committing.
+`lint`, `check`, `build`, and `test` must all pass with zero errors before committing.
 
 ## Build / Deployment
 

@@ -154,7 +154,7 @@ function getEntryId(): Promise<string> {
   return _entryIdPromise;
 }
 
-function _fetchEntryId(): Promise<string> {
+async function _fetchEntryId(): Promise<string> {
   const hass = getHass();
   if (!hass) {
     const err = new Error(
@@ -162,35 +162,32 @@ function _fetchEntryId(): Promise<string> {
         "will retry when the page finishes loading.",
     );
     _warn(err.message);
-    return Promise.reject(err);
+    throw err;
   }
 
   _debug("Fetching entry_id via WS");
-  return hass
-    .callWS<{ entry_id?: string }>({
-      type:   WS_GET_ENTRY_ID,
-    })
-    .then(
-      (result) => {
-        if (!result || !result.entry_id) {
-          throw new Error(
-            "Server returned no entry_id. The integration must be added via " +
-              "Settings → Devices & Services → Add Integration first.",
-          );
-        }
-        return result.entry_id;
-      },
-        (err: WSError) => {
-          _error(
-            "Failed to get entry_id from server: " +
-              (err.message || err.error || err.code || String(err)) +
-              ". " +
-              "Add the integration via Settings → Devices & Services → " +
-              "Add Integration → Google Assistant (Manual).",
-          );
-          throw err;
-      },
+  try {
+    const result = await hass.callWS<{ entry_id?: string }>({
+      type: WS_GET_ENTRY_ID,
+    });
+    if (!result || !result.entry_id) {
+      throw new Error(
+        "Server returned no entry_id. The integration must be added via " +
+          "Settings → Devices & Services → Add Integration first.",
+      );
+    }
+    return result.entry_id;
+  } catch (err: unknown) {
+    const wsErr = err as WSError;
+    _error(
+      "Failed to get entry_id from server: " +
+        (wsErr.message || wsErr.error || wsErr.code || String(err)) +
+        ". " +
+        "Add the integration via Settings → Devices & Services → " +
+        "Add Integration → Google Assistant (Manual).",
     );
+    throw err;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -852,125 +849,125 @@ const _TOGGLE_CONFIGS: Record<string, ToggleConfig> = {
   },
 };
 
-function _toggleIntegration(
+async function _toggleIntegration(
   config: ToggleConfig,
   card: HTMLElement,
   globalSwitch: HTMLElement,
   settingsRows: HTMLElement[],
-): void {
-  getEntryId()
-    .then((entryId) => {
-      const hass = getHass();
-      if (!hass) {
-        _warn("_toggleIntegration: Home Assistant not loaded");
-        (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
-        return;
-      }
-
-      _info(config.action.charAt(0).toUpperCase() + config.action.slice(1) +
-        " Google Assistant for entry_id=" + entryId);
-      hass
-        .callWS({ type: config.wsType, entry_id: entryId })
-        .then(() => {
-          _info(config.successMsg);
-          _gaManualEnabled = config.showCardOnSuccess;
-          _refreshExposePage();
-          _setRowsVisible(settingsRows, config.showCardOnSuccess);
-          if (config.showCardOnSuccess) refreshExposeToggle(card);
-        })
-        .catch((err: WSError) => {
-          _error(config.failMsg + " " +
-            (err.message || err.error || err.code || String(err)));
-          (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
-          _showToast(
-            config.failMsg + " " +
-              (err.message || err.error || "Check Home Assistant logs for details.") +
-              "\n\n" + config.failHint,
-            true,
-          );
-        });
-    })
-    .catch((err: WSError) => {
-      _error("_toggleIntegration(" + config.action + "): " + err.message);
+): Promise<void> {
+  try {
+    const entryId = await getEntryId();
+    const hass = getHass();
+    if (!hass) {
+      _warn("_toggleIntegration: Home Assistant not loaded");
       (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
-    });
+      return;
+    }
+
+    _info(
+      config.action.charAt(0).toUpperCase() + config.action.slice(1) +
+        " Google Assistant for entry_id=" + entryId,
+    );
+
+    try {
+      await hass.callWS({ type: config.wsType, entry_id: entryId });
+      _info(config.successMsg);
+      _gaManualEnabled = config.showCardOnSuccess;
+      _refreshExposePage();
+      _setRowsVisible(settingsRows, config.showCardOnSuccess);
+      if (config.showCardOnSuccess) refreshExposeToggle(card);
+    } catch (err: unknown) {
+      const wsErr = err as WSError;
+      _error(
+        config.failMsg + " " +
+          (wsErr.message || wsErr.error || wsErr.code || String(err)),
+      );
+      (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
+      _showToast(
+        config.failMsg + " " +
+          (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") +
+          "\n\n" + config.failHint,
+        true,
+      );
+    }
+  } catch (err: unknown) {
+    _error("_toggleIntegration(" + config.action + "): " + (err as Error).message);
+    (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
+  }
 }
 
 // ---------------------------------------------------------------------------
 // Card state refresh
 // ---------------------------------------------------------------------------
 
-function refreshCardState(
+async function refreshCardState(
   card: HTMLElement,
   globalSwitch: HTMLElement,
   settingsRows: HTMLElement[],
   reportStateSwitch: HTMLElement | null,
   pinInput: TogglableElement | null,
   yamlAlert: HTMLElement,
-): void {
-  getEntryId()
-    .then((entryId) => {
-      const hass = getHass();
-      if (!hass) {
-        _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
-        return;
+): Promise<void> {
+  try {
+    const entryId = await getEntryId();
+    const hass = getHass();
+    if (!hass) {
+      _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
+      return;
+    }
+
+    try {
+      const config = await hass.callWS<{
+        enabled: boolean;
+        yaml_suppressed: boolean;
+        report_state: boolean;
+        secure_devices_pin: string;
+      }>({
+        type: WS_GET_CONFIG,
+        entry_id: entryId,
+      });
+
+      _debug(
+        "refreshCardState received config: enabled=" +
+          config.enabled +
+          " report_state=" +
+          config.report_state,
+      );
+
+      _gaManualEnabled = config.enabled;
+      _refreshExposePage();
+
+      (globalSwitch as TogglableElement).checked = config.enabled;
+
+      if (yamlAlert) {
+        yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
       }
 
-      hass
-        .callWS<{
-          enabled: boolean;
-          yaml_suppressed: boolean;
-          report_state: boolean;
-          secure_devices_pin: string;
-        }>({
-          type:   WS_GET_CONFIG,
-          entry_id: entryId,
-        })
-        .then((config) => {
-          _debug(
-            "refreshCardState received config: enabled=" +
-              config.enabled +
-              " report_state=" +
-              config.report_state,
-          );
+      _setRowsVisible(settingsRows, config.enabled);
 
-          _gaManualEnabled = config.enabled;
-          _refreshExposePage();
+      if (reportStateSwitch) {
+        (reportStateSwitch as TogglableElement).checked = config.report_state;
+        (reportStateSwitch as TogglableElement).disabled = !config.enabled;
+      }
 
-          (globalSwitch as TogglableElement).checked = config.enabled;
+      if (pinInput) {
+        if (config.secure_devices_pin) {
+          pinInput.value = config.secure_devices_pin;
+        }
+        pinInput.disabled = !config.enabled;
+      }
 
-          if (yamlAlert) {
-            yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
-          }
-
-          _setRowsVisible(settingsRows, config.enabled);
-
-          if (reportStateSwitch) {
-            (reportStateSwitch as TogglableElement).checked = config.report_state;
-            (reportStateSwitch as TogglableElement).disabled = !config.enabled;
-          }
-
-          if (pinInput) {
-            if (config.secure_devices_pin) {
-              pinInput.value = config.secure_devices_pin;
-            }
-            pinInput.disabled = !config.enabled;
-          }
-
-          // Also refresh expose toggle + entity count
-          refreshExposeToggle(card);
-        })
-        .catch((err: WSError) => {
-          _error(
-            "Failed to fetch card state: " +
-              (err.message || err.error || err.code || String(err)),
-          );
-          // Keep defaults — card will show with toggles off
-        });
-    })
-    .catch((err: WSError) => {
-      _error("refreshCardState: " + err.message);
-    });
+      refreshExposeToggle(card);
+    } catch (err: unknown) {
+      const wsErr = err as WSError;
+      _error(
+        "Failed to fetch card state: " +
+          (wsErr.message || wsErr.error || wsErr.code || String(err)),
+      );
+    }
+  } catch (err: unknown) {
+    _error("refreshCardState: " + (err as Error).message);
+  }
 }
 
 /**
@@ -1191,38 +1188,38 @@ function onExposeToggle(e: Event): void {
     });
 }
 
-function onReportStateToggle(e: Event): void {
+async function onReportStateToggle(e: Event): Promise<void> {
   const hass = getHass();
   if (!hass) return;
   const checked = (e.target as TogglableElement).checked;
 
-  getEntryId()
-    .then((entryId) => {
-      hass
-        .callWS({
-          type:   WS_UPDATE_CONFIG,
-          entry_id: entryId,
-          data: { report_state: checked },
-        })
-        .catch((err: WSError) => {
-          _error(
-            "Failed to update report_state: " +
-              (err.message || err.error || String(err)),
-          );
-          (e.target as TogglableElement).checked = !checked;
-          _showToast(
-            "Failed to " +
-              (checked ? "enable" : "disable") +
-              " state reporting. " +
-              "Try toggling the integration off and on, or check Home Assistant logs.",
-            true,
-          );
-        });
-    })
-    .catch((err: WSError) => {
-      _error("onReportStateToggle entry resolution: " + err.message);
+  try {
+    const entryId = await getEntryId();
+    try {
+      await hass.callWS({
+        type: WS_UPDATE_CONFIG,
+        entry_id: entryId,
+        data: { report_state: checked },
+      });
+    } catch (err: unknown) {
+      const wsErr = err as WSError;
+      _error(
+        "Failed to update report_state: " +
+          (wsErr.message || wsErr.error || String(err)),
+      );
       (e.target as TogglableElement).checked = !checked;
-    });
+      _showToast(
+        "Failed to " +
+          (checked ? "enable" : "disable") +
+          " state reporting. " +
+          "Try toggling the integration off and on, or check Home Assistant logs.",
+        true,
+      );
+    }
+  } catch (err: unknown) {
+    _error("onReportStateToggle entry resolution: " + (err as Error).message);
+    (e.target as TogglableElement).checked = !checked;
+  }
 }
 
 function onPinChanged(e: Event): void {
@@ -1232,23 +1229,28 @@ function onPinChanged(e: Event): void {
 
   if (_pinTimer) clearTimeout(_pinTimer);
   _pinTimer = setTimeout(() => {
-    getEntryId()
-      .then((entryId) => {
-        hass.callWS({
-          type:   WS_UPDATE_CONFIG,
-          entry_id: entryId,
-          data: { secure_devices_pin: value },
-        }).catch((err: WSError) => {
-          _error(
-            "Failed to update secure_devices_pin: " +
-              (err.message || err.error || String(err)),
-          );
-        });
-      })
-      .catch((err: WSError) => {
-        _error("onPinChanged entry resolution: " + err.message);
-      });
+    _savePin(value);
   }, 500);
+}
+
+async function _savePin(value: string): Promise<void> {
+  const hass = getHass();
+  if (!hass) return;
+
+  try {
+    const entryId = await getEntryId();
+    await hass.callWS({
+      type: WS_UPDATE_CONFIG,
+      entry_id: entryId,
+      data: { secure_devices_pin: value },
+    });
+  } catch (err: unknown) {
+    const wsErr = err as WSError;
+    _error(
+      "Failed to update secure_devices_pin: " +
+        (wsErr.message || wsErr.error || String(err)),
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------

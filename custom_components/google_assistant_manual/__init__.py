@@ -222,23 +222,21 @@ def _build_core_config(entry: ConfigEntry) -> dict[str, Any]:
 
     config: dict[str, Any] = {
         CONF_PROJECT_ID: project_id,
+        CONF_REPORT_STATE: False,
     }
 
     sa = entry.data.get(CONF_SERVICE_ACCOUNT, {})
-    if sa:
-        if not isinstance(sa, dict):
-            _LOGGER.warning(
-                "service_account in entry data is not a dict (type=%s), ignoring",
-                type(sa).__name__,
-            )
-        else:
-            config[CONF_SERVICE_ACCOUNT] = {
-                CONF_CLIENT_EMAIL: sa.get(CONF_CLIENT_EMAIL, ""),
-                CONF_PRIVATE_KEY: sa.get(CONF_PRIVATE_KEY, ""),
-            }
-            config[CONF_REPORT_STATE] = entry.options.get(CONF_REPORT_STATE, False)
-    else:
-        config[CONF_REPORT_STATE] = False
+    if isinstance(sa, dict) and sa:
+        config[CONF_SERVICE_ACCOUNT] = {
+            CONF_CLIENT_EMAIL: sa.get(CONF_CLIENT_EMAIL, ""),
+            CONF_PRIVATE_KEY: sa.get(CONF_PRIVATE_KEY, ""),
+        }
+        config[CONF_REPORT_STATE] = entry.options.get(CONF_REPORT_STATE, False)
+    elif sa:
+        _LOGGER.warning(
+            "service_account in entry data is not a dict (type=%s), ignoring",
+            type(sa).__name__,
+        )
 
     pin = entry.options.get(CONF_SECURE_DEVICES_PIN)
     if pin:
