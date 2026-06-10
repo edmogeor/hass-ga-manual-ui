@@ -1,11 +1,11 @@
 {
-  "domain": "google_assistant_manual",
+  "domain": "hass_ga_manual_ui",
   "name": "Google Assistant (Manual)",
   "after_dependencies": ["homeassistant"],
   "codeowners": [],
   "config_flow": true,
   "dependencies": ["frontend"],
-  "documentation": "https://github.com/edmogeor/google-assistant-manual",
+  "documentation": "https://github.com/edmogeor/hass-ga-manual-ui",
   "homeassistant": "2025.6.0",
   "integration_type": "service",
   "iot_class": "local_push",

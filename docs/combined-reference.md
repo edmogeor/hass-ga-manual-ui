@@ -820,7 +820,7 @@ Frontend → WS: cloud/update_prefs { google_enabled: true, google_report_state:
 
 ---
 
-## 16. Current State of `google_assistant_manual`
+## 16. Current State of `hass_ga_manual_ui`
 
 `const.py` + `__init__.py` + `frontend.py` + `frontend.js`
 

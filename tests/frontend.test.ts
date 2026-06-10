@@ -21,7 +21,7 @@ const __dirname = resolve(__filename, "..");
 
 const FRONTEND_JS_PATH = resolve(
   __dirname,
-  "../custom_components/google_assistant_manual/frontend.js",
+  "../custom_components/hass_ga_manual_ui/frontend.js",
 );
 const FRONTEND_JS_CODE = readFileSync(FRONTEND_JS_PATH, "utf8");
 
@@ -42,10 +42,10 @@ interface MockHass {
 function createMockHass(): MockHass {
   return {
     callWS: vi.fn((msg: Record<string, unknown>) => {
-      if (msg.type === "google_assistant_manual/get_entry_id") {
+      if (msg.type === "hass_ga_manual_ui/get_entry_id") {
         return Promise.resolve({ entry_id: "mock-entry" });
       }
-      if (msg.type === "google_assistant_manual/get_config") {
+      if (msg.type === "hass_ga_manual_ui/get_config") {
         return Promise.resolve({
           enabled: false,
           report_state: false,
@@ -211,7 +211,7 @@ describe("Google Assistant Manual frontend", () => {
         (c: unknown[]) =>
           typeof c[0] === "object" &&
           (c[0] as Record<string, unknown>).type ===
-            "google_assistant_manual/get_entry_id"
+            "hass_ga_manual_ui/get_entry_id"
       );
       expect(entryCalls.length).toBe(1);
     });
@@ -227,7 +227,7 @@ describe("Google Assistant Manual frontend", () => {
         (c: unknown[]) =>
           typeof c[0] === "object" &&
           (c[0] as Record<string, unknown>).type ===
-            "google_assistant_manual/get_config"
+            "hass_ga_manual_ui/get_config"
       );
       expect(configCalls.length).toBe(1);
     });
@@ -235,7 +235,7 @@ describe("Google Assistant Manual frontend", () => {
     it("handles failed get_entry_id gracefully", () => {
       const hass = createMockHass();
       hass.callWS.mockRejectedValue(
-        new Error("No config entry found for google_assistant_manual")
+        new Error("No config entry found for hass_ga_manual_ui")
       );
 
       setupDom(hass);
@@ -245,7 +245,7 @@ describe("Google Assistant Manual frontend", () => {
     it("handles failed get_config gracefully", async () => {
       const hass = createMockHass();
       hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "google_assistant_manual/get_entry_id") {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
           return Promise.resolve({ entry_id: "abc123" });
         }
         return Promise.reject(new Error("Config read failed"));
@@ -264,10 +264,10 @@ describe("Google Assistant Manual frontend", () => {
       // and reset it to expose_new (false) — instantly reverting the enable.
       const hass = createMockHass();
       hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "google_assistant_manual/get_entry_id") {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
           return Promise.resolve({ entry_id: "mock-entry" });
         }
-        if (msg.type === "google_assistant_manual/get_config") {
+        if (msg.type === "hass_ga_manual_ui/get_config") {
           return Promise.resolve({
             enabled: true,
             report_state: false,

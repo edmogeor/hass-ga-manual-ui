@@ -1,10 +1,10 @@
 {
-  "name": "google-assistant-manual",
+  "name": "hass-ga-manual-ui",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build": "esbuild frontend.ts --bundle --outfile=custom_components/google_assistant_manual/frontend.js --target=es2020 --format=iife",
-    "watch": "esbuild frontend.ts --bundle --outfile=custom_components/google_assistant_manual/frontend.js --target=es2020 --format=iife --watch",
+    "build": "esbuild frontend.ts --bundle --outfile=custom_components/hass_ga_manual_ui/frontend.js --target=es2020 --format=iife",
+    "watch": "esbuild frontend.ts --bundle --outfile=custom_components/hass_ga_manual_ui/frontend.js --target=es2020 --format=iife --watch",
     "check": "tsc --noEmit && pyrefly check",
     "lint": "eslint frontend.ts tests/ && ruff check . && ruff format --check .",
     "lint:ts": "eslint frontend.ts tests/",

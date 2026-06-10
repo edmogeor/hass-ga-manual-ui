@@ -1,13 +1,13 @@
-"""Tests for google_assistant_manual/frontend.py."""
+"""Tests for hass_ga_manual_ui/frontend.py."""
 
 import logging
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import google_assistant_manual.frontend as frontend_module
+import hass_ga_manual_ui.frontend as frontend_module
 import pytest
-from google_assistant_manual.const import DOMAIN
-from google_assistant_manual.frontend import (
+from hass_ga_manual_ui.const import DOMAIN
+from hass_ga_manual_ui.frontend import (
     FRONTEND_JS_PATH,
     FRONTEND_URL,
     async_setup_frontend,

@@ -1,7 +1,7 @@
 "use strict";
 (() => {
   // frontend.ts
-  var ASSISTANT_ID = "google_assistant_manual";
+  var ASSISTANT_ID = "hass_ga_manual_ui";
   var ASSISTANT_NAME = "Google Assistant (Manual)";
   var SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
   var BRANDS_CDN = "https://brands.home-assistant.io";
@@ -37,7 +37,7 @@
       hass.callService("system_log", "write", {
         message,
         level: level === "warn" ? "warning" : level,
-        logger: "google_assistant_manual.frontend"
+        logger: "hass_ga_manual_ui.frontend"
       });
     } catch {
     }
@@ -87,7 +87,7 @@
       hass.callService("persistent_notification", "create", {
         title: ASSISTANT_NAME + (isError ? " \u2014 Error" : " \u2014 Notice"),
         message,
-        notification_id: "google_assistant_manual_notification"
+        notification_id: "hass_ga_manual_ui_notification"
       });
     } catch (e) {
       _error("Failed to show toast: " + _errorMessage(e));

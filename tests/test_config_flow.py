@@ -1,16 +1,16 @@
-"""Tests for google_assistant_manual/config_flow.py."""
+"""Tests for hass_ga_manual_ui/config_flow.py."""
 
 import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import voluptuous as vol
-from google_assistant_manual.config_flow import (
+from hass_ga_manual_ui.config_flow import (
     GoogleAssistantManualConfigFlow,
     _is_valid_project_id,
     _parse_service_account_json,
 )
-from google_assistant_manual.const import (
+from hass_ga_manual_ui.const import (
     CONF_CLIENT_EMAIL,
     CONF_PRIVATE_KEY,
     CONF_PROJECT_ID,

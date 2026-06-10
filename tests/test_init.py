@@ -1,4 +1,4 @@
-"""Tests for google_assistant_manual/__init__.py."""
+"""Tests for hass_ga_manual_ui/__init__.py."""
 
 import logging
 from pathlib import Path
@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import voluptuous as vol
-from google_assistant_manual import (
+from hass_ga_manual_ui import (
     WS_CONFIG_SCHEMA,
     _add_assistant_to_schema,
     _build_core_config,
@@ -22,7 +22,7 @@ from google_assistant_manual import (
     _safe_get_entry,
     _teardown_core_ga,
 )
-from google_assistant_manual.const import (
+from hass_ga_manual_ui.const import (
     ASSISTANT_ID,
     CONF_CLIENT_EMAIL,
     CONF_PROJECT_ID,
@@ -435,13 +435,13 @@ class TestGetVersion:
         assert version == "0.1.0"
 
     def test_load_version_reads_manifest(self) -> None:
-        from google_assistant_manual import _load_version
+        from hass_ga_manual_ui import _load_version
 
         version = _load_version()
         assert version == "0.1.0"
 
     def test_load_version_falls_back_on_error(self) -> None:
-        from google_assistant_manual import _load_version
+        from hass_ga_manual_ui import _load_version
 
         with patch.object(Path, "read_text", side_effect=FileNotFoundError("missing")):
             version = _load_version()
@@ -1134,7 +1134,7 @@ class TestPatchCoreAssistants:
     def test_patches_known_assistants(self) -> None:
         """Test KNOWN_ASSISTANTS tuple is patched."""
         import homeassistant.components.homeassistant.exposed_entities as ee
-        from google_assistant_manual import _patch_core_assistants
+        from hass_ga_manual_ui import _patch_core_assistants
 
         original = ee.KNOWN_ASSISTANTS
 
@@ -1157,7 +1157,7 @@ class TestPatchCoreAssistants:
     def test_idempotent(self) -> None:
         """Calling twice doesn't add duplicate."""
         import homeassistant.components.homeassistant.exposed_entities as ee
-        from google_assistant_manual import _patch_core_assistants
+        from hass_ga_manual_ui import _patch_core_assistants
 
         original = ee.KNOWN_ASSISTANTS
 
@@ -1178,7 +1178,7 @@ class TestPatchCoreAssistants:
     def test_patches_ws_schemas_when_handlers_available(self) -> None:
         """When handlers are available, schemas are patched."""
         import homeassistant.components.homeassistant.exposed_entities as ee
-        from google_assistant_manual import _patch_core_assistants
+        from hass_ga_manual_ui import _patch_core_assistants
 
         original = ee.KNOWN_ASSISTANTS
 
@@ -1219,7 +1219,7 @@ class TestPatchCoreAssistants:
 
     def test_skips_ws_when_handlers_empty(self) -> None:
         import homeassistant.components.homeassistant.exposed_entities as ee
-        from google_assistant_manual import _patch_core_assistants
+        from hass_ga_manual_ui import _patch_core_assistants
 
         original = ee.KNOWN_ASSISTANTS
 
@@ -1238,7 +1238,7 @@ class TestPatchCoreAssistants:
 
     def test_skips_ws_when_handlers_key_missing(self) -> None:
         import homeassistant.components.homeassistant.exposed_entities as ee
-        from google_assistant_manual import _patch_core_assistants
+        from hass_ga_manual_ui import _patch_core_assistants
 
         original = ee.KNOWN_ASSISTANTS
 

@@ -1,6 +1,6 @@
-"""Tests for google_assistant_manual/const.py."""
+"""Tests for hass_ga_manual_ui/const.py."""
 
-from google_assistant_manual.const import (
+from hass_ga_manual_ui.const import (
     ASSISTANT_ID,
     CONF_CLIENT_EMAIL,
     CONF_PRIVATE_KEY,
@@ -21,7 +21,7 @@ class TestConstants:
     """Test constant values are correct and consistent."""
 
     def test_domain(self) -> None:
-        assert DOMAIN == "google_assistant_manual"
+        assert DOMAIN == "hass_ga_manual_ui"
 
     def test_assistant_id_matches_domain(self) -> None:
         assert ASSISTANT_ID == DOMAIN
@@ -38,10 +38,10 @@ class TestConstants:
             assert isinstance(key, str)
 
     def test_ws_command_strings(self) -> None:
-        assert WS_GET_CONFIG == "google_assistant_manual/get_config"
-        assert WS_UPDATE_CONFIG == "google_assistant_manual/update_config"
-        assert WS_ENABLE == "google_assistant_manual/enable"
-        assert WS_DISABLE == "google_assistant_manual/disable"
+        assert WS_GET_CONFIG == "hass_ga_manual_ui/get_config"
+        assert WS_UPDATE_CONFIG == "hass_ga_manual_ui/update_config"
+        assert WS_ENABLE == "hass_ga_manual_ui/enable"
+        assert WS_DISABLE == "hass_ga_manual_ui/disable"
 
     def test_all_ws_commands_include_domain(self) -> None:
         for cmd in [WS_GET_CONFIG, WS_UPDATE_CONFIG, WS_ENABLE, WS_DISABLE]:

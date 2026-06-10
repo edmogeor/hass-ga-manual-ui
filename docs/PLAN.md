@@ -23,7 +23,7 @@ users to configure the manual Google Assistant entirely through the UI — no YA
 | 11 | HA version: **target latest, expand later** | `"homeassistant": "2025.6.0"` in manifest |
 | 12 | Load order: **setup-phase re-trigger** | Avoid `open()`/manifest monkey-patching; use core GA's no-YAML-no-op design |
 | 13 | YAML compat: **Import top-level, skip entity_config, warn** (C-mod) | Port project_id, service_account, report_state, expose_by_default, exposed_domains, secure_devices_pin. Skip entity_config. Warn user. ConfigEntry takes precedence after import. |
-| 14 | WS API: **get, update, enable, disable** | `google_assistant_manual/get_config` + `update_config` for settings; `enable`/`disable` for the global toggle that loads/unloads core GA |
+| 14 | WS API: **get, update, enable, disable** | `hass_ga_manual_ui/get_config` + `update_config` for settings; `enable`/`disable` for the global toggle that loads/unloads core GA |
 | 15 | Config flow: **two steps** — step 1: project_id, step 2: service account textarea | Simple, works with HA's form-based config flows |
 | 16 | Global toggle: **soft enable/disable** (A) | Toggle off = report_state off + `enabled=False` so `should_expose` returns False (SYNC empty); card stays, settings hidden. Toggle on = re-enable. The core GA entry/view/webhook stay registered because core GA has no `async_unload_entry` and registers unremovable aiohttp routes — add/remove churn caused duplicate-webhook errors. _Superseded the original "unload/reload core GA ConfigEntry" plan._ |
 | 17 | Auto-resync (**Cloud parity**) | The core config-entry `GoogleConfig` does NOT auto-trigger Google `requestSync` (only Nabu Casa Cloud does). `_register_sync_listeners` adds listeners on exposure changes, entity-registry updates (Google-relevant attrs), and device-area changes that call `GoogleConfig.async_schedule_google_sync_all()`. So newly exposed/areaed devices propagate to Google without a manual "sync my devices". Note: Google only applies `roomHint` for devices it hasn't seen before, so already-synced unplaced devices still need manual placement or a relink. |
@@ -101,31 +101,31 @@ Source-of-truth translation keys (HA generate script reads this to produce `tran
 - Add: after `homeassistant` component is loaded, register WS commands
 
 **WS command handlers**:
-- `google_assistant_manual/get_config`: read entry.options, return dict with all settings including `enabled` (whether core GA ConfigEntry is currently loaded)
-- `google_assistant_manual/update_config`: validate incoming dict, update entry.options via `hass.config_entries.async_update_entry`, trigger monkey-patched live updates (report_state enable/disable on change)
-- `google_assistant_manual/enable`: run setup-phase re-trigger to create and load core GA ConfigEntry, update options to mark enabled
-- `google_assistant_manual/disable`: unload core GA ConfigEntry (teardown webhook, stop report_state), update options to mark disabled. Keep `google_assistant_manual` entry loaded so card remains visible
+- `hass_ga_manual_ui/get_config`: read entry.options, return dict with all settings including `enabled` (whether core GA ConfigEntry is currently loaded)
+- `hass_ga_manual_ui/update_config`: validate incoming dict, update entry.options via `hass.config_entries.async_update_entry`, trigger monkey-patched live updates (report_state enable/disable on change)
+- `hass_ga_manual_ui/enable`: run setup-phase re-trigger to create and load core GA ConfigEntry, update options to mark enabled
+- `hass_ga_manual_ui/disable`: unload core GA ConfigEntry (teardown webhook, stop report_state), update options to mark disabled. Keep `hass_ga_manual_ui` entry loaded so card remains visible
 
 ### 6. `frontend.js` — medium changes
 
 **Global toggle (card header switch)**:
 - Mirrors `cloud-google-pref`'s `google_enabled` toggle exactly
-- Toggle OFF → calls `google_assistant_manual/disable` WS command → soft disable: report_state off + `enabled=False` so `should_expose` returns False (SYNC reports no devices). Core entry/view stay registered (core GA can't unload at runtime). Card shows settings rows hidden, "Exposed entities" link hidden (same as cloud card)
-- Toggle ON → calls `google_assistant_manual/enable` WS command → re-runs setup-phase re-trigger. Card shows settings rows
+- Toggle OFF → calls `hass_ga_manual_ui/disable` WS command → soft disable: report_state off + `enabled=False` so `should_expose` returns False (SYNC reports no devices). Core entry/view stay registered (core GA can't unload at runtime). Card shows settings rows hidden, "Exposed entities" link hidden (same as cloud card)
+- Toggle ON → calls `hass_ga_manual_ui/enable` WS command → re-runs setup-phase re-trigger. Card shows settings rows
 - On card mount, fetch enabled state from `get_config`. Toggle reflects current state
 
 **Fix stub handlers**:
-- State reporting toggle: bind to `_onReportStateToggle(ev)` → calls `hass.callWS({type: "google_assistant_manual/update_config", data: {report_state: ev.target.checked}})` (only visible when global toggle is ON)
-- PIN input: bind to `_onPinChanged(ev)` → debounced call to `hass.callWS({type: "google_assistant_manual/update_config", data: {secure_devices_pin: ev.target.value}})` (only visible when global toggle is ON)
+- State reporting toggle: bind to `_onReportStateToggle(ev)` → calls `hass.callWS({type: "hass_ga_manual_ui/update_config", data: {report_state: ev.target.checked}})` (only visible when global toggle is ON)
+- PIN input: bind to `_onPinChanged(ev)` → debounced call to `hass.callWS({type: "hass_ga_manual_ui/update_config", data: {secure_devices_pin: ev.target.value}})` (only visible when global toggle is ON)
 
 **Add initial state fetch**:
-- On card mount, call `hass.callWS({type: "google_assistant_manual/get_config"})` to populate toggle states (including `enabled`)
+- On card mount, call `hass.callWS({type: "hass_ga_manual_ui/get_config"})` to populate toggle states (including `enabled`)
 
 ### 7. `manifest.json` — update
 
 ```json
 {
-  "domain": "google_assistant_manual",
+  "domain": "hass_ga_manual_ui",
   "name": "Google Assistant (Manual)",
   "after_dependencies": ["homeassistant"],
   "codeowners": [],
@@ -155,7 +155,7 @@ Register WS static paths for the new commands, or delegate to `__init__.py`.
 User configures via UI
   → config_flow async_step_user (project_id)
     → async_step_service_account (service account JSON)
-      → ConfigEntry created for "google_assistant_manual"
+      → ConfigEntry created for "hass_ga_manual_ui"
         → async_setup_entry() fires:
           1. Populates hass.data["google_assistant"]["data_config"]
           2. Reuses the existing core GA ConfigEntry, or registers a fresh one
@@ -169,12 +169,12 @@ User configures via UI
 
 User visits Voice Assistants config page
   → Card renders (existing injection mechanism)
-  → Card fetches state via 'google_assistant_manual/get_config'
+  → Card fetches state via 'hass_ga_manual_ui/get_config'
   → Global toggle reflects enabled state, show/hide settings rows
   → Toggles active, bound to WS handlers
 
 User toggles global enable/disable in card header
-  → JS calls 'google_assistant_manual/enable' or 'disable'
+  → JS calls 'hass_ga_manual_ui/enable' or 'disable'
   → enable:  re-runs setup-phase re-trigger (reuses or creates the core entry)
   → disable: _teardown_core_ga(disable=True) — SOFT disable: report_state off +
              enabled=False; should_expose returns False so SYNC has no devices.
@@ -183,7 +183,7 @@ User toggles global enable/disable in card header
   (plain unload/reload uses disable=False and just drops our runtime pointer)
 
 User changes settings in card (when enabled)
-  → JS calls 'google_assistant_manual/update_config'
+  → JS calls 'hass_ga_manual_ui/update_config'
   → Python handler:
     - Updates entry.options
     - If report_state changed: calls GoogleConfig.async_enable/disable_report_state() + async_schedule_google_sync_all() (willReportState is per-device → re-sync)

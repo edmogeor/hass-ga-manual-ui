@@ -1,5 +1,5 @@
 project-includes = [
-    "custom_components/google_assistant_manual/*.py",
+    "custom_components/hass_ga_manual_ui/*.py",
 ]
 
 project-excludes = [

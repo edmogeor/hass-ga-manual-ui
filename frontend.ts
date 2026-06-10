@@ -74,7 +74,7 @@ interface WSError extends Error {
 // Constants
 // ---------------------------------------------------------------------------
 
-const ASSISTANT_ID = "google_assistant_manual";
+const ASSISTANT_ID = "hass_ga_manual_ui";
 const ASSISTANT_NAME = "Google Assistant (Manual)";
 const SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
 
@@ -150,7 +150,7 @@ function _forwardToHaLog(level: "info" | "warn" | "error", message: string): voi
     hass.callService("system_log", "write", {
       message,
       level: level === "warn" ? "warning" : level,
-      logger: "google_assistant_manual.frontend",
+      logger: "hass_ga_manual_ui.frontend",
     });
   } catch {
     /* never let logging throw or recurse */
@@ -205,7 +205,7 @@ function _showToast(message: string, isError: boolean): void {
     hass.callService("persistent_notification", "create", {
       title: ASSISTANT_NAME + (isError ? " — Error" : " — Notice"),
       message,
-      notification_id: "google_assistant_manual_notification",
+      notification_id: "hass_ga_manual_ui_notification",
     });
   } catch (e) {
     _error("Failed to show toast: " + _errorMessage(e));

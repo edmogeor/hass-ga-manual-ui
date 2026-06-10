@@ -1,4 +1,4 @@
-"""Shared test fixtures for google_assistant_manual tests."""
+"""Shared test fixtures for hass_ga_manual_ui tests."""
 
 import sys
 from pathlib import Path
@@ -13,7 +13,7 @@ from homeassistant.config_entries import ConfigEntry
 sys.path.insert(0, str(Path(__file__).parent.parent / "custom_components"))
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from google_assistant_manual.const import (  # noqa: E402
+from hass_ga_manual_ui.const import (  # noqa: E402
     CONF_CLIENT_EMAIL,
     CONF_PRIVATE_KEY,
     CONF_PROJECT_ID,
@@ -188,14 +188,14 @@ SERVICE_ACCOUNT_WRONG_TYPES = """{
 @pytest.fixture
 def reset_version_cache() -> None:
     """Reset the _VERSION cache in __init__ module."""
-    import google_assistant_manual
+    import hass_ga_manual_ui
 
-    google_assistant_manual._VERSION = None
+    hass_ga_manual_ui._VERSION = None
 
 
 @pytest.fixture
 def reset_original_props_cache() -> None:
     """Reset the _ORIGINAL_GOOGLE_CONFIG_PROPS cache."""
-    import google_assistant_manual
+    import hass_ga_manual_ui
 
-    google_assistant_manual._ORIGINAL_GOOGLE_CONFIG_PROPS.clear()
+    hass_ga_manual_ui._ORIGINAL_GOOGLE_CONFIG_PROPS.clear()

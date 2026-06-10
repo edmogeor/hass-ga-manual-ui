@@ -5,10 +5,10 @@
 A Home Assistant custom integration that provides UI-based configuration for the manual
 Google Assistant integration, reaching feature parity with the Nabu Casa Cloud Google Assistant.
 
-**Domain:** `google_assistant_manual`
-**Assistant ID:** `google_assistant_manual`
+**Domain:** `hass_ga_manual_ui`
+**Assistant ID:** `hass_ga_manual_ui`
 **Type:** HA custom integration (Python 3 + vanilla JS)
-**Install:** Place this entire project folder as `custom_components/google_assistant_manual/` in HA config, then restart.
+**Install:** Place this entire project folder as `custom_components/hass_ga_manual_ui/` in HA config, then restart.
 **Version:** 0.1.0
 
 ## Problem Solved
@@ -35,10 +35,10 @@ and secure devices PIN. Appears as a `ha-card` under `ha-config-voice-assistants
 _Avoid_: preferences card, GA settings panel
 
 **Assistant ID**:
-The string `"google_assistant_manual"`. Registered in `KNOWN_ASSISTANTS` to make the
+The string `"hass_ga_manual_ui"`. Registered in `KNOWN_ASSISTANTS` to make the
 integration appear in entity exposure tables and WS command validation. Distinct from
 core GA's domain `"google_assistant"`.
-_Avoid_: domain (that's `google_assistant_manual`)
+_Avoid_: domain (that's `hass_ga_manual_ui`)
 
 **Config layer**:
 This integration is a config management layer on top of core GA. It does not re-implement
@@ -59,8 +59,8 @@ The entry persists across restarts and is reused via `_find_core_entry()` rather
 recreated each boot, which keeps device-registry links stable.
 
 **WebSocket bridge**:
-WS commands (`google_assistant_manual/get_config`, `google_assistant_manual/update_config`,
-`google_assistant_manual/enable`, `google_assistant_manual/disable`)
+WS commands (`hass_ga_manual_ui/get_config`, `hass_ga_manual_ui/update_config`,
+`hass_ga_manual_ui/enable`, `hass_ga_manual_ui/disable`)
 that the assistant card uses to read/write settings. These wrap `ConfigEntry.options`
 updates. On `update_config`, live property patches on `GoogleConfig` are triggered
 (for `report_state` enable/disable) without requiring a full ConfigEntry reload.
@@ -102,7 +102,7 @@ Two-layer monkey-patching approach. Neither layer modifies core HA files on disk
 On `async_setup()`:
 1. Initiálises `hass.data["google_assistant"]` as an empty dict (safety for stale entries).
 2. Reconciles core GA ConfigEntries via `_reconcile_core_ga_entries()`: seeds `DATA_CONFIG` from our entry (prevents boot `KeyError`) and prunes orphan/duplicate core entries — but keeps the managed one.
-3. Patches `KNOWN_ASSISTANTS` tuple in `homeassistant.components.homeassistant.exposed_entities` to include `"google_assistant_manual"`.
+3. Patches `KNOWN_ASSISTANTS` tuple in `homeassistant.components.homeassistant.exposed_entities` to include `"hass_ga_manual_ui"`.
 4. Walks the Voluptuous schemas for three WebSocket commands and injects the new assistant ID into any `vol.In` validator that contains `"conversation"`.
 5. Registers static HTTP paths to serve `frontend.js` and `assets/icon.png`.
 6. Registers `frontend.js` as an extra JS module so the HA frontend loads it.
@@ -114,7 +114,7 @@ On `async_setup_entry()`:
 3. Reuses the existing core GA entry (`_find_core_entry`) if present — setting it up only if not already loaded — otherwise registers a fresh one via `hass.config_entries.async_add()` (which also sets it up). Never calls core GA's `async_setup_entry` directly (that would double-set-up).
 4. Stores `GoogleConfig` reference (from `core_entry.runtime_data`) in `entry.runtime_data`.
 5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`, and `GoogleConfig.should_2fa` to read the per-entity `disable_2fa` option from the registry (core GA hard-codes `should_2fa` to `True`; cloud reads the option — this powers the "Ask for PIN" toggle).
-6. Monkey-patches `GoogleConfig.should_expose` to delegate to `async_should_expose(hass, "google_assistant_manual", entity_id)` — bridging the core config-entry path (which otherwise uses the legacy YAML `expose_by_default`/`entity_config` model) to the modern `exposed_entities` registry the UI writes to. Without this, SYNC returns zero devices ("Account linked, but no devices found"). When the integration is soft-disabled (`enabled=False`) it returns `False`, so SYNC reports nothing.
+6. Monkey-patches `GoogleConfig.should_expose` to delegate to `async_should_expose(hass, "hass_ga_manual_ui", entity_id)` — bridging the core config-entry path (which otherwise uses the legacy YAML `expose_by_default`/`entity_config` model) to the modern `exposed_entities` registry the UI writes to. Without this, SYNC returns zero devices ("Account linked, but no devices found"). When the integration is soft-disabled (`enabled=False`) it returns `False`, so SYNC reports nothing.
 7. Registers Cloud-parity auto-resync listeners (`_register_sync_listeners`): on exposure changes, entity-registry updates (Google-relevant attrs), and device-area changes it calls `GoogleConfig.async_schedule_google_sync_all()` (Google `requestSync`). The core config-entry `GoogleConfig` lacks these; only Nabu Casa Cloud has them. Unsubscribes are stored in `runtime_data["sync_unsubs"]` and removed on teardown.
 8. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
 
@@ -124,8 +124,8 @@ On `async_setup_entry()`:
 - `homeassistant/expose_new_entities/set` — write "expose new entities" toggle
 
 **Own WS commands for per-entity 2FA (mirror cloud's `cloud/google_assistant/entities/*`):**
-- `google_assistant_manual/get_entity` — returns `{traits, might_2fa, disable_2fa}` for an entity (built from core GA's `GoogleEntity` against our `GoogleConfig`)
-- `google_assistant_manual/update_entity` — writes the `disable_2fa` option under our assistant id via `async_set_assistant_option`
+- `hass_ga_manual_ui/get_entity` — returns `{traits, might_2fa, disable_2fa}` for an entity (built from core GA's `GoogleEntity` against our `GoogleConfig`)
+- `hass_ga_manual_ui/update_entity` — writes the `disable_2fa` option under our assistant id via `async_set_assistant_option`
 
 ### Layer 2: JavaScript Frontend Companion
 
@@ -135,8 +135,8 @@ Four patching mechanisms applied at `init()`:
 
 | # | Function | Mechanism | Purpose |
 |---|----------|-----------|---------|
-| 1 | `patchVoiceAssistants()` | Monkey-patch `Object.keys()` | Detects when code iterates the `voiceAssistants` map and injects `{ google_assistant_manual: { domain: "google_assistant", name: "Google Assistant (Manual)" } }` |
-| 2 | `patchSortKey()` | Monkey-patch `Array.prototype.forEach()` | Injects `"google_assistant_manual"` into the sort-order array `["conversation", "cloud.alexa", "cloud.google_assistant"]` so the new assistant appears in the correct position |
+| 1 | `patchVoiceAssistants()` | Monkey-patch `Object.keys()` | Detects when code iterates the `voiceAssistants` map and injects `{ hass_ga_manual_ui: { domain: "google_assistant", name: "Google Assistant (Manual)" } }` |
+| 2 | `patchSortKey()` | Monkey-patch `Array.prototype.forEach()` | Injects `"hass_ga_manual_ui"` into the sort-order array `["conversation", "cloud.alexa", "cloud.google_assistant"]` so the new assistant appears in the correct position |
 | 3 | `patchExposePage()` | Wrap `_availableAssistants` getter on `ha-config-voice-assistants-expose` | Makes the new assistant ID appear in the per-entity exposure dropdown |
 | 4 | `patchCustomElements()` | Intercept `customElements.define()` and retroactively patch already-defined elements | Patches four custom element prototypes (see below) |
 
@@ -181,7 +181,7 @@ All settings rows hidden by default. State fetched via `get_config` WS on mount.
 
 ## Relationships
 
-- The **config flow** produces a **ConfigEntry** for `google_assistant_manual`.
+- The **config flow** produces a **ConfigEntry** for `hass_ga_manual_ui`.
 - The **ConfigEntry** bridges to **core GA** via setup-phase re-trigger, populating `hass.data["google_assistant"]` and calling `async_setup_entry`.
 - The **assistant card** reads/writes settings through the **WebSocket bridge**, which updates the **ConfigEntry** and triggers live patches on **core GA**'s `GoogleConfig` instance.
 - The assistant card's **global toggle** enables/disables core GA entirely via `enable`/`disable` WS commands — unloading the core GA tears down the webhook and stops `report_state`; re-enabling re-runs setup-phase re-trigger.
@@ -199,7 +199,7 @@ HA starts
 
 User adds integration via UI:
   → config_flow: project_id → service_account (JSON textarea)
-    → ConfigEntry created for domain "google_assistant_manual"
+    → ConfigEntry created for domain "hass_ga_manual_ui"
       → async_setup_entry() fires:
         1. Populates hass.data["google_assistant"]["config"]
         2. Reuses existing core GA entry (_find_core_entry) or registers a fresh
@@ -212,7 +212,7 @@ User adds integration via UI:
         8. Registers WS commands (get_config/update_config/enable/disable)
 
 Browser loads HA frontend
-  → HA loads /google_assistant_manual/frontend.js as extra module
+  → HA loads /hass_ga_manual_ui/frontend.js as extra module
   → init() runs immediately (or on DOMContentLoaded)
     → patchVoiceAssistants(): intercepts Object.keys
     → patchSortKey(): intercepts Array.forEach
@@ -225,20 +225,20 @@ User visits voice assistants config page
   → ha-config-voice-assistants-assistants renders
   → connectedCallback fires → injectCardInto(el)
   → Card calls hass.callWS() for:
-      - google_assistant_manual/get_entry_id (discover entry)
-      - google_assistant_manual/get_config (enabled, report_state, PIN)
+      - hass_ga_manual_ui/get_entry_id (discover entry)
+      - hass_ga_manual_ui/get_config (enabled, report_state, PIN)
       - homeassistant/expose_new_entities/get (populate "expose new" toggle)
       - homeassistant/expose_entity/list (populate entity count badge)
 
 User toggles global enable/disable in card header:
-  → JS calls google_assistant_manual/enable or /disable
+  → JS calls hass_ga_manual_ui/enable or /disable
   → enable: re-runs setup-phase re-trigger (reuses or creates the core entry)
   → disable: _teardown_core_ga(disable=True) — soft disable: report_state off +
              enabled=False; should_expose then returns False so SYNC has no devices
              (core entry/view/webhook are left registered — core GA can't unload)
 
 User changes settings in card (when enabled):
-  → JS calls google_assistant_manual/update_config
+  → JS calls hass_ga_manual_ui/update_config
   → Python handler:
     - Updates entry.options
     - If report_state changed: calls GoogleConfig.async_enable/disable_report_state() + async_schedule_google_sync_all() (willReportState is per-device, so Google must be re-synced)
@@ -257,16 +257,16 @@ User changes settings in card (when enabled):
 
 ```python
 # const.py
-DOMAIN = "google_assistant_manual"
-ASSISTANT_ID = "google_assistant_manual"
+DOMAIN = "hass_ga_manual_ui"
+ASSISTANT_ID = "hass_ga_manual_ui"
 ```
 
 ```ts
 // frontend.ts
-const ASSISTANT_ID = "google_assistant_manual";
+const ASSISTANT_ID = "hass_ga_manual_ui";
 const ASSISTANT_NAME = "Google Assistant (Manual)";
 const SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
-const ASSET_URL = "/google_assistant_manual/assets";
+const ASSET_URL = "/hass_ga_manual_ui/assets";
 
 const WS_GET_ENTRY_ID = `${ASSISTANT_ID}/get_entry_id`;
 const WS_GET_CONFIG = `${ASSISTANT_ID}/get_config`;
@@ -277,12 +277,12 @@ const WS_DISABLE = `${ASSISTANT_ID}/disable`;
 
 ## Directory Structure
 
-Integration files live in `custom_components/google_assistant_manual/` (standard HACS layout). Dev tooling stays at repo root.
+Integration files live in `custom_components/hass_ga_manual_ui/` (standard HACS layout). Dev tooling stays at repo root.
 
 ```
 ./
 ├── custom_components/
-│   └── google_assistant_manual/     # Integration (what HACS/HA loads)
+│   └── hass_ga_manual_ui/     # Integration (what HACS/HA loads)
 │       ├── __init__.py              # Integration entry point, core GA bridge, WS commands
 │       ├── config_flow.py           # Two-step config flow (project_id → service_account)
 │       ├── const.py                 # DOMAIN, ASSISTANT_ID, CONF_* keys, WS constants
@@ -355,7 +355,7 @@ npm install
 | Command | What it does |
 |---|---|
 | `npm run build` | Compile `frontend.ts` → `frontend.js` (esbuild, <10ms) |
-| `npm run build:dist` | Build JS + create `build/custom_components/google_assistant_manual/` with only runtime files |
+| `npm run build:dist` | Build JS + create `build/custom_components/hass_ga_manual_ui/` with only runtime files |
 | `npm run watch` | Rebuild `frontend.js` on every `.ts` change |
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
 | `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
@@ -410,7 +410,7 @@ Two test frameworks serve different parts of the codebase:
 **Pyrefly** (`pyrefly.toml`):
 - Preset: `strict`
 - All `homeassistant.*` and `voluptuous` imports replaced with `Any` (packages not installable outside HA)
-- Search path: `..` (so the `google_assistant_manual` package resolves relative imports)
+- Search path: `..` (so the `hass_ga_manual_ui` package resolves relative imports)
 - Excludes: `references/`, `.venv/`
 
 ### Pre-commit workflow
@@ -433,7 +433,7 @@ The project source is TypeScript and Python. Deployment requires the compiled JS
 npm run build:dist
 
 # Copy into HA config
-cp -r build/custom_components/google_assistant_manual /config/custom_components/
+cp -r build/custom_components/hass_ga_manual_ui /config/custom_components/
 ```
 
 Then go to Settings → Devices & Services → Add Integration → Google Assistant (Manual).
@@ -448,10 +448,10 @@ Then go to Settings → Devices & Services → Add Integration → Google Assist
 
 4. **Defensive patching with tiered logging.** Every patch, WS call, and DOM operation is wrapped in try/except (Python) or try/catch (JS). All failures are logged with `[GA Manual]` prefix, full tracebacks, and actionable messages. The JS side surfaces critical errors via `persistent_notification` toasts.
 
-   **Backend logging** uses the standard `_LOGGER`: `.debug()` for verbose tracing (only emitted when the integration's log level is DEBUG) and `.error()`/`.exception()` for problems (always emitted). Users enable verbose logging via the config entry's ⋮ → **Enable debug logging**, or `logger:` in `configuration.yaml` (`custom_components.google_assistant_manual: debug`). No code needed — HA handles it.
+   **Backend logging** uses the standard `_LOGGER`: `.debug()` for verbose tracing (only emitted when the integration's log level is DEBUG) and `.error()`/`.exception()` for problems (always emitted). Users enable verbose logging via the config entry's ⋮ → **Enable debug logging**, or `logger:` in `configuration.yaml` (`custom_components.hass_ga_manual_ui: debug`). No code needed — HA handles it.
 
    **Frontend logging** mirrors this in three tiers:
-   - `_banner()` — always logged to the console **and** once to the HA logs (via `system_log.write`, logger `google_assistant_manual.frontend`) so the user can confirm the companion loaded without dev tools.
+   - `_banner()` — always logged to the console **and** once to the HA logs (via `system_log.write`, logger `hass_ga_manual_ui.frontend`) so the user can confirm the companion loaded without dev tools.
    - `_warn()`/`_error()` — always logged to the console **and** forwarded to the HA logs.
    - `_debug()`/`_info()` — verbose; only logged when the debug flag is set: `localStorage.setItem("gaManualDebug", "1")` (or `?gaManualDebug` in the URL), then reload.
 
