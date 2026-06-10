@@ -4,7 +4,8 @@
   var ASSISTANT_ID = "google_assistant_manual";
   var ASSISTANT_NAME = "Google Assistant (Manual)";
   var SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
-  var ASSET_URL = "/google_assistant_manual/assets";
+  var BRANDS_CDN = "https://brands.home-assistant.io";
+  var BRAND_DOMAIN = "google_assistant";
   var WS_GET_ENTRY_ID = `${ASSISTANT_ID}/get_entry_id`;
   var WS_GET_CONFIG = `${ASSISTANT_ID}/get_config`;
   var WS_UPDATE_CONFIG = `${ASSISTANT_ID}/update_config`;
@@ -92,8 +93,21 @@
       _error("Failed to show toast: " + _errorMessage(e));
     }
   }
+  function _isDarkMode() {
+    try {
+      const dm = getHass()?.themes?.darkMode;
+      if (typeof dm === "boolean") return dm;
+    } catch {
+    }
+    try {
+      return typeof matchMedia !== "undefined" && matchMedia("(prefers-color-scheme: dark)").matches;
+    } catch {
+      return false;
+    }
+  }
   function getBrandIconUrl() {
-    return ASSET_URL + "/icon.png";
+    const variant = _isDarkMode() ? "dark_icon" : "icon";
+    return `${BRANDS_CDN}/${BRAND_DOMAIN}/${variant}.png`;
   }
   function getHass() {
     const homeAssistant = document.querySelector("home-assistant");

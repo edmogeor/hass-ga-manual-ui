@@ -8,8 +8,6 @@ import google_assistant_manual.frontend as frontend_module
 import pytest
 from google_assistant_manual.const import DOMAIN
 from google_assistant_manual.frontend import (
-    ASSETS_PATH,
-    ASSETS_URL,
     FRONTEND_JS_PATH,
     FRONTEND_URL,
     async_setup_frontend,
@@ -33,13 +31,6 @@ class TestPathConstants:
         assert f"/{DOMAIN}/frontend.js" == FRONTEND_URL
         assert FRONTEND_URL.startswith("/")
 
-    def test_assets_path_exists(self) -> None:
-        assert ASSETS_PATH.exists()
-
-    def test_assets_url_includes_domain(self) -> None:
-        assert f"/{DOMAIN}/assets" == ASSETS_URL
-        assert ASSETS_URL.startswith("/")
-
 
 def _make_hass() -> MagicMock:
     """Create a mock HomeAssistant with async HTTP support."""
@@ -53,7 +44,7 @@ class TestAsyncSetupFrontend:
 
     @pytest.mark.asyncio
     async def test_registers_static_paths(self) -> None:
-        """Test that static paths are registered for frontend.js and assets."""
+        """Test that the static path is registered for frontend.js."""
         hass = _make_hass()
         hass.data = {}
 
@@ -62,10 +53,8 @@ class TestAsyncSetupFrontend:
 
         hass.http.async_register_static_paths.assert_called_once()
         call_args = hass.http.async_register_static_paths.call_args[0][0]
-        assert len(call_args) >= 1
+        assert len(call_args) == 1
         assert any(c.url_path == FRONTEND_URL for c in call_args)
-        if ASSETS_PATH.exists():
-            assert any(c.url_path == ASSETS_URL for c in call_args)
         mock_add_js.assert_called_once_with(hass, FRONTEND_URL)
 
     @pytest.mark.asyncio
@@ -178,49 +167,3 @@ class TestAsyncSetupFrontend:
         assert any(
             "Failed to register extra JS URL" in r.message for r in caplog.records
         )
-
-    @pytest.mark.asyncio
-    async def test_warns_when_assets_dir_missing(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """When assets directory is missing, warning is logged."""
-        hass = _make_hass()
-
-        # Patch Path.exists to return False only for the ASSETS_PATH
-        original_exists = Path.exists
-
-        def mock_exists(self: Path) -> bool:
-            if self == ASSETS_PATH:
-                return False
-            return original_exists(self)
-
-        with (
-            patch.object(Path, "exists", mock_exists),
-            caplog.at_level(logging.WARNING),
-        ):
-            await async_setup_frontend(hass)
-
-        assert any("Assets directory not found" in r.message for r in caplog.records)
-
-    @pytest.mark.asyncio
-    async def test_warns_when_icon_missing(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """When icon.png is missing in the assets dir, warning is logged."""
-        hass = _make_hass()
-
-        original_exists = Path.exists
-        icon_path = ASSETS_PATH / "icon.png"
-
-        def mock_exists(self: Path) -> bool:
-            if self == icon_path:
-                return False
-            return original_exists(self)
-
-        with (
-            patch.object(Path, "exists", mock_exists),
-            caplog.at_level(logging.WARNING),
-        ):
-            await async_setup_frontend(hass)
-
-        assert any("without a brand icon" in r.message for r in caplog.records)

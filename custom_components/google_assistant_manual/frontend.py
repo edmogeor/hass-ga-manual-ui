@@ -16,8 +16,6 @@ _LOGGER = logging.getLogger(__name__)
 
 FRONTEND_JS_PATH = Path(__file__).parent / "frontend.js"
 FRONTEND_URL = f"/{DOMAIN}/frontend.js"
-ASSETS_PATH = Path(__file__).parent / "assets"
-ASSETS_URL = f"/{DOMAIN}/assets"
 
 
 async def async_setup_frontend(hass: HomeAssistant) -> None:
@@ -31,38 +29,17 @@ async def async_setup_frontend(hass: HomeAssistant) -> None:
         )
         return
 
-    if not ASSETS_PATH.exists():
-        _LOGGER.warning(
-            "Assets directory not found at %s. "
-            "The Google Assistant brand icon may not render correctly.",
-            ASSETS_PATH,
-        )
-    elif not (ASSETS_PATH / "icon.png").exists():
-        _LOGGER.warning(
-            "Brand icon not found at %s/icon.png. "
-            "The Google Assistant card will appear without a brand icon.",
-            ASSETS_PATH,
-        )
-
     try:
-        static_configs = [
-            StaticPathConfig(
-                FRONTEND_URL,
-                str(FRONTEND_JS_PATH),
-                cache_headers=False,
-            ),
-        ]
-        if ASSETS_PATH.exists():
-            static_configs.append(
+        await hass.http.async_register_static_paths(
+            [
                 StaticPathConfig(
-                    ASSETS_URL,
-                    str(ASSETS_PATH),
-                    cache_headers=True,
-                )
-            )
-
-        await hass.http.async_register_static_paths(static_configs)
-        _LOGGER.debug("Registered static paths: %s, %s", FRONTEND_URL, ASSETS_URL)
+                    FRONTEND_URL,
+                    str(FRONTEND_JS_PATH),
+                    cache_headers=False,
+                ),
+            ]
+        )
+        _LOGGER.debug("Registered static path: %s", FRONTEND_URL)
     except Exception as exc:
         _LOGGER.exception(
             "Failed to register static paths. "

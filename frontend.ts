@@ -17,6 +17,7 @@ interface HomeAssistant {
   callWS<T = unknown>(msg: Record<string, unknown>): Promise<T>;
   localize(key: string, args?: Record<string, number | string>): string;
   states?: Record<string, unknown>;
+  themes?: { darkMode?: boolean };
 }
 
 interface LitLifecycle {
@@ -76,7 +77,14 @@ interface WSError extends Error {
 const ASSISTANT_ID = "google_assistant_manual";
 const ASSISTANT_NAME = "Google Assistant (Manual)";
 const SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
-const ASSET_URL = "/google_assistant_manual/assets";
+
+// Use Core's official Google Assistant brand icon from the HA brands CDN so our
+// card matches the rest of HA (and tracks any future logo refresh). We hit the
+// public CDN directly — the same URL HA's own brandsUrl() builds — rather than
+// the instance's tokenized /api/brands/...?token= proxy URL, whose signed token
+// is short-lived and can't be hardcoded.
+const BRANDS_CDN = "https://brands.home-assistant.io";
+const BRAND_DOMAIN = "google_assistant";
 
 const WS_GET_ENTRY_ID = `${ASSISTANT_ID}/get_entry_id`;
 const WS_GET_CONFIG = `${ASSISTANT_ID}/get_config`;
@@ -208,8 +216,28 @@ function _showToast(message: string, isError: boolean): void {
 // Entry ID resolution
 // ---------------------------------------------------------------------------
 
+/** True when HA is in dark mode, so we can pick the dark brand variant. */
+function _isDarkMode(): boolean {
+  try {
+    const dm = getHass()?.themes?.darkMode;
+    if (typeof dm === "boolean") return dm;
+  } catch {
+    /* hass/themes may be unavailable */
+  }
+  try {
+    return (
+      typeof matchMedia !== "undefined" &&
+      matchMedia("(prefers-color-scheme: dark)").matches
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Core's Google Assistant brand icon from the HA brands CDN (theme-aware). */
 function getBrandIconUrl(): string {
-  return ASSET_URL + "/icon.png";
+  const variant = _isDarkMode() ? "dark_icon" : "icon";
+  return `${BRANDS_CDN}/${BRAND_DOMAIN}/${variant}.png`;
 }
 
 function getHass(): HomeAssistant | undefined {
