@@ -83,10 +83,34 @@ jobs:
           cd "$COMPONENT_DIR"
           zip -r "$GITHUB_WORKSPACE/$ZIP_NAME" . -x '*.pyc' -x '__pycache__/*'
 
+      - name: Extract release notes from CHANGELOG
+        shell: bash
+        run: |
+          version="${{ github.ref_name }}"
+          version="${version#v}"
+          notes="$(awk -v ver="$version" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, "[" ver "]")) { found = 1; next }
+            }
+            found { print }
+          ' CHANGELOG.md)"
+          # Trim leading and trailing blank lines.
+          notes="$(printf '%s\n' "$notes" | sed -e '/./,$!d' | sed -e :a -e '/^\n*$/{$d;N;ba}')"
+          if [ -z "$notes" ]; then
+            echo "No CHANGELOG entry found for $version" >&2
+            exit 1
+          fi
+          {
+            echo "RELEASE_NOTES<<CHANGELOG_EOF"
+            echo "$notes"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_ENV"
+
       - name: Create release and attach ZIP
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
-          generate_release_notes: true
+          body: ${{ env.RELEASE_NOTES }}
           files: ${{ env.ZIP_NAME }}
