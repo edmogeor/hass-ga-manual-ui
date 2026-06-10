@@ -425,21 +425,21 @@ class TestAddAssistantToSchema:
 class TestGetVersion:
     """Tests for _get_version."""
 
-    def test_returns_version_from_manifest(self, reset_version_cache: None) -> None:
+    def test_returns_version_from_manifest(self) -> None:
         version = _get_version()
         assert version == "0.1.0"
 
-    def test_caches_result(self, reset_version_cache: None) -> None:
-        v1 = _get_version()
-        with patch.object(
-            Path, "read_text", side_effect=RuntimeError("should not read")
-        ):
-            v2 = _get_version()
-        assert v1 == v2
+    def test_load_version_reads_manifest(self) -> None:
+        from google_assistant_manual import _load_version
 
-    def test_falls_back_to_unknown_on_error(self, reset_version_cache: None) -> None:
+        version = _load_version()
+        assert version == "0.1.0"
+
+    def test_load_version_falls_back_on_error(self) -> None:
+        from google_assistant_manual import _load_version
+
         with patch.object(Path, "read_text", side_effect=FileNotFoundError("missing")):
-            version = _get_version()
+            version = _load_version()
         assert version == "unknown"
 
 

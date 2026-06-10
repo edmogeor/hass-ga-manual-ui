@@ -5,7 +5,9 @@ a device, without requiring Nabu Casa Cloud. Provides UI-based configuration
 for the manual Google Assistant integration.
 """
 
+import json
 import logging
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 from uuid import uuid4
@@ -36,7 +38,16 @@ from .frontend import async_setup_frontend
 
 _LOGGER = logging.getLogger(__name__)
 
-_VERSION: str | None = None
+
+def _load_version() -> str:
+    try:
+        manifest_path = Path(__file__).parent / "manifest.json"
+        return json.loads(manifest_path.read_text()).get("version", "unknown")
+    except Exception:
+        return "unknown"
+
+
+_VERSION: str = _load_version()
 
 _WSC_PATCH_TARGETS = (
     "homeassistant/expose_entity",
@@ -55,6 +66,35 @@ def _project_id(entry: ConfigEntry) -> str:
     return entry.data.get(CONF_PROJECT_ID, "<missing>")
 
 
+async def _cleanup_core_ga_entries(hass: HomeAssistant) -> None:
+    """Remove all existing core GA config entries so ours takes priority.
+
+    This runs during async_setup (before our entries are loaded) to prevent
+    stale entries from crashing with KeyError when HA auto-sets them up.
+    """
+    try:
+        core_entries = list(hass.config_entries.async_entries(CORE_GA_DOMAIN))
+    except Exception as exc:
+        _LOGGER.debug("Could not enumerate core GA entries: %s", exc)
+        return
+
+    for core_entry in core_entries:
+        try:
+            _LOGGER.debug(
+                "Removing stale core GA entry '%s' (project='%s', source=%s)",
+                core_entry.entry_id,
+                core_entry.data.get(CONF_PROJECT_ID, "<missing>"),
+                core_entry.source,
+            )
+            await hass.config_entries.async_remove(core_entry.entry_id)
+        except Exception as exc:
+            _LOGGER.warning(
+                "Could not remove stale core GA entry '%s': %s",
+                core_entry.entry_id,
+                exc,
+            )
+
+
 # ---------------------------------------------------------------------------
 # Setup / teardown lifecycle
 # ---------------------------------------------------------------------------
@@ -64,6 +104,10 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Google Assistant Manual integration."""
     _LOGGER.debug("async_setup starting for %s v%s", DOMAIN, _get_version())
     hass.data.setdefault(DOMAIN, {})
+
+    hass.data.setdefault(CORE_GA_DOMAIN, {})
+
+    await _cleanup_core_ga_entries(hass)
 
     _patch_core_assistants(hass)
 
@@ -90,9 +134,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _register_ws_commands(hass, entry)
 
-    # Neutralise any YAML-based core GA entries so our config takes priority.
-    await _suppress_yaml_config(hass, entry)
-
     if entry.options.get("enabled", True):
         try:
             await _setup_core_ga(hass, entry)
@@ -112,47 +153,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.options.get("enabled", True),
     )
     return True
-
-
-async def _suppress_yaml_config(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Remove any YAML-based core GA ConfigEntries so ours takes priority."""
-    try:
-        yaml_entries = [
-            e
-            for e in hass.config_entries.async_entries(CORE_GA_DOMAIN)
-            if e.source == "import"
-        ]
-    except Exception as exc:
-        _LOGGER.debug("Could not check for YAML-based core GA entries: %s", exc)
-        return
-
-    if not yaml_entries:
-        return
-
-    _LOGGER.info(
-        "Detected %d YAML-based core GA entries. Removing so %s takes priority.",
-        len(yaml_entries),
-        DOMAIN,
-    )
-
-    for yaml_entry in yaml_entries:
-        try:
-            _LOGGER.debug(
-                "Removing YAML-based core GA entry '%s' (project='%s')",
-                yaml_entry.entry_id,
-                yaml_entry.data.get(CONF_PROJECT_ID, "<missing>"),
-            )
-            await hass.config_entries.async_remove(yaml_entry.entry_id)
-        except Exception as exc:
-            _LOGGER.warning(
-                "Could not remove YAML-based core GA entry '%s': %s",
-                yaml_entry.entry_id,
-                exc,
-            )
-
-    hass.config_entries.async_update_entry(
-        entry, options={**entry.options, "yaml_suppressed": True}
-    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1055,15 +1055,4 @@ def _add_assistant_to_schema(schema: object, assistant_id: str) -> None:
 
 def _get_version() -> str:
     """Return the integration version from manifest.json."""
-    global _VERSION
-    if _VERSION is not None:
-        return _VERSION
-    try:
-        import json
-        from pathlib import Path
-
-        manifest_path = Path(__file__).parent / "manifest.json"
-        _VERSION = json.loads(manifest_path.read_text()).get("version", "unknown")
-    except Exception:
-        _VERSION = "unknown"
     return _VERSION

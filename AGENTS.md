@@ -61,13 +61,13 @@ updates. On `update_config`, live property patches on `GoogleConfig` are trigger
 On `enable`/`disable`, the core GA ConfigEntry is loaded/unloaded entirely — matching
 the `google_enabled` toggle behavior of the cloud card.
 
-**YAML suppression**:
-When our integration is enabled, any existing `google_assistant:` configuration in
-`configuration.yaml` is neutralised. `_suppress_yaml_config()` removes YAML-based
-core GA `ConfigEntry` instances (with `source == "import"`) before our own setup
-runs. Our `ConfigEntry` is the single authoritative source of truth for Google
-Assistant configuration. Users migrating from YAML should remove the
-`google_assistant:` section from their configuration after installing this integration.
+**Core GA entry cleanup**:
+When our integration loads, `_cleanup_core_ga_entries()` removes ALL existing
+`google_assistant` domain ConfigEntries (not just YAML ones) before our config
+entries are set up. This prevents stale entries from crashing with `KeyError`
+when HA auto-sets them up (the core GA expects `hass.data["google_assistant"]`
+to be pre-populated). `hass.data["google_assistant"]` is also initialised as an
+empty dict early in `async_setup()` as a safety net.
 
 > "google_assistant" can mean the core HA component, the Google cloud platform, or
 > the Nabu Casa Cloud integration — always use **core GA** for the HA component.
@@ -81,20 +81,21 @@ Two-layer monkey-patching approach. Neither layer modifies core HA files on disk
 **Files:** `__init__.py`, `config_flow.py`, `const.py`, `frontend.py`
 
 On `async_setup()`:
-1. Patches `KNOWN_ASSISTANTS` tuple in `homeassistant.components.homeassistant.exposed_entities` to include `"google_assistant_manual"`.
-2. Walks the Voluptuous schemas for three WebSocket commands and injects the new assistant ID into any `vol.In` validator that contains `"conversation"`.
-3. Registers static HTTP paths to serve `frontend.js` and `assets/icon.png`.
-4. Registers `frontend.js` as an extra JS module so the HA frontend loads it.
-5. Registers the `get_entry_id` WS discovery command.
+1. Initiálises `hass.data["google_assistant"]` as an empty dict (safety for stale entries).
+2. Removes all existing core GA ConfigEntries via `_cleanup_core_ga_entries()`.
+3. Patches `KNOWN_ASSISTANTS` tuple in `homeassistant.components.homeassistant.exposed_entities` to include `"google_assistant_manual"`.
+4. Walks the Voluptuous schemas for three WebSocket commands and injects the new assistant ID into any `vol.In` validator that contains `"conversation"`.
+5. Registers static HTTP paths to serve `frontend.js` and `assets/icon.png`.
+6. Registers `frontend.js` as an extra JS module so the HA frontend loads it.
+7. Registers the `get_entry_id` WS discovery command.
 
 On `async_setup_entry()`:
-1. Neutralises any YAML-based core GA ConfigEntries via `_suppress_yaml_config()`.
-2. Builds config dict from `entry.data` + `entry.options`.
-3. Sets `hass.data["google_assistant"]["config"]`.
-4. Imports and calls core GA's `async_setup_entry` with a `SimpleNamespace`-based fake entry.
-5. Stores `GoogleConfig` reference in `entry.runtime_data`.
-6. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
-7. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
+1. Builds config dict from `entry.data` + `entry.options`.
+2. Sets `hass.data["google_assistant"]["config"]`.
+3. Imports and calls core GA's `async_setup_entry` with a `SimpleNamespace`-based fake entry.
+4. Stores `GoogleConfig` reference in `entry.runtime_data`.
+5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`.
+6. Registers WS commands for the assistant card (`get_config`, `update_config`, `enable`, `disable`).
 
 **Patched WS commands (entity exposure):**
 - `homeassistant/expose_entity` — set per-entity exposure
