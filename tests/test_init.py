@@ -2,7 +2,6 @@
 
 import logging
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -177,23 +176,22 @@ class TestMakeCoreEntry:
     def test_entry_id_is_hex_string(self) -> None:
         entry = mock_config_entry()
         core_entry = _make_core_entry(entry)
-        assert len(core_entry.entry_id) == 32
-        assert all(c in "0123456789abcdef" for c in core_entry.entry_id)
+        assert len(core_entry.entry_id) == 26
 
-    def test_source_is_user(self) -> None:
+    def test_source_is_system(self) -> None:
         entry = mock_config_entry()
         core_entry = _make_core_entry(entry)
-        assert core_entry.source == "user"
+        assert core_entry.source == "system"
 
     def test_options_are_empty_dict(self) -> None:
         entry = mock_config_entry()
         core_entry = _make_core_entry(entry)
         assert core_entry.options == {}
 
-    def test_runtime_data_starts_none(self) -> None:
+    def test_runtime_data_starts_unset(self) -> None:
         entry = mock_config_entry()
         core_entry = _make_core_entry(entry)
-        assert core_entry.runtime_data is None
+        assert not hasattr(core_entry, "runtime_data")
 
     def test_disabled_by_is_none(self) -> None:
         entry = mock_config_entry()
@@ -212,10 +210,10 @@ class TestMakeCoreEntry:
         assert core_entry.pref_disable_new_entities is False
         assert core_entry.pref_disable_polling is False
 
-    def test_result_is_simple_namespace(self) -> None:
+    def test_result_is_config_entry(self) -> None:
         entry = mock_config_entry()
         core_entry = _make_core_entry(entry)
-        assert isinstance(core_entry, SimpleNamespace)
+        assert isinstance(core_entry, ConfigEntry)
 
 
 # =============================================================================
@@ -598,19 +596,19 @@ class TestPatchGoogleConfigProperties:
 class TestTeardownCoreGa:
     """Tests for _teardown_core_ga."""
 
-    def test_teardown_with_no_runtime_data(self) -> None:
+    async def test_teardown_with_no_runtime_data(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         entry = mock_config_entry(runtime_data=None)
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         # Should not raise, and entry.runtime_data stays None
 
-    def test_teardown_with_non_dict_runtime(self) -> None:
+    async def test_teardown_with_non_dict_runtime(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         entry = mock_config_entry(runtime_data="not-a-dict")
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         assert entry.runtime_data is None
 
-    def test_teardown_calls_async_deinitialize(self) -> None:
+    async def test_teardown_calls_async_deinitialize(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
         gc.async_deinitialize = MagicMock()  # type: ignore[method-assign]
@@ -623,10 +621,10 @@ class TestTeardownCoreGa:
         # Mock async_update_entry
         hass.config_entries.async_update_entry = MagicMock()
 
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         gc.async_deinitialize.assert_called_once()
 
-    def test_teardown_removes_routes(self) -> None:
+    async def test_teardown_removes_routes(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         mock_route = MagicMock()
         hass.http.app.router._routes = [mock_route]
@@ -640,10 +638,10 @@ class TestTeardownCoreGa:
         )
         hass.config_entries.async_update_entry = MagicMock()
 
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         assert mock_route not in hass.http.app.router._routes
 
-    def test_teardown_sets_runtime_data_to_none(self) -> None:
+    async def test_teardown_sets_runtime_data_to_none(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
         entry = mock_config_entry(
@@ -654,10 +652,10 @@ class TestTeardownCoreGa:
         )
         hass.config_entries.async_update_entry = MagicMock()
 
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         assert entry.runtime_data is None
 
-    def test_teardown_sets_enabled_false(self) -> None:
+    async def test_teardown_sets_enabled_false(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
         entry = mock_config_entry(
@@ -669,11 +667,11 @@ class TestTeardownCoreGa:
         entry.options["enabled"] = True
         hass.config_entries.async_update_entry = MagicMock()
 
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         call_args = hass.config_entries.async_update_entry.call_args
         assert call_args[1]["options"]["enabled"] is False
 
-    def test_teardown_handles_deinitialize_failure(self) -> None:
+    async def test_teardown_handles_deinitialize_failure(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
         gc.async_deinitialize = MagicMock(  # type: ignore[method-assign]
@@ -687,10 +685,10 @@ class TestTeardownCoreGa:
         )
         hass.config_entries.async_update_entry = MagicMock()
 
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         assert entry.runtime_data is None
 
-    def test_teardown_handles_route_removal_failure(self) -> None:
+    async def test_teardown_handles_route_removal_failure(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
 
@@ -708,9 +706,9 @@ class TestTeardownCoreGa:
         )
         hass.config_entries.async_update_entry = MagicMock()
 
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
 
-    def test_teardown_without_google_config(self) -> None:
+    async def test_teardown_without_google_config(self) -> None:
         """Runtime data can exist without a google_config key."""
         hass = MagicMock(spec=HomeAssistant)
         entry = mock_config_entry(
@@ -719,7 +717,7 @@ class TestTeardownCoreGa:
             }
         )
         hass.config_entries.async_update_entry = MagicMock()
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
         assert entry.runtime_data is None
 
 

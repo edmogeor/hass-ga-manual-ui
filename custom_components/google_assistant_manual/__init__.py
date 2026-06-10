@@ -8,9 +8,7 @@ for the manual Google Assistant integration.
 import json
 import logging
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
-from uuid import uuid4
 
 import voluptuous as vol
 from homeassistant.components import websocket_api
@@ -164,7 +162,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     try:
-        _teardown_core_ga(hass, entry)
+        await _teardown_core_ga(hass, entry)
     except Exception:
         _LOGGER.exception(
             "Error during core GA teardown for project='%s'",
@@ -246,23 +244,27 @@ def _build_core_config(entry: ConfigEntry) -> dict[str, Any]:
     return config
 
 
-def _make_core_entry(entry: ConfigEntry) -> SimpleNamespace:
-    """Create a minimal fake ConfigEntry for the core GA domain."""
-    fake = SimpleNamespace()
-    fake.version = 1
-    fake.domain = CORE_GA_DOMAIN
-    fake.title = entry.data[CONF_PROJECT_ID]
-    fake.data = entry.data
-    fake.entry_id = uuid4().hex
-    fake.source = "user"
-    fake.options = {}
-    fake.runtime_data = None
-    fake.disabled_by = None
-    fake.pref_disable_new_entities = False
-    fake.pref_disable_polling = False
-    fake.unique_id = None
-    fake.minor_version = 1
-    return fake
+def _make_core_entry(entry: ConfigEntry) -> ConfigEntry:
+    """Create a real ConfigEntry for the core GA domain.
+
+    Must be registered via hass.config_entries.async_add() before use
+    so the device registry can link to it.
+    """
+    return ConfigEntry(
+        version=1,
+        minor_version=1,
+        domain=CORE_GA_DOMAIN,
+        title=entry.data[CONF_PROJECT_ID],
+        data=entry.data,
+        source="system",
+        options={},
+        entry_id=None,
+        unique_id=None,
+        discovery_keys={},
+        subentries_data=(),
+        pref_disable_new_entities=False,
+        pref_disable_polling=False,
+    )
 
 
 async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -302,6 +304,11 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     core_entry = _make_core_entry(entry)
 
+    await hass.config_entries.async_add(core_entry)
+    _LOGGER.debug(
+        "Registered core GA entry with entry_id=%s", core_entry.entry_id
+    )
+
     # Snapshot registered views before setup so we can find the new one
     try:
         views_before = set(hass.http.app.router.routes())
@@ -314,7 +321,7 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         views_before = set()
 
     _LOGGER.debug(
-        "Calling core GA async_setup_entry with fake entry_id=%s", core_entry.entry_id
+        "Calling core GA async_setup_entry with entry_id=%s", core_entry.entry_id
     )
     await core_async_setup_entry(hass, core_entry)
 
@@ -355,7 +362,7 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
     _LOGGER.info("Core GA successfully loaded for project '%s'", project_id)
 
 
-def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Tear down core GA — webhook, report_state, HTTP view."""
     project_id = _project_id(entry)
     runtime = entry.runtime_data
@@ -397,6 +404,20 @@ def _teardown_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         if removed:
             _LOGGER.debug(
                 "Removed %d/%d core GA HTTP routes", removed, len(routes_to_remove)
+            )
+
+    core_entry = runtime.get("core_entry")
+    if core_entry is not None:
+        try:
+            await hass.config_entries.async_remove(core_entry.entry_id)
+            _LOGGER.debug(
+                "Removed core GA config entry '%s'", core_entry.entry_id
+            )
+        except Exception as exc:
+            _LOGGER.warning(
+                "Could not remove core GA config entry '%s': %s",
+                core_entry.entry_id,
+                exc,
             )
 
     entry.runtime_data = None
@@ -885,31 +906,37 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         msg: dict[str, Any],
     ) -> None:
         """Disable core GA — tear down webhook, stop report_state."""
-        current_entry = _safe_get_entry(_hass, msg["entry_id"], msg["id"], connection)
-        if current_entry is None:
-            return
 
-        project_id = _project_id(current_entry)
-        _LOGGER.info("Disabling Google Assistant for project='%s'", project_id)
+        async def _disable() -> None:
+            current_entry = _safe_get_entry(
+                _hass, msg["entry_id"], msg["id"], connection
+            )
+            if current_entry is None:
+                return
 
-        try:
-            _teardown_core_ga(_hass, current_entry)
-            _LOGGER.info(
-                "Successfully disabled Google Assistant for project='%s'",
-                project_id,
-            )
-            connection.send_result(msg["id"])
-        except Exception as exc:
-            _LOGGER.exception(
-                "Error disabling Google Assistant for project='%s'",
-                project_id,
-            )
-            connection.send_error(
-                msg["id"],
-                "teardown_failed",
-                f"Failed to disable integration: {exc}. "
-                "Check Home Assistant logs for details.",
-            )
+            project_id = _project_id(current_entry)
+            _LOGGER.info("Disabling Google Assistant for project='%s'", project_id)
+
+            try:
+                await _teardown_core_ga(_hass, current_entry)
+                _LOGGER.info(
+                    "Successfully disabled Google Assistant for project='%s'",
+                    project_id,
+                )
+                connection.send_result(msg["id"])
+            except Exception as exc:
+                _LOGGER.exception(
+                    "Error disabling Google Assistant for project='%s'",
+                    project_id,
+                )
+                connection.send_error(
+                    msg["id"],
+                    "teardown_failed",
+                    f"Failed to disable integration: {exc}. "
+                    "Check Home Assistant logs for details.",
+                )
+
+        _hass.async_create_task(_disable())
 
     # Register all four commands
     commands = [
