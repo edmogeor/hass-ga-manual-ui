@@ -10,9 +10,9 @@
     "lint:ts": "eslint frontend.ts tests/",
     "lint:py": "ruff check . && ruff format --check .",
     "fix": "eslint --fix frontend.ts tests/ && ruff check --fix . && ruff format .",
-    "test": "vitest run && python -m pytest tests/ -q",
+    "test": "vitest run && python -B -m pytest tests/ -q",
     "test:ts": "vitest run",
-    "test:py": "python -m pytest tests/ -q"
+    "test:py": "python -B -m pytest tests/ -q"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
