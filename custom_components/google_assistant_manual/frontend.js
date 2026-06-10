@@ -11,7 +11,8 @@
   var WS_ENABLE = `${ASSISTANT_ID}/enable`;
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   function _errorMessage(e) {
-    return _errorMessage(e);
+    if (e instanceof Error) return e.message;
+    return String(e);
   }
   var _entryId = null;
   var _entryIdPromise = null;
@@ -454,6 +455,12 @@
     return item;
   }
   var _pinTimer = null;
+  function _setRowsVisible(rows, visible) {
+    const display = visible ? "" : "none";
+    for (let i = 0; i < rows.length; i++) {
+      rows[i].style.display = display;
+    }
+  }
   function buildCard() {
     try {
       let addSetting2 = function(el) {
@@ -559,15 +566,10 @@
       card.appendChild(actions);
       settingsRows.push(actions);
       globalSwitch.addEventListener("change", () => {
-        if (globalSwitch.checked) {
-          _enableIntegration(card, globalSwitch, settingsRows);
-        } else {
-          _disableIntegration(card, globalSwitch, settingsRows);
-        }
+        const cfg = globalSwitch.checked ? _TOGGLE_CONFIGS.enable : _TOGGLE_CONFIGS.disable;
+        _toggleIntegration(cfg, card, globalSwitch, settingsRows);
       });
-      for (let i = 0; i < settingsRows.length; i++) {
-        settingsRows[i].style.display = "none";
-      }
+      _setRowsVisible(settingsRows, false);
       refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
       return card;
     } catch (e) {
@@ -575,73 +577,50 @@
       return null;
     }
   }
-  function _enableIntegration(card, globalSwitch, settingsRows) {
+  var _TOGGLE_CONFIGS = {
+    enable: {
+      action: "enable",
+      wsType: WS_ENABLE,
+      successMsg: "Google Assistant enabled successfully",
+      failMsg: "Failed to enable Google Assistant.",
+      failHint: "Try reloading the integration from Settings \u2192 Devices & Services.",
+      showCardOnSuccess: true
+    },
+    disable: {
+      action: "disable",
+      wsType: WS_DISABLE,
+      successMsg: "Google Assistant disabled successfully",
+      failMsg: "Failed to disable Google Assistant.",
+      failHint: "Try removing the integration from Settings \u2192 Devices & Services.",
+      showCardOnSuccess: false
+    }
+  };
+  function _toggleIntegration(config, card, globalSwitch, settingsRows) {
     getEntryId().then((entryId) => {
       const hass = getHass();
       if (!hass) {
-        _warn("_enableIntegration: Home Assistant not loaded");
-        globalSwitch.checked = false;
+        _warn("_toggleIntegration: Home Assistant not loaded");
+        globalSwitch.checked = !config.showCardOnSuccess;
         return;
       }
-      _info("Enabling Google Assistant for entry_id=" + entryId);
-      hass.callWS({
-        type: WS_ENABLE,
-        entry_id: entryId
-      }).then(() => {
-        _info("Google Assistant enabled successfully");
-        _gaManualEnabled = true;
+      _info(config.action.charAt(0).toUpperCase() + config.action.slice(1) + " Google Assistant for entry_id=" + entryId);
+      hass.callWS({ type: config.wsType, entry_id: entryId }).then(() => {
+        _info(config.successMsg);
+        _gaManualEnabled = config.showCardOnSuccess;
         _refreshExposePage();
-        for (let i = 0; i < settingsRows.length; i++) {
-          settingsRows[i].style.display = "";
-        }
-        refreshExposeToggle(card);
+        _setRowsVisible(settingsRows, config.showCardOnSuccess);
+        if (config.showCardOnSuccess) refreshExposeToggle(card);
       }).catch((err) => {
-        _error(
-          "Failed to enable Google Assistant: " + (err.message || err.error || err.code || String(err))
-        );
-        globalSwitch.checked = false;
+        _error(config.failMsg + " " + (err.message || err.error || err.code || String(err)));
+        globalSwitch.checked = !config.showCardOnSuccess;
         _showToast(
-          "Failed to enable Google Assistant. " + (err.message || err.error || "Check Home Assistant logs for details.") + "\n\nTry reloading the integration from Settings \u2192 Devices & Services.",
+          config.failMsg + " " + (err.message || err.error || "Check Home Assistant logs for details.") + "\n\n" + config.failHint,
           true
         );
       });
     }).catch((err) => {
-      _error("_enableIntegration: " + err.message);
-      globalSwitch.checked = false;
-    });
-  }
-  function _disableIntegration(card, globalSwitch, settingsRows) {
-    getEntryId().then((entryId) => {
-      const hass = getHass();
-      if (!hass) {
-        _warn("_disableIntegration: Home Assistant not loaded");
-        globalSwitch.checked = true;
-        return;
-      }
-      _info("Disabling Google Assistant for entry_id=" + entryId);
-      hass.callWS({
-        type: WS_DISABLE,
-        entry_id: entryId
-      }).then(() => {
-        _info("Google Assistant disabled successfully");
-        _gaManualEnabled = false;
-        _refreshExposePage();
-        for (let i = 0; i < settingsRows.length; i++) {
-          settingsRows[i].style.display = "none";
-        }
-      }).catch((err) => {
-        _error(
-          "Failed to disable Google Assistant: " + (err.message || err.error || err.code || String(err))
-        );
-        globalSwitch.checked = true;
-        _showToast(
-          "Failed to disable Google Assistant. " + (err.message || err.error || "Check Home Assistant logs for details.") + "\n\nTry removing the integration from Settings \u2192 Devices & Services.",
-          true
-        );
-      });
-    }).catch((err) => {
-      _error("_disableIntegration: " + err.message);
-      globalSwitch.checked = true;
+      _error("_toggleIntegration(" + config.action + "): " + err.message);
+      globalSwitch.checked = !config.showCardOnSuccess;
     });
   }
   function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert) {
@@ -664,9 +643,7 @@
         if (yamlAlert) {
           yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
         }
-        for (let i = 0; i < settingsRows.length; i++) {
-          settingsRows[i].style.display = config.enabled ? "" : "none";
-        }
+        _setRowsVisible(settingsRows, config.enabled);
         if (reportStateSwitch) {
           reportStateSwitch.checked = config.report_state;
           reportStateSwitch.disabled = !config.enabled;

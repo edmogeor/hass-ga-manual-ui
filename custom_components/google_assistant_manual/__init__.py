@@ -13,7 +13,6 @@ from uuid import uuid4
 import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PROJECT_ID
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.typing import ConfigType
 
@@ -21,6 +20,7 @@ from .const import (
     ASSISTANT_ID,
     CONF_CLIENT_EMAIL,
     CONF_PRIVATE_KEY,
+    CONF_PROJECT_ID,
     CONF_REPORT_STATE,
     CONF_SECURE_DEVICES_PIN,
     CONF_SERVICE_ACCOUNT,

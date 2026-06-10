@@ -1,0 +1,432 @@
+"""Tests for google_assistant_manual/config_flow.py."""
+
+import json
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
+import voluptuous as vol
+from google_assistant_manual.config_flow import (
+    GoogleAssistantManualConfigFlow,
+    _is_valid_project_id,
+    _parse_service_account_json,
+)
+from google_assistant_manual.const import (
+    CONF_CLIENT_EMAIL,
+    CONF_PRIVATE_KEY,
+    CONF_PROJECT_ID,
+    CONF_SERVICE_ACCOUNT,
+)
+
+from .conftest import (
+    INVALID_JSON_STRING,
+    SERVICE_ACCOUNT_EMPTY,
+    SERVICE_ACCOUNT_JSON_ARRAY,
+    SERVICE_ACCOUNT_NO_CLIENT_EMAIL,
+    SERVICE_ACCOUNT_NO_PRIVATE_KEY,
+    SERVICE_ACCOUNT_WRONG_TYPES,
+    VALID_SERVICE_ACCOUNT_JSON,
+)
+
+# =============================================================================
+# _is_valid_project_id
+# =============================================================================
+
+
+class TestIsValidProjectId:
+    """Test the GCP project ID validator."""
+
+    def test_valid_ids(self) -> None:
+        """Valid GCP project IDs."""
+        valid = [
+            "my-project",
+            "my-project-123",
+            "abcdef",  # exactly 6 chars
+            "a" * 30,  # exactly 30 chars
+            "test-project",
+            "project1",
+            "a1b2c3",
+            "hello-world-test",
+        ]
+        for vid in valid:
+            assert _is_valid_project_id(vid), f"Expected valid: '{vid}'"
+
+    def test_empty_string(self) -> None:
+        assert not _is_valid_project_id("")
+
+    def test_none_value(self) -> None:
+        """None or falsy values."""
+        assert not _is_valid_project_id(None)  # type: ignore[arg-type]
+        assert not _is_valid_project_id(False)  # type: ignore[arg-type]
+
+    def test_too_short(self) -> None:
+        """Less than 6 characters."""
+        invalid = ["", "a", "ab", "abc", "abcd", "abcde"]
+        for vid in invalid:
+            assert not _is_valid_project_id(vid), (
+                f"Expected invalid (too short): '{vid}'"
+            )
+
+    def test_too_long(self) -> None:
+        """More than 30 characters."""
+        assert not _is_valid_project_id("a" * 31)
+
+    def test_starts_with_non_letter(self) -> None:
+        """Must start with a letter."""
+        invalid = ["1project", "-project", "0test", "123abc"]
+        for vid in invalid:
+            assert not _is_valid_project_id(vid), f"Expected invalid: '{vid}'"
+
+    def test_ends_with_hyphen(self) -> None:
+        """Must not end with a hyphen."""
+        assert not _is_valid_project_id("my-project-")
+        assert not _is_valid_project_id("a-")
+
+    def test_uppercase_characters(self) -> None:
+        """Must be lowercase only."""
+        invalid = [
+            "My-Project",
+            "MY-PROJECT",
+            "testProject",
+            "Test-Project",
+        ]
+        for vid in invalid:
+            assert not _is_valid_project_id(vid), (
+                f"Expected invalid (uppercase): '{vid}'"
+            )
+
+    def test_invalid_characters(self) -> None:
+        """Characters other than lowercase letters, digits, and hyphens."""
+        invalid = [
+            "my_project",
+            "my project",
+            "test@project",
+            "project#1",
+            "test/project",
+            "project.test",
+        ]
+        for vid in invalid:
+            assert not _is_valid_project_id(vid), (
+                f"Expected invalid (bad chars): '{vid}'"
+            )
+
+    def test_only_digits(self) -> None:
+        """All digits should fail because it must start with a letter."""
+        assert not _is_valid_project_id("123456")
+
+    def test_only_hyphens(self) -> None:
+        """All hyphens should fail because it must start with a letter."""
+        assert not _is_valid_project_id("------")
+
+
+# =============================================================================
+# _parse_service_account_json
+# =============================================================================
+
+
+class TestParseServiceAccountJson:
+    """Test service account JSON parsing."""
+
+    def test_valid_json(self) -> None:
+        result = _parse_service_account_json(VALID_SERVICE_ACCOUNT_JSON)
+        assert result == {
+            CONF_CLIENT_EMAIL: "test@test-project.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: (
+                "-----BEGIN PRIVATE KEY-----\n"
+                "MIIEvQIBADANBgkqhkiG9w0BAQE...\n"
+                "-----END PRIVATE KEY-----\n"
+            ),
+        }
+
+    def test_minimal_valid_json(self) -> None:
+        """Minimal JSON with only required fields."""
+        minimal = json.dumps(
+            {
+                "client_email": "minimal@test.iam.gserviceaccount.com",
+                "private_key": "-----BEGIN PRIVATE KEY-----\nkey\n-----END PRIVATE KEY-----\n",
+            }
+        )
+        result = _parse_service_account_json(minimal)
+        assert result[CONF_CLIENT_EMAIL] == "minimal@test.iam.gserviceaccount.com"
+        assert "-----BEGIN PRIVATE KEY-----" in result[CONF_PRIVATE_KEY]
+
+    def test_missing_client_email(self) -> None:
+        with pytest.raises(vol.Invalid, match="client_email"):
+            _parse_service_account_json(SERVICE_ACCOUNT_NO_CLIENT_EMAIL)
+
+    def test_missing_private_key(self) -> None:
+        with pytest.raises(vol.Invalid, match="private_key"):
+            _parse_service_account_json(SERVICE_ACCOUNT_NO_PRIVATE_KEY)
+
+    def test_empty_object(self) -> None:
+        with pytest.raises(vol.Invalid, match="Missing required fields"):
+            _parse_service_account_json(SERVICE_ACCOUNT_EMPTY)
+
+    def test_invalid_json(self) -> None:
+        with pytest.raises(vol.Invalid, match="Invalid JSON"):
+            _parse_service_account_json(INVALID_JSON_STRING)
+
+    def test_array_instead_of_object(self) -> None:
+        with pytest.raises(vol.Invalid, match="JSON object"):
+            _parse_service_account_json(SERVICE_ACCOUNT_JSON_ARRAY)
+
+    def test_null_client_email(self) -> None:
+        """null value counts as missing."""
+        bad = '{"client_email": null, "private_key": "key"}'
+        with pytest.raises(vol.Invalid, match="client_email"):
+            _parse_service_account_json(bad)
+
+    def test_empty_string_client_email(self) -> None:
+        """Empty string counts as missing."""
+        bad = '{"client_email": "", "private_key": "key"}'
+        with pytest.raises(vol.Invalid, match="client_email"):
+            _parse_service_account_json(bad)
+
+    def test_empty_string_private_key(self) -> None:
+        bad = '{"client_email": "test@test.com", "private_key": ""}'
+        with pytest.raises(vol.Invalid, match="private_key"):
+            _parse_service_account_json(bad)
+
+    def test_wrong_types_raise_invalid(self) -> None:
+        """Non-string values should raise."""
+        with pytest.raises(vol.Invalid, match="must be a string"):
+            _parse_service_account_json(SERVICE_ACCOUNT_WRONG_TYPES)
+
+    def test_client_email_is_int(self) -> None:
+        bad = '{"client_email": 42, "private_key": "key"}'
+        with pytest.raises(vol.Invalid, match="must be a string"):
+            _parse_service_account_json(bad)
+
+    def test_private_key_is_int(self) -> None:
+        bad = '{"client_email": "test@test.com", "private_key": 99}'
+        with pytest.raises(vol.Invalid, match="must be a string"):
+            _parse_service_account_json(bad)
+
+    def test_extra_fields_ignored(self) -> None:
+        """Extra fields should be silently ignored."""
+        extra = json.dumps(
+            {
+                "client_email": "test@test.iam.gserviceaccount.com",
+                "private_key": "-----BEGIN PRIVATE KEY-----\nkey\n-----END PRIVATE KEY-----\n",
+                "type": "service_account",
+                "project_id": "my-project",
+                "token_uri": "https://example.com",
+            }
+        )
+        result = _parse_service_account_json(extra)
+        assert result[CONF_CLIENT_EMAIL] == "test@test.iam.gserviceaccount.com"
+
+
+# =============================================================================
+# GoogleAssistantManualConfigFlow
+# =============================================================================
+
+
+@pytest.fixture
+def config_flow() -> GoogleAssistantManualConfigFlow:
+    """Return a fresh config flow instance."""
+    return GoogleAssistantManualConfigFlow()
+
+
+class TestConfigFlowUserStep:
+    """Test the initial 'user' step of the config flow."""
+
+    @pytest.mark.asyncio
+    async def test_shows_form_on_first_load(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_user()
+        assert result["type"] == "form"
+        assert result["step_id"] == "user"
+        assert "project_id" in result["data_schema"].schema
+
+    @pytest.mark.asyncio
+    async def test_empty_project_id_shows_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_user({CONF_PROJECT_ID: ""})
+        assert result["type"] == "form"
+        assert result["errors"] == {CONF_PROJECT_ID: "project_id_required"}
+
+    @pytest.mark.asyncio
+    async def test_whitespace_only_project_id_shows_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_user({CONF_PROJECT_ID: "   "})
+        assert result["type"] == "form"
+        assert result["errors"] == {CONF_PROJECT_ID: "project_id_required"}
+
+    @pytest.mark.asyncio
+    async def test_invalid_project_id_shows_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_user({CONF_PROJECT_ID: "Ab"})
+        assert result["type"] == "form"
+        assert result["errors"] == {CONF_PROJECT_ID: "invalid_project_id"}
+
+    @pytest.mark.asyncio
+    async def test_valid_project_id_advances_to_service_account(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # Override async_step_service_account to return a form
+        config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
+            return_value={"type": "form", "step_id": "service_account"}
+        )
+        result = await config_flow.async_step_user({CONF_PROJECT_ID: "my-project-123"})
+        # Should call async_step_service_account
+        config_flow.async_step_service_account.assert_awaited_once()
+        assert result["step_id"] == "service_account"
+
+    @pytest.mark.asyncio
+    async def test_project_id_stored_in_data(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
+            return_value={"type": "form", "step_id": "service_account"}
+        )
+        await config_flow.async_step_user({CONF_PROJECT_ID: "my-test-project"})
+        assert config_flow._data[CONF_PROJECT_ID] == "my-test-project"
+
+    @pytest.mark.asyncio
+    async def test_project_id_stripped_of_whitespace(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
+            return_value={"type": "form", "step_id": "service_account"}
+        )
+        await config_flow.async_step_user({CONF_PROJECT_ID: "  my-project  "})
+        assert config_flow._data[CONF_PROJECT_ID] == "my-project"
+
+
+class TestConfigFlowServiceAccountStep:
+    """Test the 'service_account' step of the config flow."""
+
+    @pytest.mark.asyncio
+    async def test_shows_form_on_first_load(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        result = await config_flow.async_step_service_account()
+        assert result["type"] == "form"
+        assert result["step_id"] == "service_account"
+
+    @pytest.mark.asyncio
+    async def test_empty_input_shows_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        result = await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: ""}
+        )
+        assert result["errors"] == {CONF_SERVICE_ACCOUNT: "service_account_required"}
+
+    @pytest.mark.asyncio
+    async def test_whitespace_only_shows_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        result = await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: "   "}
+        )
+        assert result["errors"] == {CONF_SERVICE_ACCOUNT: "service_account_required"}
+
+    @pytest.mark.asyncio
+    async def test_invalid_json_shows_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        result = await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: INVALID_JSON_STRING}
+        )
+        assert result["type"] == "form"
+        assert CONF_SERVICE_ACCOUNT in result["errors"]
+        assert "Invalid JSON" in result["errors"][CONF_SERVICE_ACCOUNT]
+
+    @pytest.mark.asyncio
+    async def test_missing_fields_shows_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        result = await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: SERVICE_ACCOUNT_EMPTY}
+        )
+        assert result["type"] == "form"
+        error = result["errors"][CONF_SERVICE_ACCOUNT]
+        assert "Missing required fields" in error
+
+    @pytest.mark.asyncio
+    async def test_valid_json_creates_entry(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(
+            return_value={"type": "create_entry"}
+        )  # type: ignore[method-assign]
+        await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+        )
+        config_flow.async_create_entry.assert_called_once()
+        call_args = config_flow.async_create_entry.call_args
+        assert call_args[1]["title"] == "test-project"
+        assert CONF_PROJECT_ID in call_args[1]["data"]
+        assert CONF_SERVICE_ACCOUNT in call_args[1]["data"]
+
+    @pytest.mark.asyncio
+    async def test_service_account_stored_in_data(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(
+            return_value={"type": "create_entry"}
+        )  # type: ignore[method-assign]
+        await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+        )
+        sa = config_flow._data[CONF_SERVICE_ACCOUNT]
+        assert sa[CONF_CLIENT_EMAIL] == "test@test-project.iam.gserviceaccount.com"
+        assert "-----BEGIN PRIVATE KEY-----" in sa[CONF_PRIVATE_KEY]
+
+    @pytest.mark.asyncio
+    async def test_flows_independent_data(self) -> None:
+        """Ensure each flow instance has independent _data."""
+        flow1 = GoogleAssistantManualConfigFlow()
+        flow2 = GoogleAssistantManualConfigFlow()
+
+        flow1.async_step_service_account = AsyncMock(return_value={"type": "form"})  # type: ignore[method-assign]
+        flow2.async_step_service_account = AsyncMock(return_value={"type": "form"})  # type: ignore[method-assign]
+
+        await flow1.async_step_user({CONF_PROJECT_ID: "project-one"})
+        await flow2.async_step_user({CONF_PROJECT_ID: "project-two"})
+
+        assert flow1._data[CONF_PROJECT_ID] == "project-one"
+        assert flow2._data[CONF_PROJECT_ID] == "project-two"
+
+    @pytest.mark.asyncio
+    async def test_description_placeholders_in_user_step(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_user()
+        assert "description_placeholders" in result
+        assert "guide_url" in result["description_placeholders"]
+
+    @pytest.mark.asyncio
+    async def test_description_placeholders_in_service_account_step(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        result = await config_flow.async_step_service_account()
+        assert "description_placeholders" in result
+        assert "docs_url" in result["description_placeholders"]
+        assert "guide_url" in result["description_placeholders"]
+
+    @pytest.mark.asyncio
+    async def test_raw_input_stripped(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """Whitespace around valid JSON is stripped before parsing."""
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(
+            return_value={"type": "create_entry"}
+        )  # type: ignore[method-assign]
+        padded = f"  {VALID_SERVICE_ACCOUNT_JSON}  "
+        await config_flow.async_step_service_account({CONF_SERVICE_ACCOUNT: padded})
+        config_flow.async_create_entry.assert_called_once()

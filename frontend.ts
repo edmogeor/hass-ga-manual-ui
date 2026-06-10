@@ -75,7 +75,8 @@ const WS_DISABLE = `${ASSISTANT_ID}/disable`;
 // ---------------------------------------------------------------------------
 
 function _errorMessage(e: unknown): string {
-  return _errorMessage(e);
+  if (e instanceof Error) return e.message;
+  return String(e);
 }
 
 let _entryId: string | null = null;
@@ -652,6 +653,13 @@ function makeSwitchSettingItem(
 
 let _pinTimer: ReturnType<typeof setTimeout> | null = null;
 
+function _setRowsVisible(rows: HTMLElement[], visible: boolean): void {
+  const display = visible ? "" : "none";
+  for (let i = 0; i < rows.length; i++) {
+    rows[i].style.display = display;
+  }
+}
+
 function buildCard(): HTMLElement | null {
   try {
     const hass = getHass();
@@ -793,17 +801,14 @@ function buildCard(): HTMLElement | null {
 
     // Global toggle: calls enable/disable WS commands
     globalSwitch.addEventListener("change", () => {
-      if ((globalSwitch as TogglableElement).checked) {
-        _enableIntegration(card, globalSwitch, settingsRows);
-      } else {
-        _disableIntegration(card, globalSwitch, settingsRows);
-      }
+      const cfg = (globalSwitch as TogglableElement).checked
+        ? _TOGGLE_CONFIGS.enable
+        : _TOGGLE_CONFIGS.disable;
+      _toggleIntegration(cfg, card, globalSwitch, settingsRows);
     });
 
     // Default: hidden until state is fetched
-    for (let i = 0; i < settingsRows.length; i++) {
-      settingsRows[i].style.display = "none";
-    }
+    _setRowsVisible(settingsRows, false);
 
     // Fetch initial config state
     refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
@@ -819,56 +824,36 @@ function buildCard(): HTMLElement | null {
 // Enable/disable integration
 // ---------------------------------------------------------------------------
 
-function _enableIntegration(
-  card: HTMLElement,
-  globalSwitch: HTMLElement,
-  settingsRows: HTMLElement[],
-): void {
-  getEntryId()
-    .then((entryId) => {
-      const hass = getHass();
-      if (!hass) {
-        _warn("_enableIntegration: Home Assistant not loaded");
-        (globalSwitch as TogglableElement).checked = false;
-        return;
-      }
-
-      _info("Enabling Google Assistant for entry_id=" + entryId);
-      hass
-        .callWS({
-          type:   WS_ENABLE,
-          entry_id: entryId,
-        })
-        .then(() => {
-          _info("Google Assistant enabled successfully");
-          _gaManualEnabled = true;
-          _refreshExposePage();
-          for (let i = 0; i < settingsRows.length; i++) {
-            settingsRows[i].style.display = "";
-          }
-          refreshExposeToggle(card);
-        })
-        .catch((err: WSError) => {
-          _error(
-            "Failed to enable Google Assistant: " +
-              (err.message || err.error || err.code || String(err)),
-          );
-          (globalSwitch as TogglableElement).checked = false;
-          _showToast(
-            "Failed to enable Google Assistant. " +
-              (err.message || err.error || "Check Home Assistant logs for details.") +
-              "\n\nTry reloading the integration from Settings → Devices & Services.",
-            true,
-          );
-        });
-    })
-    .catch((err: WSError) => {
-      _error("_enableIntegration: " + err.message);
-      (globalSwitch as TogglableElement).checked = false;
-    });
+interface ToggleConfig {
+  action: "enable" | "disable";
+  wsType: string;
+  successMsg: string;
+  failMsg: string;
+  failHint: string;
+  showCardOnSuccess: boolean;
 }
 
-function _disableIntegration(
+const _TOGGLE_CONFIGS: Record<string, ToggleConfig> = {
+  enable: {
+    action: "enable",
+    wsType: WS_ENABLE,
+    successMsg: "Google Assistant enabled successfully",
+    failMsg: "Failed to enable Google Assistant.",
+    failHint: "Try reloading the integration from Settings → Devices & Services.",
+    showCardOnSuccess: true,
+  },
+  disable: {
+    action: "disable",
+    wsType: WS_DISABLE,
+    successMsg: "Google Assistant disabled successfully",
+    failMsg: "Failed to disable Google Assistant.",
+    failHint: "Try removing the integration from Settings → Devices & Services.",
+    showCardOnSuccess: false,
+  },
+};
+
+function _toggleIntegration(
+  config: ToggleConfig,
   card: HTMLElement,
   globalSwitch: HTMLElement,
   settingsRows: HTMLElement[],
@@ -877,42 +862,37 @@ function _disableIntegration(
     .then((entryId) => {
       const hass = getHass();
       if (!hass) {
-        _warn("_disableIntegration: Home Assistant not loaded");
-        (globalSwitch as TogglableElement).checked = true;
+        _warn("_toggleIntegration: Home Assistant not loaded");
+        (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
         return;
       }
 
-      _info("Disabling Google Assistant for entry_id=" + entryId);
+      _info(config.action.charAt(0).toUpperCase() + config.action.slice(1) +
+        " Google Assistant for entry_id=" + entryId);
       hass
-        .callWS({
-          type:   WS_DISABLE,
-          entry_id: entryId,
-        })
+        .callWS({ type: config.wsType, entry_id: entryId })
         .then(() => {
-          _info("Google Assistant disabled successfully");
-          _gaManualEnabled = false;
+          _info(config.successMsg);
+          _gaManualEnabled = config.showCardOnSuccess;
           _refreshExposePage();
-          for (let i = 0; i < settingsRows.length; i++) {
-            settingsRows[i].style.display = "none";
-          }
+          _setRowsVisible(settingsRows, config.showCardOnSuccess);
+          if (config.showCardOnSuccess) refreshExposeToggle(card);
         })
         .catch((err: WSError) => {
-          _error(
-            "Failed to disable Google Assistant: " +
-              (err.message || err.error || err.code || String(err)),
-          );
-          (globalSwitch as TogglableElement).checked = true;
+          _error(config.failMsg + " " +
+            (err.message || err.error || err.code || String(err)));
+          (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
           _showToast(
-            "Failed to disable Google Assistant. " +
+            config.failMsg + " " +
               (err.message || err.error || "Check Home Assistant logs for details.") +
-              "\n\nTry removing the integration from Settings → Devices & Services.",
+              "\n\n" + config.failHint,
             true,
           );
         });
     })
     .catch((err: WSError) => {
-      _error("_disableIntegration: " + err.message);
-      (globalSwitch as TogglableElement).checked = true;
+      _error("_toggleIntegration(" + config.action + "): " + err.message);
+      (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
     });
 }
 
@@ -963,9 +943,7 @@ function refreshCardState(
             yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
           }
 
-          for (let i = 0; i < settingsRows.length; i++) {
-            settingsRows[i].style.display = config.enabled ? "" : "none";
-          }
+          _setRowsVisible(settingsRows, config.enabled);
 
           if (reportStateSwitch) {
             (reportStateSwitch as TogglableElement).checked = config.report_state;

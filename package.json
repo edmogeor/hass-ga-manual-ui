@@ -7,16 +7,22 @@
     "build:dist": "npm run build && rm -rf build && mkdir -p build && cp -r custom_components build/",
     "watch": "esbuild frontend.ts --bundle --outfile=custom_components/google_assistant_manual/frontend.js --target=es2020 --format=iife --watch",
     "check": "tsc --noEmit && pyrefly check",
-    "lint": "eslint frontend.ts && ruff check . && ruff format --check .",
-    "lint:ts": "eslint frontend.ts",
+    "lint": "eslint frontend.ts tests/ && ruff check . && ruff format --check .",
+    "lint:ts": "eslint frontend.ts tests/",
     "lint:py": "ruff check . && ruff format --check .",
-    "fix": "eslint --fix frontend.ts && ruff check --fix . && ruff format ."
+    "fix": "eslint --fix frontend.ts tests/ && ruff check --fix . && ruff format .",
+    "test": "vitest run && python -m pytest tests/ -q",
+    "test:ts": "vitest run",
+    "test:py": "python -m pytest tests/ -q"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^25.9.2",
     "esbuild": "^0.25.0",
     "eslint": "^10.4.1",
+    "jsdom": "^29.1.1",
     "typescript": "^5.7.0",
-    "typescript-eslint": "^8.61.0"
+    "typescript-eslint": "^8.61.0",
+    "vitest": "^4.1.8"
   }
 }

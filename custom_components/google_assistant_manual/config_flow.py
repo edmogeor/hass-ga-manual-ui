@@ -9,11 +9,11 @@ from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
 )
-from homeassistant.const import CONF_PROJECT_ID
 
 from .const import (
     CONF_CLIENT_EMAIL,
     CONF_PRIVATE_KEY,
+    CONF_PROJECT_ID,
     CONF_SERVICE_ACCOUNT,
     DOMAIN,
 )
