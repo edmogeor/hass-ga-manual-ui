@@ -12,7 +12,42 @@ env:
   ZIP_NAME: hass_ga_manual_ui.zip
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install Python tools
+        run: pip install pyrefly ruff pytest pytest-asyncio pytest-homeassistant-custom-component homeassistant voluptuous
+
+      - name: Install JS dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run check
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
   release:
+    name: Release
+    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: write
