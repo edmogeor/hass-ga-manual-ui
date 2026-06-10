@@ -360,22 +360,18 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
             "This integration requires the built-in 'google_assistant' component."
         ) from exc
 
-    # Snapshot registered views before setup so we can find the new one
-    try:
-        views_before = set(hass.http.app.router.routes())
-    except Exception as exc:
-        _LOGGER.warning(
-            "Could not snapshot HTTP routes before core GA setup: %s. "
-            "Route cleanup on disable may not fully work.",
-            exc,
-        )
-        views_before = set()
-
     # Reuse the framework-registered core GA entry across restarts when one
     # already exists (it carries device-registry links). Only create a fresh
     # one on first enable. async_add() both registers AND sets up the entry, so
-    # we must NOT call core GA's async_setup_entry ourselves — doing both is
-    # what caused duplicate webhook registration and "already been setup".
+    # we must NOT call core GA's async_setup_entry ourselves.
+    #
+    # The core GA config entry has no async_unload_entry and registers an HTTP
+    # view + local-SDK webhook that cannot be cleanly removed at runtime. So we
+    # set it up at most once per process and never tear it down on disable —
+    # disable is a soft toggle (see _teardown_core_ga): report_state is turned
+    # off and should_expose is gated on entry.options["enabled"], so SYNC
+    # returns no devices. This avoids the duplicate-webhook / unremovable-route
+    # errors that add/remove churn produced.
     core_entry = _find_core_entry(hass, entry)
     if core_entry is None:
         core_entry = _make_core_entry(entry)
@@ -395,16 +391,6 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         )
         await hass.config_entries.async_reload(core_entry.entry_id)
 
-    # Find newly registered routes
-    try:
-        new_routes: list[Any] = [
-            r for r in hass.http.app.router.routes() if r not in views_before
-        ]
-        _LOGGER.debug("Core GA registered %d new HTTP routes", len(new_routes))
-    except Exception as exc:
-        _LOGGER.warning("Could not detect new HTTP routes: %s", exc)
-        new_routes = []
-
     google_config = core_entry.runtime_data
 
     if google_config is None:
@@ -418,33 +404,43 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
             "Check the Home Assistant logs for errors from the 'google_assistant' component."
         )
 
-    entry.runtime_data = {
-        "core_entry": core_entry,
-        "registered_routes": new_routes,
-    }
+    entry.runtime_data = {"core_entry": core_entry, "google_config": google_config}
     hass.config_entries.async_update_entry(
         entry, options={**entry.options, "enabled": True}
     )
 
     _patch_google_config_properties(google_config, entry)
-    entry.runtime_data["google_config"] = google_config
+
+    # Ensure report_state matches the option — covers re-enabling after a soft
+    # disable (which turned it off). async_enable_report_state is idempotent.
+    if entry.options.get(CONF_REPORT_STATE):
+        try:
+            google_config.async_enable_report_state()
+        except Exception:
+            _LOGGER.debug(
+                "async_enable_report_state on (re)enable failed", exc_info=True
+            )
 
     _LOGGER.info("Core GA successfully loaded for project '%s'", project_id)
 
 
 async def _teardown_core_ga(
-    hass: HomeAssistant, entry: ConfigEntry, *, remove_entry: bool = False
+    hass: HomeAssistant, entry: ConfigEntry, *, disable: bool = False
 ) -> None:
-    """Tear down core GA.
+    """Tear down or soft-disable core GA.
 
-    ``remove_entry=False`` (a plain unload/reload of our entry): leave the
+    ``disable=False`` (a plain unload/reload of our entry): leave the
     framework-registered core GA entry loaded and persisted so it survives the
     restart and keeps its device-registry links — just drop our runtime pointer.
 
-    ``remove_entry=True`` (the user disabled the integration): fully tear down —
-    deinitialize the GoogleConfig, remove the HTTP routes (core GA has no
-    async_unload_entry, so nothing else will), remove the core entry, and mark
-    the integration disabled.
+    ``disable=True`` (the user toggled the integration off): **soft** disable.
+    Core GA has no async_unload_entry and registers an HTTP view + local-SDK
+    webhook that can't be cleanly removed at runtime, so we do NOT unload/remove
+    the core entry. Instead we turn off report_state and set enabled=False; the
+    patched should_expose then returns False for every entity, so SYNC reports
+    no devices. (The core entry is fully removed only on entry deletion, or
+    pruned on the next restart by _reconcile_core_ga_entries since it is then
+    disabled.)
     """
     project_id = _project_id(entry)
     runtime = entry.runtime_data
@@ -460,7 +456,7 @@ async def _teardown_core_ga(
         entry.runtime_data = None
         return
 
-    if not remove_entry:
+    if not disable:
         # Unload/reload: keep the core GA entry intact, only drop our pointer.
         entry.runtime_data = None
         _LOGGER.debug(
@@ -469,51 +465,23 @@ async def _teardown_core_ga(
         )
         return
 
+    # Soft disable: stop report_state; should_expose gating handles the rest.
     google_config = runtime.get("google_config")
     if google_config is not None:
         try:
-            google_config.async_deinitialize()
-            _LOGGER.debug("Core GA deinitialized for project='%s'", project_id)
+            google_config.async_disable_report_state()
+            _LOGGER.debug("Disabled report_state for project='%s'", project_id)
         except Exception:
-            _LOGGER.exception(
-                "Error deinitializing GoogleConfig for project='%s'. "
-                "Some event listeners or webhook registrations may remain.",
-                project_id,
-            )
-
-    routes_to_remove = runtime.get("registered_routes", [])
-    if routes_to_remove:
-        removed = 0
-        for route in routes_to_remove:
-            try:
-                hass.http.app.router._routes.remove(route)
-                removed += 1
-            except ValueError:
-                _LOGGER.debug("Route already removed: %s", route)
-            except Exception as exc:
-                _LOGGER.warning("Could not remove HTTP route %s: %s", route, exc)
-        if removed:
             _LOGGER.debug(
-                "Removed %d/%d core GA HTTP routes", removed, len(routes_to_remove)
+                "async_disable_report_state on disable failed for project='%s'",
+                project_id,
+                exc_info=True,
             )
 
-    core_entry = runtime.get("core_entry")
-    if core_entry is not None:
-        try:
-            await hass.config_entries.async_remove(core_entry.entry_id)
-            _LOGGER.debug("Removed core GA config entry '%s'", core_entry.entry_id)
-        except Exception as exc:
-            _LOGGER.warning(
-                "Could not remove core GA config entry '%s': %s",
-                core_entry.entry_id,
-                exc,
-            )
-
-    entry.runtime_data = None
     hass.config_entries.async_update_entry(
         entry, options={**entry.options, "enabled": False}
     )
-    _LOGGER.info("Core GA disabled for project '%s'", project_id)
+    _LOGGER.info("Core GA soft-disabled for project '%s'", project_id)
 
 
 # ---------------------------------------------------------------------------
@@ -668,6 +636,10 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
 
     def _should_expose(self: Any, entity_id: str) -> bool:
         if self is google_config:
+            # Soft-disabled integration exposes nothing (SYNC returns no
+            # devices) even though the core entry/view stay registered.
+            if not entry.options.get("enabled", True):
+                return False
             try:
                 from homeassistant.components.homeassistant.exposed_entities import (
                     async_should_expose,
@@ -861,10 +833,10 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             return
 
         try:
-            runtime = current_entry.runtime_data
-            enabled = bool(
-                isinstance(runtime, dict) and runtime.get("google_config") is not None
-            )
+            # enabled is the user's toggle state (entry options), which is the
+            # source of truth. The core entry may stay loaded while soft-disabled,
+            # so runtime_data presence is not a reliable signal.
+            enabled = bool(current_entry.options.get("enabled", True))
 
             result = {
                 "enabled": enabled,
@@ -1067,7 +1039,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.info("Disabling Google Assistant for project='%s'", project_id)
 
             try:
-                await _teardown_core_ga(_hass, current_entry, remove_entry=True)
+                await _teardown_core_ga(_hass, current_entry, disable=True)
                 _LOGGER.info(
                     "Successfully disabled Google Assistant for project='%s'",
                     project_id,

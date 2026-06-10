@@ -17,6 +17,7 @@
   var _entryId = null;
   var _entryIdPromise = null;
   var _gaManualEnabled = true;
+  var _voiceAssistantsMap = null;
   function _log(level, message, data) {
     try {
       if (data !== void 0) {
@@ -76,6 +77,26 @@
     );
     return _entryIdPromise;
   }
+  function _ensureVoiceAssistantEntry() {
+    if (!_voiceAssistantsMap) return false;
+    if (!(ASSISTANT_ID in _voiceAssistantsMap)) {
+      _voiceAssistantsMap[ASSISTANT_ID] = {
+        domain: "google_assistant",
+        name: ASSISTANT_NAME
+      };
+    }
+    return true;
+  }
+  function _invalidateEntryId() {
+    _entryId = null;
+    _entryIdPromise = null;
+  }
+  function _isEntryGoneError(err) {
+    const wsErr = err;
+    if (wsErr && wsErr.code === "not_found") return true;
+    const msg = (wsErr && wsErr.message || "").toLowerCase();
+    return msg.includes("config entry not found") || msg.includes("not_found");
+  }
   async function _fetchEntryId() {
     const hass = getHass();
     if (!hass) {
@@ -113,6 +134,7 @@
           if (obj && typeof obj === "object" && !Array.isArray(obj) && !seen.has(obj) && "conversation" in obj && "cloud.alexa" in obj && "cloud.google_assistant" in obj) {
             seen.add(obj);
             const record = obj;
+            _voiceAssistantsMap = record;
             if (!(ASSISTANT_ID in record)) {
               record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
               _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
@@ -188,7 +210,7 @@
           try {
             const result = orig.call(this);
             if (!Array.isArray(result)) return result;
-            if (!_gaManualEnabled) {
+            if (!_gaManualEnabled || !_ensureVoiceAssistantEntry()) {
               return result.filter((id) => id !== ASSISTANT_ID);
             }
             return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
@@ -595,38 +617,43 @@
     }
   };
   async function _toggleIntegration(config, card, globalSwitch, settingsRows) {
-    try {
+    const hass = getHass();
+    if (!hass) {
+      _warn("_toggleIntegration: Home Assistant not loaded");
+      globalSwitch.checked = !config.showCardOnSuccess;
+      return;
+    }
+    const sendToggle = async () => {
       const entryId = await getEntryId();
-      const hass = getHass();
-      if (!hass) {
-        _warn("_toggleIntegration: Home Assistant not loaded");
-        globalSwitch.checked = !config.showCardOnSuccess;
-        return;
-      }
       _info(
         config.action.charAt(0).toUpperCase() + config.action.slice(1) + " Google Assistant for entry_id=" + entryId
       );
+      await hass.callWS({ type: config.wsType, entry_id: entryId });
+    };
+    try {
       try {
-        await hass.callWS({ type: config.wsType, entry_id: entryId });
-        _info(config.successMsg);
-        _gaManualEnabled = config.showCardOnSuccess;
-        _refreshExposePage();
-        _setRowsVisible(settingsRows, config.showCardOnSuccess);
-        if (config.showCardOnSuccess) refreshExposeToggle(card);
+        await sendToggle();
       } catch (err) {
-        const wsErr = err;
-        _error(
-          config.failMsg + " " + (wsErr.message || wsErr.error || wsErr.code || String(err))
-        );
-        globalSwitch.checked = !config.showCardOnSuccess;
-        _showToast(
-          config.failMsg + " " + (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") + "\n\n" + config.failHint,
-          true
-        );
+        if (!_isEntryGoneError(err)) throw err;
+        _warn("Cached entry_id was stale; re-resolving and retrying " + config.action);
+        _invalidateEntryId();
+        await sendToggle();
       }
+      _info(config.successMsg);
+      _gaManualEnabled = config.showCardOnSuccess;
+      _refreshExposePage();
+      _setRowsVisible(settingsRows, config.showCardOnSuccess);
+      if (config.showCardOnSuccess) refreshExposeToggle(card);
     } catch (err) {
-      _error("_toggleIntegration(" + config.action + "): " + err.message);
+      const wsErr = err;
+      _error(
+        config.failMsg + " " + (wsErr.message || wsErr.error || wsErr.code || String(err))
+      );
       globalSwitch.checked = !config.showCardOnSuccess;
+      _showToast(
+        config.failMsg + " " + (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") + "\n\n" + config.failHint,
+        true
+      );
     }
   }
   async function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert) {

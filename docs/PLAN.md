@@ -25,7 +25,7 @@ users to configure the manual Google Assistant entirely through the UI — no YA
 | 13 | YAML compat: **Import top-level, skip entity_config, warn** (C-mod) | Port project_id, service_account, report_state, expose_by_default, exposed_domains, secure_devices_pin. Skip entity_config. Warn user. ConfigEntry takes precedence after import. |
 | 14 | WS API: **get, update, enable, disable** | `google_assistant_manual/get_config` + `update_config` for settings; `enable`/`disable` for the global toggle that loads/unloads core GA |
 | 15 | Config flow: **two steps** — step 1: project_id, step 2: service account textarea | Simple, works with HA's form-based config flows |
-| 16 | Global toggle: **unload/reload core GA ConfigEntry** (A) | Toggle off = tear down webhook/report_state, card stays but settings hidden. Toggle on = re-setup. Mirrors `cloud-google-pref` behavior exactly. |
+| 16 | Global toggle: **soft enable/disable** (A) | Toggle off = report_state off + `enabled=False` so `should_expose` returns False (SYNC empty); card stays, settings hidden. Toggle on = re-enable. The core GA entry/view/webhook stay registered because core GA has no `async_unload_entry` and registers unremovable aiohttp routes — add/remove churn caused duplicate-webhook errors. _Superseded the original "unload/reload core GA ConfigEntry" plan._ |
 
 ---
 
@@ -108,7 +108,7 @@ Source-of-truth translation keys (HA generate script reads this to produce `tran
 
 **Global toggle (card header switch)**:
 - Mirrors `cloud-google-pref`'s `google_enabled` toggle exactly
-- Toggle OFF → calls `google_assistant_manual/disable` WS command → unloads core GA ConfigEntry, tears down webhook + report_state. Card shows settings rows hidden, "Exposed entities" link hidden (same as cloud card)
+- Toggle OFF → calls `google_assistant_manual/disable` WS command → soft disable: report_state off + `enabled=False` so `should_expose` returns False (SYNC reports no devices). Core entry/view stay registered (core GA can't unload at runtime). Card shows settings rows hidden, "Exposed entities" link hidden (same as cloud card)
 - Toggle ON → calls `google_assistant_manual/enable` WS command → re-runs setup-phase re-trigger. Card shows settings rows
 - On card mount, fetch enabled state from `get_config`. Toggle reflects current state
 
@@ -174,9 +174,11 @@ User visits Voice Assistants config page
 User toggles global enable/disable in card header
   → JS calls 'google_assistant_manual/enable' or 'disable'
   → enable:  re-runs setup-phase re-trigger (reuses or creates the core entry)
-  → disable: _teardown_core_ga(remove_entry=True) — deinits GoogleConfig, removes
-             HTTP routes, removes the core GA ConfigEntry
-  (plain unload/reload uses remove_entry=False and keeps the persisted core entry)
+  → disable: _teardown_core_ga(disable=True) — SOFT disable: report_state off +
+             enabled=False; should_expose returns False so SYNC has no devices.
+             The core entry/view/webhook stay registered (core GA has no
+             async_unload_entry / unremovable aiohttp routes).
+  (plain unload/reload uses disable=False and just drops our runtime pointer)
 
 User changes settings in card (when enabled)
   → JS calls 'google_assistant_manual/update_config'

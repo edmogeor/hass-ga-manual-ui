@@ -64,11 +64,18 @@ WS commands (`google_assistant_manual/get_config`, `google_assistant_manual/upda
 that the assistant card uses to read/write settings. These wrap `ConfigEntry.options`
 updates. On `update_config`, live property patches on `GoogleConfig` are triggered
 (for `report_state` enable/disable) without requiring a full ConfigEntry reload.
-On `enable`, the core GA ConfigEntry is created/loaded; on `disable`, `_teardown_core_ga(..., remove_entry=True)` removes it entirely — matching
-the `google_enabled` toggle behavior of the cloud card. A plain unload/reload of our
-entry (HA shutdown, reload) calls `_teardown_core_ga(..., remove_entry=False)`, which
-leaves the persisted, still-loaded core entry intact and only drops our runtime pointer
-(core GA has **no** `async_unload_entry`, so we never try to unload it on reload).
+On `enable`, the core GA ConfigEntry is created (first time) or reused. On `disable`,
+`_teardown_core_ga(..., disable=True)` performs a **soft** disable: it turns off
+`report_state` and sets `enabled=False`, but does NOT remove the core entry or its HTTP
+view/webhook. The patched `should_expose` returns `False` whenever `enabled` is `False`,
+so SYNC reports no devices — an effective disable. This is required because core GA has
+**no** `async_unload_entry` and registers an HTTP view + local-SDK webhook that cannot
+be cleanly removed at runtime; add/remove churn produced duplicate-webhook and
+unremovable-route errors. A plain unload/reload of our entry (HA shutdown, reload) calls
+`_teardown_core_ga(..., disable=False)`, which just drops our runtime pointer and leaves
+the core entry loaded. The core entry is removed only on entry deletion, or pruned on
+the next restart by `_reconcile_core_ga_entries` (a disabled project is not in the
+keep-set).
 
 **Core GA entry reconciliation**:
 When our integration loads, `_reconcile_core_ga_entries()` runs in `async_setup()`. It
@@ -219,8 +226,9 @@ User visits voice assistants config page
 User toggles global enable/disable in card header:
   → JS calls google_assistant_manual/enable or /disable
   → enable: re-runs setup-phase re-trigger (reuses or creates the core entry)
-  → disable: _teardown_core_ga(remove_entry=True) — deinits GoogleConfig, removes
-             HTTP routes, and removes the core GA config entry
+  → disable: _teardown_core_ga(disable=True) — soft disable: report_state off +
+             enabled=False; should_expose then returns False so SYNC has no devices
+             (core entry/view/webhook are left registered — core GA can't unload)
 
 User changes settings in card (when enabled):
   → JS calls google_assistant_manual/update_config
@@ -345,7 +353,7 @@ npm install
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
 | `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
 | `npm run fix` | Auto-fix all: `eslint --fix` + `ruff check --fix` + `ruff format` |
-| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (152 Python tests) |
+| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (151 Python tests) |
 
 ### Testing
 
@@ -358,7 +366,7 @@ Two test frameworks serve different parts of the codebase:
 - Runs as `vitest run` (single shot, no watch mode)
 
 **pytest** (`pytest.ini`) — Python tests:
-- 152 tests across 5 files in `tests/`
+- 151 tests across 5 files in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()` — build `ConfigEntry`-like objects for all test scenarios
@@ -449,7 +457,7 @@ Then go to Settings → Devices & Services → Add Integration → Google Assist
 
 5. **Core GA availability.** This integration requires the built-in `google_assistant` component to be available. If import fails, setup raises a descriptive `RuntimeError`.
 
-6. **Route cleanup.** HTTP routes registered by core GA are tracked via snapshot diffing and removed via `_routes.remove()`. This accesses aiohttp internals and may break on major aiohttp version bumps.
+6. **No clean runtime teardown of core GA.** Core GA has no `async_unload_entry` and registers an HTTP view + local-SDK webhook that aiohttp cannot remove at runtime. The integration therefore sets the core entry up at most once per process and uses a **soft disable** (report_state off + `should_expose` gated on `enabled`) instead of unloading. The view/webhook persist (idle) while disabled and are only cleared by an HA restart.
 
 ## How to Extend
 

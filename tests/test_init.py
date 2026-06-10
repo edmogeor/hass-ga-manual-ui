@@ -595,7 +595,7 @@ class TestPatchGoogleConfigProperties:
         self, reset_original_props_cache: None
     ) -> None:
         """should_expose delegates to the exposed_entities registry."""
-        entry = mock_config_entry()
+        entry = mock_config_entry(options={"enabled": True})
         hass = MagicMock()
         # exposed empty => the original method would return False
         gc = FakeGoogleConfig(hass=hass, exposed=set())
@@ -612,11 +612,29 @@ class TestPatchGoogleConfigProperties:
         assert result is True
         mock_should_expose.assert_called_once_with(hass, ASSISTANT_ID, "light.kitchen")
 
+    def test_should_expose_false_when_disabled(
+        self, reset_original_props_cache: None
+    ) -> None:
+        """A soft-disabled entry exposes nothing, without hitting the registry."""
+        entry = mock_config_entry(options={"enabled": False})
+        gc = FakeGoogleConfig(hass=MagicMock(), exposed={"light.kitchen"})
+
+        _patch_google_config_properties(gc, entry)
+
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_should_expose",
+            return_value=True,
+        ) as mock_should_expose:
+            assert gc.should_expose("light.kitchen") is False
+
+        mock_should_expose.assert_not_called()
+
     def test_should_expose_uses_assistant_id_key(
         self, reset_original_props_cache: None
     ) -> None:
         """The registry is queried under our ASSISTANT_ID, not core GA's domain."""
-        entry = mock_config_entry()
+        entry = mock_config_entry(options={"enabled": True})
         hass = MagicMock()
 
         class LocalGC:
@@ -643,7 +661,7 @@ class TestPatchGoogleConfigProperties:
         self, reset_original_props_cache: None
     ) -> None:
         """If the registry lookup raises, fall back to the original method."""
-        entry = mock_config_entry()
+        entry = mock_config_entry(options={"enabled": True})
 
         class LocalGC:
             def __init__(self) -> None:
@@ -718,7 +736,7 @@ class TestPatchGoogleConfigProperties:
 
 
 class TestTeardownCoreGa:
-    """Tests for _teardown_core_ga."""
+    """Tests for _teardown_core_ga (unload vs soft-disable)."""
 
     async def test_teardown_with_no_runtime_data(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
@@ -732,142 +750,80 @@ class TestTeardownCoreGa:
         await _teardown_core_ga(hass, entry)
         assert entry.runtime_data is None
 
-    async def test_teardown_calls_async_deinitialize(self) -> None:
+    async def test_unload_drops_pointer_only(self) -> None:
+        """disable=False (plain unload/reload) just drops our runtime pointer."""
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
-        gc.async_deinitialize = MagicMock()  # type: ignore[method-assign]
-        entry = mock_config_entry(
-            runtime_data={
-                "google_config": gc,
-                "registered_routes": [],
-            }
-        )
-        # Mock async_update_entry
+        gc.async_disable_report_state = MagicMock()  # type: ignore[method-assign]
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry, remove_entry=True)
-        gc.async_deinitialize.assert_called_once()
+        entry = mock_config_entry(runtime_data={"google_config": gc})
+        entry.options["enabled"] = True
 
-    async def test_teardown_removes_routes(self) -> None:
-        hass = MagicMock(spec=HomeAssistant)
-        mock_route = MagicMock()
-        hass.http.app.router._routes = [mock_route]
+        await _teardown_core_ga(hass, entry, disable=False)
 
-        gc = FakeGoogleConfig()
-        entry = mock_config_entry(
-            runtime_data={
-                "google_config": gc,
-                "registered_routes": [mock_route],
-            }
-        )
-        hass.config_entries.async_update_entry = MagicMock()
-
-        await _teardown_core_ga(hass, entry, remove_entry=True)
-        assert mock_route not in hass.http.app.router._routes
-
-    async def test_teardown_sets_runtime_data_to_none(self) -> None:
-        hass = MagicMock(spec=HomeAssistant)
-        gc = FakeGoogleConfig()
-        entry = mock_config_entry(
-            runtime_data={
-                "google_config": gc,
-                "registered_routes": [],
-            }
-        )
-        hass.config_entries.async_update_entry = MagicMock()
-
-        await _teardown_core_ga(hass, entry)
         assert entry.runtime_data is None
+        gc.async_disable_report_state.assert_not_called()
+        hass.config_entries.async_update_entry.assert_not_called()
 
-    async def test_teardown_sets_enabled_false(self) -> None:
+    async def test_disable_turns_off_report_state(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
-        entry = mock_config_entry(
-            runtime_data={
-                "google_config": gc,
-                "registered_routes": [],
-            }
-        )
+        gc.async_disable_report_state = MagicMock()  # type: ignore[method-assign]
+        entry = mock_config_entry(runtime_data={"google_config": gc})
+        hass.config_entries.async_update_entry = MagicMock()
+
+        await _teardown_core_ga(hass, entry, disable=True)
+        gc.async_disable_report_state.assert_called_once()
+
+    async def test_disable_sets_enabled_false(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        gc = FakeGoogleConfig()
+        entry = mock_config_entry(runtime_data={"google_config": gc})
         entry.options["enabled"] = True
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry, remove_entry=True)
+        await _teardown_core_ga(hass, entry, disable=True)
         call_args = hass.config_entries.async_update_entry.call_args
         assert call_args[1]["options"]["enabled"] is False
 
-    async def test_teardown_handles_deinitialize_failure(self) -> None:
+    async def test_disable_keeps_runtime_data_and_core_entry(self) -> None:
+        """Soft-disable must NOT remove the core entry or drop runtime_data."""
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
-        gc.async_deinitialize = MagicMock(  # type: ignore[method-assign]
-            side_effect=RuntimeError("deinit failed")
-        )
-        entry = mock_config_entry(
-            runtime_data={
-                "google_config": gc,
-                "registered_routes": [],
-            }
-        )
         hass.config_entries.async_update_entry = MagicMock()
+        hass.config_entries.async_remove = MagicMock()
 
-        await _teardown_core_ga(hass, entry, remove_entry=True)
-        assert entry.runtime_data is None
+        runtime = {"google_config": gc, "core_entry": MagicMock()}
+        entry = mock_config_entry(runtime_data=runtime)
 
-    async def test_teardown_handles_route_removal_failure(self) -> None:
+        await _teardown_core_ga(hass, entry, disable=True)
+
+        assert entry.runtime_data is runtime  # kept
+        hass.config_entries.async_remove.assert_not_called()  # core entry kept
+
+    async def test_disable_handles_report_state_failure(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
         gc = FakeGoogleConfig()
-
-        class BadRoute:
-            pass
-
-        bad_route = BadRoute()
-        hass.http.app.router._routes = [bad_route]
-
-        entry = mock_config_entry(
-            runtime_data={
-                "google_config": gc,
-                "registered_routes": [bad_route],
-            }
+        gc.async_disable_report_state = MagicMock(  # type: ignore[method-assign]
+            side_effect=RuntimeError("boom")
         )
+        entry = mock_config_entry(runtime_data={"google_config": gc})
         hass.config_entries.async_update_entry = MagicMock()
 
-        await _teardown_core_ga(hass, entry, remove_entry=True)
+        # Must not raise; still flips enabled off.
+        await _teardown_core_ga(hass, entry, disable=True)
+        call_args = hass.config_entries.async_update_entry.call_args
+        assert call_args[1]["options"]["enabled"] is False
 
-    async def test_teardown_without_google_config(self) -> None:
+    async def test_disable_without_google_config(self) -> None:
         """Runtime data can exist without a google_config key."""
         hass = MagicMock(spec=HomeAssistant)
-        entry = mock_config_entry(
-            runtime_data={
-                "registered_routes": [],
-            }
-        )
+        entry = mock_config_entry(runtime_data={"core_entry": MagicMock()})
         hass.config_entries.async_update_entry = MagicMock()
-        await _teardown_core_ga(hass, entry, remove_entry=True)
-        assert entry.runtime_data is None
-
-    async def test_unload_keeps_core_entry_and_does_not_deinit(self) -> None:
-        """remove_entry=False (plain unload) leaves the core entry untouched."""
-        hass = MagicMock(spec=HomeAssistant)
-        gc = FakeGoogleConfig()
-        gc.async_deinitialize = MagicMock()  # type: ignore[method-assign]
-        mock_route = MagicMock()
-        hass.http.app.router._routes = [mock_route]
-        hass.config_entries.async_update_entry = MagicMock()
-
-        entry = mock_config_entry(
-            runtime_data={
-                "google_config": gc,
-                "registered_routes": [mock_route],
-            }
-        )
-        entry.options["enabled"] = True
-
-        await _teardown_core_ga(hass, entry, remove_entry=False)
-
-        # Pointer dropped, but no destructive teardown happened.
-        assert entry.runtime_data is None
-        gc.async_deinitialize.assert_not_called()
-        assert mock_route in hass.http.app.router._routes
-        hass.config_entries.async_update_entry.assert_not_called()
+        await _teardown_core_ga(hass, entry, disable=True)
+        call_args = hass.config_entries.async_update_entry.call_args
+        assert call_args[1]["options"]["enabled"] is False
 
 
 # =============================================================================

@@ -82,6 +82,10 @@ function _errorMessage(e: unknown): string {
 let _entryId: string | null = null;
 let _entryIdPromise: Promise<string> | null = null;
 let _gaManualEnabled = true;
+// Captured reference to HA's voiceAssistants map (from data/expose.ts) the first
+// time our Object.keys interceptor sees it. Needed so we can resolve our
+// assistant's display name — dialogs do voiceAssistants[id].name directly.
+let _voiceAssistantsMap: Record<string, unknown> | null = null;
 
 // ---------------------------------------------------------------------------
 // Logging helpers
@@ -154,6 +158,41 @@ function getEntryId(): Promise<string> {
   return _entryIdPromise;
 }
 
+/**
+ * Ensure the captured voiceAssistants map contains our assistant entry.
+ * Returns true if the map is known and now contains our entry — i.e. it is
+ * safe to advertise ASSISTANT_ID in assistant lists without dialogs throwing
+ * on voiceAssistants[ASSISTANT_ID].name.
+ */
+function _ensureVoiceAssistantEntry(): boolean {
+  if (!_voiceAssistantsMap) return false;
+  if (!(ASSISTANT_ID in _voiceAssistantsMap)) {
+    _voiceAssistantsMap[ASSISTANT_ID] = {
+      domain: "google_assistant",
+      name: ASSISTANT_NAME,
+    };
+  }
+  return true;
+}
+
+/** Forget the cached entry_id so the next getEntryId() re-resolves it. */
+function _invalidateEntryId(): void {
+  _entryId = null;
+  _entryIdPromise = null;
+}
+
+/**
+ * True when a WS error indicates the entry_id no longer exists — e.g. after the
+ * integration was deleted and re-added (which assigns a new entry_id) while a
+ * stale id was cached.
+ */
+function _isEntryGoneError(err: unknown): boolean {
+  const wsErr = err as WSError;
+  if (wsErr && wsErr.code === "not_found") return true;
+  const msg = ((wsErr && wsErr.message) || "").toLowerCase();
+  return msg.includes("config entry not found") || msg.includes("not_found");
+}
+
 async function _fetchEntryId(): Promise<string> {
   const hass = getHass();
   if (!hass) {
@@ -212,6 +251,8 @@ function patchVoiceAssistants(): void {
         ) {
           seen.add(obj);
           const record = obj as Record<string, unknown>;
+          // Capture the map so we can resolve our assistant name elsewhere.
+          _voiceAssistantsMap = record;
           if (!(ASSISTANT_ID in record)) {
             record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
             _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
@@ -310,7 +351,10 @@ async function patchExposePage(): Promise<void> {
         try {
           const result = orig.call(this) as string[];
           if (!Array.isArray(result)) return result;
-          if (!_gaManualEnabled) {
+          // Only advertise our assistant when it's enabled AND the
+          // voiceAssistants map can resolve its name — otherwise dialogs that do
+          // voiceAssistants[id].name (e.g. dialog-expose-entity) throw.
+          if (!_gaManualEnabled || !_ensureVoiceAssistantEntry()) {
             return result.filter((id) => id !== ASSISTANT_ID);
           }
           return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
@@ -855,44 +899,53 @@ async function _toggleIntegration(
   globalSwitch: HTMLElement,
   settingsRows: HTMLElement[],
 ): Promise<void> {
-  try {
-    const entryId = await getEntryId();
-    const hass = getHass();
-    if (!hass) {
-      _warn("_toggleIntegration: Home Assistant not loaded");
-      (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
-      return;
-    }
+  const hass = getHass();
+  if (!hass) {
+    _warn("_toggleIntegration: Home Assistant not loaded");
+    (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
+    return;
+  }
 
+  // Issue the enable/disable WS call against a freshly-resolved entry_id.
+  const sendToggle = async (): Promise<void> => {
+    const entryId = await getEntryId();
     _info(
       config.action.charAt(0).toUpperCase() + config.action.slice(1) +
         " Google Assistant for entry_id=" + entryId,
     );
+    await hass.callWS({ type: config.wsType, entry_id: entryId });
+  };
 
+  try {
     try {
-      await hass.callWS({ type: config.wsType, entry_id: entryId });
-      _info(config.successMsg);
-      _gaManualEnabled = config.showCardOnSuccess;
-      _refreshExposePage();
-      _setRowsVisible(settingsRows, config.showCardOnSuccess);
-      if (config.showCardOnSuccess) refreshExposeToggle(card);
+      await sendToggle();
     } catch (err: unknown) {
-      const wsErr = err as WSError;
-      _error(
-        config.failMsg + " " +
-          (wsErr.message || wsErr.error || wsErr.code || String(err)),
-      );
-      (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
-      _showToast(
-        config.failMsg + " " +
-          (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") +
-          "\n\n" + config.failHint,
-        true,
-      );
+      if (!_isEntryGoneError(err)) throw err;
+      // The integration was likely deleted and re-added; our cached entry_id is
+      // stale. Drop it, re-resolve, and retry once before giving up.
+      _warn("Cached entry_id was stale; re-resolving and retrying " + config.action);
+      _invalidateEntryId();
+      await sendToggle();
     }
+
+    _info(config.successMsg);
+    _gaManualEnabled = config.showCardOnSuccess;
+    _refreshExposePage();
+    _setRowsVisible(settingsRows, config.showCardOnSuccess);
+    if (config.showCardOnSuccess) refreshExposeToggle(card);
   } catch (err: unknown) {
-    _error("_toggleIntegration(" + config.action + "): " + (err as Error).message);
+    const wsErr = err as WSError;
+    _error(
+      config.failMsg + " " +
+        (wsErr.message || wsErr.error || wsErr.code || String(err)),
+    );
     (globalSwitch as TogglableElement).checked = !config.showCardOnSuccess;
+    _showToast(
+      config.failMsg + " " +
+        (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") +
+        "\n\n" + config.failHint,
+      true,
+    );
   }
 }
 
