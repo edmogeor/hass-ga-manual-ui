@@ -1078,7 +1078,9 @@
     }
   }
   function init() {
-    _banner("Companion JS loaded (version 0.1.0)");
+    _banner(
+      ASSISTANT_NAME + " is ready \u2014 manage it under Settings \u2192 Voice assistants (v0.1.0)."
+    );
     try {
       patchVoiceAssistants();
     } catch (e) {

@@ -1539,7 +1539,10 @@ async function _savePin(value: string, input?: TogglableElement): Promise<void> 
 // ---------------------------------------------------------------------------
 
 function init(): void {
-  _banner("Companion JS loaded (version 0.1.0)");
+  _banner(
+    ASSISTANT_NAME +
+      " is ready — manage it under Settings → Voice assistants (v0.1.0).",
+  );
 
   // Apply each patch independently — one failing does not block the rest
   try {
