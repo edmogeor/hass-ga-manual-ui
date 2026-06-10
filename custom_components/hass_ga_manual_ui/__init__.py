@@ -14,6 +14,7 @@ import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import CoreState, HomeAssistant, callback
+import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -50,6 +51,8 @@ def _load_version() -> str:
 
 
 _VERSION: str = _load_version()
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 _WSC_PATCH_TARGETS = (
     "homeassistant/expose_entity",
