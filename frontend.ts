@@ -384,20 +384,11 @@ function _ensureVoiceAssistantEntry(): boolean {
 let _primeStarted = false;
 
 /**
- * Force the voiceAssistants map to be captured.
- *
- * Capture is otherwise passive — it only happens when HA calls
- * Object.keys(voiceAssistants) (e.g. opening an entity's voice settings). The
- * expose page never does, so on a fresh visit the map stays null, our assistant
- * is gated out of _availableAssistants, and the table shows "no data" until
- * something incidental triggers the capture.
- *
- * We trip it deterministically by constructing a throwaway
- * ha-filter-voice-assistants and calling its firstUpdated(), whose body runs
- * Object.keys(voiceAssistants). requestUpdate is stubbed first so the element
- * never renders — no DOM insertion, no localize context, no side effects. On
- * success the captured map is injected (via the interceptor) and the expose
- * page is refreshed so its getter now advertises us.
+ * Force the voiceAssistants map to be captured so the expose page advertises us
+ * on first visit. Capture is otherwise passive (only on Object.keys), which the
+ * expose page never triggers. We trip it via a throwaway ha-filter-voice-assistants
+ * whose firstUpdated() runs Object.keys — requestUpdate is stubbed so it never
+ * renders (no DOM, no context, no side effects).
  */
 function _primeVoiceAssistantsMap(): void {
   if (_voiceAssistantsMap) return;
@@ -635,8 +626,7 @@ async function patchExposePage(): Promise<void> {
           // voiceAssistants map can resolve its name — otherwise dialogs that do
           // voiceAssistants[id].name (e.g. dialog-expose-entity) throw.
           if (!_gaManualEnabled || !_ensureVoiceAssistantEntry()) {
-            // Enabled but the map isn't captured yet: force the capture, which
-            // re-renders the page so this getter advertises us on the next read.
+            // Map not captured yet: trip the capture, which re-renders the page.
             if (_gaManualEnabled) _primeVoiceAssistantsMap();
             return result.filter((id) => id !== ASSISTANT_ID);
           }
@@ -649,8 +639,7 @@ async function patchExposePage(): Promise<void> {
     });
     _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
 
-    // Capture the voiceAssistants map up front so the page advertises us on its
-    // very first render, not only after the user visits an entity's settings.
+    // Capture the map up front so the page advertises us on its first render.
     _primeVoiceAssistantsMap();
 
     const el =
