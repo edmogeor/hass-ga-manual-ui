@@ -364,20 +364,6 @@ function getEntryId(): Promise<string> {
   return _entryIdPromise;
 }
 
-/**
- * Ensure the captured voiceAssistants map contains our assistant entry.
- * Returns true always so the expose page advertises our assistant immediately.
- */
-function _ensureVoiceAssistantEntry(): boolean {
-  if (_voiceAssistantsMap && !(ASSISTANT_ID in _voiceAssistantsMap)) {
-    _voiceAssistantsMap[ASSISTANT_ID] = {
-      domain: "google_assistant",
-      name: ASSISTANT_NAME,
-    };
-  }
-  return true;
-}
-
 function _safeAssistantsFold(ids: string[]): string[] {
   if (!_voiceAssistantsMap) {
     return ids.filter((id) => id !== ASSISTANT_ID);
@@ -1331,27 +1317,14 @@ async function _toggleIntegration(
     return;
   }
 
-  // Issue the enable/disable WS call against a freshly-resolved entry_id.
-  const sendToggle = async (): Promise<void> => {
-    const entryId = await getEntryId();
-    _info(
-      config.action.charAt(0).toUpperCase() + config.action.slice(1) +
-        " Google Assistant for entry_id=" + entryId,
-    );
-    await hass.callWS({ type: config.wsType, entry_id: entryId });
-  };
-
   try {
-    try {
-      await sendToggle();
-    } catch (err: unknown) {
-      if (!_isEntryGoneError(err)) throw err;
-      // The integration was likely deleted and re-added; our cached entry_id is
-      // stale. Drop it, re-resolve, and retry once before giving up.
-      _warn("Cached entry_id was stale; re-resolving and retrying " + config.action);
-      _invalidateEntryId();
-      await sendToggle();
-    }
+    await _withEntryRetry(async (entryId) => {
+      _info(
+        config.action.charAt(0).toUpperCase() + config.action.slice(1) +
+          " Google Assistant for entry_id=" + entryId,
+      );
+      await hass.callWS({ type: config.wsType, entry_id: entryId });
+    });
 
     _info(t(config.successKey));
     _gaManualEnabled = config.showCardOnSuccess;
@@ -1384,16 +1357,15 @@ async function refreshCardState(
   pinInput: TogglableElement | null,
   yamlAlert: HTMLElement,
 ): Promise<void> {
-  try {
-    const entryId = await getEntryId();
-    const hass = getHass();
-    if (!hass) {
-      _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
-      return;
-    }
+  const hass = getHass();
+  if (!hass) {
+    _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
+    return;
+  }
 
-    try {
-      const config = await hass.callWS<{
+  try {
+    const config = await _withEntryRetry((entryId) =>
+      hass.callWS<{
         enabled: boolean;
         yaml_suppressed: boolean;
         report_state: boolean;
@@ -1401,42 +1373,40 @@ async function refreshCardState(
       }>({
         type: WS_GET_CONFIG,
         entry_id: entryId,
-      });
+      }),
+    );
 
-      _debug(
-        "refreshCardState received config: enabled=" +
-          config.enabled +
-          " report_state=" +
-          config.report_state,
-      );
+    _debug(
+      "refreshCardState received config: enabled=" +
+        config.enabled +
+        " report_state=" +
+        config.report_state,
+    );
 
-      _gaManualEnabled = config.enabled;
-      _refreshExposePage();
+    _gaManualEnabled = config.enabled;
+    _refreshExposePage();
 
-      (globalSwitch as TogglableElement).checked = config.enabled;
+    (globalSwitch as TogglableElement).checked = config.enabled;
 
-      if (yamlAlert) {
-        yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
-      }
-
-      _setRowsVisible(settingsRows, config.enabled);
-
-      if (reportStateSwitch) {
-        (reportStateSwitch as TogglableElement).checked = config.report_state;
-        (reportStateSwitch as TogglableElement).disabled = !config.enabled;
-      }
-
-      if (pinInput) {
-        pinInput.value = config.secure_devices_pin || "";
-        pinInput.disabled = !config.enabled;
-      }
-
-      refreshExposeToggle(card);
-    } catch (err: unknown) {
-      _error("Failed to fetch card state: " + _wsErrorMessage(err));
+    if (yamlAlert) {
+      yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
     }
+
+    _setRowsVisible(settingsRows, config.enabled);
+
+    if (reportStateSwitch) {
+      (reportStateSwitch as TogglableElement).checked = config.report_state;
+      (reportStateSwitch as TogglableElement).disabled = !config.enabled;
+    }
+
+    if (pinInput) {
+      pinInput.value = config.secure_devices_pin || "";
+      pinInput.disabled = !config.enabled;
+    }
+
+    refreshExposeToggle(card);
   } catch (err: unknown) {
-    _error("refreshCardState: " + (err as Error).message);
+    _error("Failed to fetch card state: " + _wsErrorMessage(err));
   }
 }
 
@@ -1708,11 +1678,12 @@ async function _restorePinValue(input: TogglableElement): Promise<void> {
   const hass = getHass();
   if (!hass) return;
   try {
-    const entryId = await getEntryId();
-    const config = await hass.callWS<{ secure_devices_pin: string }>({
-      type: WS_GET_CONFIG,
-      entry_id: entryId,
-    });
+    const config = await _withEntryRetry((entryId) =>
+      hass.callWS<{ secure_devices_pin: string }>({
+        type: WS_GET_CONFIG,
+        entry_id: entryId,
+      }),
+    );
     input.value = config.secure_devices_pin || "";
   } catch {
     /* best-effort revert */

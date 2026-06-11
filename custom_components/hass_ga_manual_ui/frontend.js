@@ -891,22 +891,13 @@
       globalSwitch.checked = !config.showCardOnSuccess;
       return;
     }
-    const sendToggle = async () => {
-      const entryId = await getEntryId();
-      _info(
-        config.action.charAt(0).toUpperCase() + config.action.slice(1) + " Google Assistant for entry_id=" + entryId
-      );
-      await hass.callWS({ type: config.wsType, entry_id: entryId });
-    };
     try {
-      try {
-        await sendToggle();
-      } catch (err) {
-        if (!_isEntryGoneError(err)) throw err;
-        _warn("Cached entry_id was stale; re-resolving and retrying " + config.action);
-        _invalidateEntryId();
-        await sendToggle();
-      }
+      await _withEntryRetry(async (entryId) => {
+        _info(
+          config.action.charAt(0).toUpperCase() + config.action.slice(1) + " Google Assistant for entry_id=" + entryId
+        );
+        await hass.callWS({ type: config.wsType, entry_id: entryId });
+      });
       _info(t(config.successKey));
       _gaManualEnabled = config.showCardOnSuccess;
       _refreshExposePage();
@@ -924,42 +915,39 @@
     }
   }
   async function refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert) {
+    const hass = getHass();
+    if (!hass) {
+      _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
+      return;
+    }
     try {
-      const entryId = await getEntryId();
-      const hass = getHass();
-      if (!hass) {
-        _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
-        return;
-      }
-      try {
-        const config = await hass.callWS({
+      const config = await _withEntryRetry(
+        (entryId) => hass.callWS({
           type: WS_GET_CONFIG,
           entry_id: entryId
-        });
-        _debug(
-          "refreshCardState received config: enabled=" + config.enabled + " report_state=" + config.report_state
-        );
-        _gaManualEnabled = config.enabled;
-        _refreshExposePage();
-        globalSwitch.checked = config.enabled;
-        if (yamlAlert) {
-          yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
-        }
-        _setRowsVisible(settingsRows, config.enabled);
-        if (reportStateSwitch) {
-          reportStateSwitch.checked = config.report_state;
-          reportStateSwitch.disabled = !config.enabled;
-        }
-        if (pinInput) {
-          pinInput.value = config.secure_devices_pin || "";
-          pinInput.disabled = !config.enabled;
-        }
-        refreshExposeToggle(card);
-      } catch (err) {
-        _error("Failed to fetch card state: " + _wsErrorMessage(err));
+        })
+      );
+      _debug(
+        "refreshCardState received config: enabled=" + config.enabled + " report_state=" + config.report_state
+      );
+      _gaManualEnabled = config.enabled;
+      _refreshExposePage();
+      globalSwitch.checked = config.enabled;
+      if (yamlAlert) {
+        yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
       }
+      _setRowsVisible(settingsRows, config.enabled);
+      if (reportStateSwitch) {
+        reportStateSwitch.checked = config.report_state;
+        reportStateSwitch.disabled = !config.enabled;
+      }
+      if (pinInput) {
+        pinInput.value = config.secure_devices_pin || "";
+        pinInput.disabled = !config.enabled;
+      }
+      refreshExposeToggle(card);
     } catch (err) {
-      _error("refreshCardState: " + err.message);
+      _error("Failed to fetch card state: " + _wsErrorMessage(err));
     }
   }
   function injectCardInto(el) {
@@ -1170,11 +1158,12 @@
     const hass = getHass();
     if (!hass) return;
     try {
-      const entryId = await getEntryId();
-      const config = await hass.callWS({
-        type: WS_GET_CONFIG,
-        entry_id: entryId
-      });
+      const config = await _withEntryRetry(
+        (entryId) => hass.callWS({
+          type: WS_GET_CONFIG,
+          entry_id: entryId
+        })
+      );
       input.value = config.secure_devices_pin || "";
     } catch {
     }
