@@ -12,6 +12,18 @@ env:
   ZIP_NAME: hass_ga_manual_ui.zip
 
 jobs:
+  hacs:
+    name: HACS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -47,7 +59,7 @@ jobs:
 
   release:
     name: Release
-    needs: test
+    needs: [hacs, test]
     runs-on: ubuntu-latest
     permissions:
       contents: write
