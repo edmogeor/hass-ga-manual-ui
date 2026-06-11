@@ -7,14 +7,15 @@ for the manual Google Assistant integration.
 
 import json
 import logging
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, override
+from typing import Any, Protocol, override
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry, ConfigEntryState
-from homeassistant.core import CoreState, HomeAssistant, callback
+from homeassistant.core import CoreState, Event, HomeAssistant, State, callback
 from homeassistant.helpers.typing import ConfigType
 
 from .const import (
@@ -130,7 +131,25 @@ def _find_core_entry(hass: HomeAssistant, entry: ConfigEntry) -> ConfigEntry | N
     return None
 
 
-def _our_google_config(hass: HomeAssistant) -> Any | None:
+class _GoogleConfig(Protocol):
+    """Structural interface for core GA's GoogleConfig instances.
+
+    Only declares the members we use — avoids importing the real class
+    (which may not be available at type-check time).
+    """
+
+    hass: HomeAssistant
+    should_report_state: bool
+    secure_devices_pin: str | None
+
+    def should_expose(self, entity_id: str) -> bool: ...
+    def should_2fa(self, state: State) -> bool: ...
+    def async_enable_report_state(self) -> None: ...
+    def async_disable_report_state(self) -> None: ...
+    def async_schedule_google_sync_all(self) -> None: ...
+
+
+def _our_google_config(hass: HomeAssistant) -> _GoogleConfig | None:
     """Return the active core GA GoogleConfig for our (single) entry, if enabled."""
     for e in hass.config_entries.async_entries(DOMAIN):
         runtime = e.runtime_data
@@ -485,8 +504,8 @@ def _make_core_entry(entry: ConfigEntry) -> ConfigEntry:
 
 
 def _register_sync_listeners(
-    hass: HomeAssistant, entry: ConfigEntry, google_config: Any
-) -> list[Any]:
+    hass: HomeAssistant, entry: ConfigEntry, google_config: _GoogleConfig
+) -> list[Callable[[], None]]:
     """Auto-trigger Google requestSync on exposure / area / registry changes.
 
     Mirrors the Nabu Casa Cloud GoogleConfig, which the core config-entry
@@ -510,7 +529,7 @@ def _register_sync_listeners(
         _schedule_sync()
 
     @callback
-    def _on_entity_registry_updated(event: Any) -> None:
+    def _on_entity_registry_updated(event: Event) -> None:
         if not _is_enabled(entry) or hass.state is not CoreState.running:
             return
         data = event.data
@@ -525,7 +544,7 @@ def _register_sync_listeners(
         _schedule_sync()
 
     @callback
-    def _on_device_registry_updated(event: Any) -> None:
+    def _on_device_registry_updated(event: Event) -> None:
         if not _is_enabled(entry) or hass.state is not CoreState.running:
             return
         data = event.data
@@ -540,7 +559,7 @@ def _register_sync_listeners(
             return
         _schedule_sync()
 
-    unsubs: list[Any] = []
+    unsubs: list[Callable[[], None]] = []
     try:
         unsubs.append(
             async_listen_entity_updates(
@@ -704,7 +723,7 @@ async def _teardown_core_ga(
             unsub()
         except Exception:
             _LOGGER.debug("Error removing auto-resync listener", exc_info=True)
-    runtime["sync_unsubs"] = list[Any]()
+    runtime["sync_unsubs"] = list[Callable[[], None]]()
 
     if not disable:
         # Unload/reload: keep the core GA entry intact, only drop our pointer.
@@ -824,12 +843,14 @@ def _purge_entity_exposure(hass: HomeAssistant) -> None:
 _ORIGINAL_GOOGLE_CONFIG_PROPS: dict[str, Any] = {}
 
 
-def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> None:
+def _patch_google_config_properties(
+    google_config: _GoogleConfig, entry: ConfigEntry
+) -> None:
     """Monkey-patch GoogleConfig properties to read from our ConfigEntry options.
 
     Safe to call multiple times — original property getters are cached once.
     """
-    gc_type = type(google_config)
+    gc_type: Any = type(google_config)
     gc_type_name = gc_type.__name__ if hasattr(gc_type, "__name__") else str(gc_type)
 
     # Cache original getters (only on first call to avoid chaining)
@@ -941,7 +962,7 @@ def _patch_google_config_properties(google_config: Any, entry: ConfigEntry) -> N
             return orig_se(self, entity_id)
         return False
 
-    def _should_2fa(self: Any, state: Any) -> bool:
+    def _should_2fa(self: Any, state: State) -> bool:
         if self is google_config:
             try:
                 from homeassistant.components.homeassistant.exposed_entities import (
