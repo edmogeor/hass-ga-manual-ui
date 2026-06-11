@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Marked the integration as single-instance: a second config entry can no longer
+  be added (the "Add" option is removed), preventing duplicate, conflicting
+  Google Assistant bridges.
 - Pruning of the internal `google_assistant` config entry is now ownership-based
   and fail-safe: it only ever touches entries this integration created (never a
   `google_assistant` entry you set up yourself) and does nothing when it cannot
