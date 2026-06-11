@@ -1503,14 +1503,15 @@ function findAllAssistantsElements(root: Node | null): AssistantsPageElement[] {
     results.push(root as unknown as AssistantsPageElement);
   }
 
-  const shadowRoot = (root as HTMLElement).shadowRoot;
+  const el = root as HTMLElement;
+  const shadowRoot = el.shadowRoot;
   if (shadowRoot) {
     try {
       results.push(...findAllAssistantsElements(shadowRoot));
     } catch (e) {
       _debug(
         "Could not traverse shadowRoot of " +
-          (root as HTMLElement).nodeName +
+          el.nodeName +
           ": " +
           (_errorMessage(e)),
       );
@@ -1518,7 +1519,7 @@ function findAllAssistantsElements(root: Node | null): AssistantsPageElement[] {
   }
 
   try {
-    const children = (root as HTMLElement).children || (root as HTMLElement).childNodes || [];
+    const children = el.children || el.childNodes || [];
     for (let i = 0; i < children.length; i++) {
       try {
         results.push(...findAllAssistantsElements(children[i]));

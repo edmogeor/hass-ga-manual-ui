@@ -1010,18 +1010,19 @@
     if (root instanceof HTMLElement && root.nodeName === "HA-CONFIG-VOICE-ASSISTANTS-ASSISTANTS") {
       results.push(root);
     }
-    const shadowRoot = root.shadowRoot;
+    const el = root;
+    const shadowRoot = el.shadowRoot;
     if (shadowRoot) {
       try {
         results.push(...findAllAssistantsElements(shadowRoot));
       } catch (e) {
         _debug(
-          "Could not traverse shadowRoot of " + root.nodeName + ": " + _errorMessage(e)
+          "Could not traverse shadowRoot of " + el.nodeName + ": " + _errorMessage(e)
         );
       }
     }
     try {
-      const children = root.children || root.childNodes || [];
+      const children = el.children || el.childNodes || [];
       for (let i = 0; i < children.length; i++) {
         try {
           results.push(...findAllAssistantsElements(children[i]));

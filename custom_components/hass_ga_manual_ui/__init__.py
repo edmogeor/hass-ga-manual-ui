@@ -8,7 +8,7 @@ for the manual Google Assistant integration.
 import json
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, override
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -67,15 +67,18 @@ class _CoreGaBootRaceFilter(logging.Filter):
     real google_assistant failure raises a different exception and still logs.
     """
 
+    @override
     def filter(self, record: logging.LogRecord) -> bool:
-        if record.levelno < logging.ERROR or record.exc_info is None:
+        if record.levelno < logging.ERROR:
+            return True
+        if record.exc_info is None:
             return True
         exc = record.exc_info[1]
-        return not (
-            isinstance(exc, KeyError)
-            and exc.args == (CORE_GA_DOMAIN,)
-            and CORE_GA_DOMAIN in record.getMessage()
-        )
+        if not isinstance(exc, KeyError):
+            return True
+        if exc.args != (CORE_GA_DOMAIN,):
+            return True
+        return CORE_GA_DOMAIN not in record.getMessage()
 
 
 def _install_core_ga_boot_race_filter() -> None:
