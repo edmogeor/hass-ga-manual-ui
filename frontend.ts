@@ -366,19 +366,23 @@ function getEntryId(): Promise<string> {
 
 /**
  * Ensure the captured voiceAssistants map contains our assistant entry.
- * Returns true if the map is known and now contains our entry — i.e. it is
- * safe to advertise ASSISTANT_ID in assistant lists without dialogs throwing
- * on voiceAssistants[ASSISTANT_ID].name.
+ * Returns true always so the expose page advertises our assistant immediately.
  */
 function _ensureVoiceAssistantEntry(): boolean {
-  if (!_voiceAssistantsMap) return false;
-  if (!(ASSISTANT_ID in _voiceAssistantsMap)) {
+  if (_voiceAssistantsMap && !(ASSISTANT_ID in _voiceAssistantsMap)) {
     _voiceAssistantsMap[ASSISTANT_ID] = {
       domain: "google_assistant",
       name: ASSISTANT_NAME,
     };
   }
   return true;
+}
+
+function _safeAssistantsFold(ids: string[]): string[] {
+  if (!_voiceAssistantsMap) {
+    return ids.filter((id) => id !== ASSISTANT_ID);
+  }
+  return ids;
 }
 
 let _primeStarted = false;
@@ -516,15 +520,12 @@ function patchVoiceAssistants(): void {
           // would pollute them and break the self-uninstall below.
           const conv = record.conversation;
           if (conv && typeof conv === "object" && "domain" in conv) {
-            // Capture the map so we can resolve our assistant name elsewhere.
             _voiceAssistantsMap = record;
             if (!(ASSISTANT_ID in record)) {
               record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
               _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
             }
-            // voiceAssistants is a module-level constant in HA — once our key is
-            // in it, it persists for the session. Restore the native Object.keys
-            // so we stop wrapping this very hot global on every future call.
+            _refreshExposePage();
             Object.keys = origKeys;
             _debug("Uninstalled Object.keys interceptor (voiceAssistants captured)");
           }
@@ -617,20 +618,21 @@ async function patchExposePage(): Promise<void> {
     }
 
     const orig = desc.get;
+    let _safeExposeContext = false;
+
     Object.defineProperty(cls.prototype, "_availableAssistants", {
       get: function () {
         try {
           const result = orig.call(this) as string[];
           if (!Array.isArray(result)) return result;
-          // Only advertise our assistant when it's enabled AND the
-          // voiceAssistants map can resolve its name — otherwise dialogs that do
-          // voiceAssistants[id].name (e.g. dialog-expose-entity) throw.
-          if (!_gaManualEnabled || !_ensureVoiceAssistantEntry()) {
-            // Map not captured yet: trip the capture, which re-renders the page.
-            if (_gaManualEnabled) _primeVoiceAssistantsMap();
+          if (!_gaManualEnabled) {
             return result.filter((id) => id !== ASSISTANT_ID);
           }
-          return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
+          _primeVoiceAssistantsMap();
+          const withUs = result.includes(ASSISTANT_ID)
+            ? result
+            : result.concat(ASSISTANT_ID);
+          return _safeExposeContext ? _safeAssistantsFold(withUs) : withUs;
         } catch (e) {
           _error("Error in _availableAssistants getter: " + (_errorMessage(e)));
           return orig.call(this);
@@ -639,7 +641,29 @@ async function patchExposePage(): Promise<void> {
     });
     _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
 
-    // Capture the map up front so the page advertises us on its first render.
+    const _wrapSafe = (name: string) => {
+      const proto = cls.prototype as unknown as Record<string, unknown>;
+      const origFn = proto[name] as
+        | ((this: unknown, ...args: unknown[]) => unknown)
+        | undefined;
+      if (typeof origFn !== "function") {
+        _debug("Expose page method not found (may have been renamed): " + name);
+        return;
+      }
+      proto[name] = function (this: unknown, ...args: unknown[]) {
+        _safeExposeContext = true;
+        try {
+          return origFn.apply(this, args);
+        } finally {
+          _safeExposeContext = false;
+        }
+      };
+    };
+    _wrapSafe("_addEntry");
+    _wrapSafe("_unexposeSelected");
+    _wrapSafe("_exposeSelected");
+    _debug("Patched expose page dialog methods (_addEntry / _unexposeSelected / _exposeSelected)");
+
     _primeVoiceAssistantsMap();
 
     const el =

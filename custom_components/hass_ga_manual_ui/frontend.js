@@ -185,15 +185,11 @@
     );
     return _entryIdPromise;
   }
-  function _ensureVoiceAssistantEntry() {
-    if (!_voiceAssistantsMap) return false;
-    if (!(ASSISTANT_ID in _voiceAssistantsMap)) {
-      _voiceAssistantsMap[ASSISTANT_ID] = {
-        domain: "google_assistant",
-        name: ASSISTANT_NAME
-      };
+  function _safeAssistantsFold(ids) {
+    if (!_voiceAssistantsMap) {
+      return ids.filter((id) => id !== ASSISTANT_ID);
     }
-    return true;
+    return ids;
   }
   var _primeStarted = false;
   function _primeVoiceAssistantsMap() {
@@ -280,6 +276,7 @@
                 record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
                 _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
               }
+              _refreshExposePage();
               Object.keys = origKeys;
               _debug("Uninstalled Object.keys interceptor (voiceAssistants captured)");
             }
@@ -349,16 +346,18 @@
         return;
       }
       const orig = desc.get;
+      let _safeExposeContext = false;
       Object.defineProperty(cls.prototype, "_availableAssistants", {
         get: function() {
           try {
             const result = orig.call(this);
             if (!Array.isArray(result)) return result;
-            if (!_gaManualEnabled || !_ensureVoiceAssistantEntry()) {
-              if (_gaManualEnabled) _primeVoiceAssistantsMap();
+            if (!_gaManualEnabled) {
               return result.filter((id) => id !== ASSISTANT_ID);
             }
-            return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
+            _primeVoiceAssistantsMap();
+            const withUs = result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
+            return _safeExposeContext ? _safeAssistantsFold(withUs) : withUs;
           } catch (e) {
             _error("Error in _availableAssistants getter: " + _errorMessage(e));
             return orig.call(this);
@@ -366,6 +365,26 @@
         }
       });
       _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
+      const _wrapSafe = (name) => {
+        const proto = cls.prototype;
+        const origFn = proto[name];
+        if (typeof origFn !== "function") {
+          _debug("Expose page method not found (may have been renamed): " + name);
+          return;
+        }
+        proto[name] = function(...args) {
+          _safeExposeContext = true;
+          try {
+            return origFn.apply(this, args);
+          } finally {
+            _safeExposeContext = false;
+          }
+        };
+      };
+      _wrapSafe("_addEntry");
+      _wrapSafe("_unexposeSelected");
+      _wrapSafe("_exposeSelected");
+      _debug("Patched expose page dialog methods (_addEntry / _unexposeSelected / _exposeSelected)");
       _primeVoiceAssistantsMap();
       const el = document.querySelector("ha-config-voice-assistants-expose") || findExposeElement(document.documentElement);
       if (el) {
