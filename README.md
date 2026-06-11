@@ -87,6 +87,10 @@ After installation, add the integration:
 
 The Google Assistant card will appear in **Settings → Voice assistants** alongside the cloud assistants.
 
+## Uninstalling
+
+Removing the integration also **deletes all Google Assistant configuration** (project ID, service account, PIN, exposure settings, entity aliases, and per-entity 2FA overrides). If you reinstall later, you'll need to reconfigure everything from scratch.
+
 ## License
 
 MIT
