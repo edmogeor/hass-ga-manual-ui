@@ -19,6 +19,24 @@
 
 A Home Assistant integration that brings the Google Assistant voice assistant to your Home Assistant without a Nabu Casa Cloud subscription. Once set up, the experience is **identical to the Nabu Casa Cloud Google Assistant** — same voice assistant card, same entity exposure UI, same per-entity 2FA toggle.
 
+## Screenshots
+
+<div align="center">
+
+**Google Assistant card in Settings → Voice assistants, alongside the cloud assistants**
+
+<img src="https://raw.githubusercontent.com/edmogeor/hass-ga-manual-ui/master/screenshots/assistants_page.png" width="760" alt="Google Assistant (Manual) management card with expose, state reporting, and security PIN settings"/>
+
+**Expose entities to Google Assistant**
+
+<img src="https://raw.githubusercontent.com/edmogeor/hass-ga-manual-ui/master/screenshots/entities_tab.png" width="760" alt="Expose tab listing entities exposed to Google Assistant with areas and aliases"/>
+
+**Per-entity exposure and aliases**
+
+<img src="https://raw.githubusercontent.com/edmogeor/hass-ga-manual-ui/master/screenshots/entity_modal.png" width="760" alt="Per-entity Voice assistants dialog with the Google Assistant (Manual) toggle and aliases"/>
+
+</div>
+
 ## How it works
 
 This integration is a **UI wrapper around the built-in `google_assistant` integration** — it doesn't replace it. It configures and manages the core integration so that it appears in the voice assistant UI alongside Nabu Casa Cloud.
