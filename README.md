@@ -71,6 +71,7 @@ It's recommended to have the manual `google_assistant` setup working via YAML fi
 5. Click **+ Explore & Download Repositories** (bottom right)
 6. Search for "Google Assistant (Manual)" and install it
 7. Restart Home Assistant
+8. **Hard refresh your browser** (Ctrl+Shift+R / Cmd+Shift+R) to ensure the frontend loads the new UI components
 
 ### Manual
 
