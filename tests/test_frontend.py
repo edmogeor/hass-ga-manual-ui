@@ -36,6 +36,8 @@ def _make_hass() -> MagicMock:
     """Create a mock HomeAssistant with async HTTP support."""
     hass = MagicMock(spec=HomeAssistant)
     hass.http.async_register_static_paths = AsyncMock()
+    # Run executor jobs inline so _compute_js_hash actually executes in tests.
+    hass.async_add_executor_job = AsyncMock(side_effect=lambda func, *a: func(*a))
     return hass
 
 
@@ -55,7 +57,11 @@ class TestAsyncSetupFrontend:
         call_args = hass.http.async_register_static_paths.call_args[0][0]
         assert len(call_args) == 1
         assert any(c.url_path == FRONTEND_URL for c in call_args)
-        mock_add_js.assert_called_once_with(hass, FRONTEND_URL)
+        # The advertised URL is cache-busted with a content hash; the static
+        # path itself stays at the unversioned URL.
+        mock_add_js.assert_called_once()
+        advertised_url = mock_add_js.call_args[0][1]
+        assert advertised_url.startswith(f"{FRONTEND_URL}?v=")
 
     @pytest.mark.asyncio
     async def test_handles_missing_frontend_js(
@@ -103,7 +109,8 @@ class TestAsyncSetupFrontend:
             await async_setup_frontend(hass)
 
         assert hass.data[DATA_EXTRA_MODULE_URL] is existing_manager
-        mock_add_js.assert_called_once_with(hass, FRONTEND_URL)
+        mock_add_js.assert_called_once()
+        assert mock_add_js.call_args[0][1].startswith(f"{FRONTEND_URL}?v=")
 
     @pytest.mark.asyncio
     async def test_handles_static_path_registration_failure(

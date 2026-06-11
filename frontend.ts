@@ -357,7 +357,6 @@ async function _fetchEntryId(): Promise<string> {
 function patchVoiceAssistants(): void {
   try {
     const origKeys = Object.keys;
-    const seen = new WeakSet<object>();
 
     Object.keys = function (obj: object): string[] {
       try {
@@ -365,18 +364,29 @@ function patchVoiceAssistants(): void {
           obj &&
           typeof obj === "object" &&
           !Array.isArray(obj) &&
-          !seen.has(obj) &&
           "conversation" in obj &&
           "cloud.alexa" in obj &&
           "cloud.google_assistant" in obj
         ) {
-          seen.add(obj);
           const record = obj as Record<string, unknown>;
-          // Capture the map so we can resolve our assistant name elsewhere.
-          _voiceAssistantsMap = record;
-          if (!(ASSISTANT_ID in record)) {
-            record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
-            _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
+          // The voiceAssistants map (data/expose.ts) and per-entity expose
+          // settings share the same three keys, but the map's values are
+          // { domain, name } descriptors whereas expose settings map to
+          // booleans. Only capture/inject the former — matching expose settings
+          // would pollute them and break the self-uninstall below.
+          const conv = record.conversation;
+          if (conv && typeof conv === "object" && "domain" in conv) {
+            // Capture the map so we can resolve our assistant name elsewhere.
+            _voiceAssistantsMap = record;
+            if (!(ASSISTANT_ID in record)) {
+              record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
+              _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
+            }
+            // voiceAssistants is a module-level constant in HA — once our key is
+            // in it, it persists for the session. Restore the native Object.keys
+            // so we stop wrapping this very hot global on every future call.
+            Object.keys = origKeys;
+            _debug("Uninstalled Object.keys interceptor (voiceAssistants captured)");
           }
         }
       } catch (e) {
@@ -1598,33 +1608,52 @@ function init(): void {
     _error("injectIntoAllAssistantsElements threw: " + (_errorMessage(e)));
   }
 
-  // Watch for dynamically added assistants page elements
+  // Watch for dynamically added assistants page elements. Mutations can arrive
+  // in rapid bursts (Lit renders, navigation); rather than run the recursive
+  // shadow-DOM search for each individual node synchronously, collect added
+  // nodes and process them once per animation frame. This dedupes overlapping
+  // subtrees and yields the main thread between bursts.
   try {
+    const _pendingNodes = new Set<Node>();
+    let _scanScheduled = false;
+
+    const _scanPending = (): void => {
+      _scanScheduled = false;
+      const nodes = Array.from(_pendingNodes);
+      _pendingNodes.clear();
+      for (let i = 0; i < nodes.length; i++) {
+        try {
+          const elements = findAllAssistantsElements(nodes[i]);
+          for (let k = 0; k < elements.length; k++) {
+            try {
+              injectCardInto(elements[k]);
+            } catch (e) {
+              _error(
+                "Error injecting card into dynamically added element: " +
+                  (_errorMessage(e)),
+              );
+            }
+          }
+        } catch (e) {
+          _debug(
+            "Error scanning dynamically added node: " +
+              (_errorMessage(e)),
+          );
+        }
+      }
+    };
+
     const docObserver = new MutationObserver((mutations) => {
       for (let i = 0; i < mutations.length; i++) {
         const addedNodes = mutations[i].addedNodes;
         for (let j = 0; j < addedNodes.length; j++) {
           const node = addedNodes[j];
-          if (node.nodeType !== 1) continue;
-          try {
-            const elements = findAllAssistantsElements(node);
-            for (let k = 0; k < elements.length; k++) {
-              try {
-                injectCardInto(elements[k]);
-              } catch (e) {
-                _error(
-                  "Error injecting card into dynamically added element: " +
-                    (_errorMessage(e)),
-                );
-              }
-            }
-          } catch (e) {
-            _debug(
-              "Error scanning dynamically added node: " +
-                (_errorMessage(e)),
-            );
-          }
+          if (node.nodeType === 1) _pendingNodes.add(node);
         }
+      }
+      if (_pendingNodes.size > 0 && !_scanScheduled) {
+        _scanScheduled = true;
+        requestAnimationFrame(_scanPending);
       }
     });
     const target: Node | null = document.body || document.documentElement;

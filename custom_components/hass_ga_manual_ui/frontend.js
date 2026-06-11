@@ -190,16 +190,19 @@
   function patchVoiceAssistants() {
     try {
       const origKeys = Object.keys;
-      const seen = /* @__PURE__ */ new WeakSet();
       Object.keys = function(obj) {
         try {
-          if (obj && typeof obj === "object" && !Array.isArray(obj) && !seen.has(obj) && "conversation" in obj && "cloud.alexa" in obj && "cloud.google_assistant" in obj) {
-            seen.add(obj);
+          if (obj && typeof obj === "object" && !Array.isArray(obj) && "conversation" in obj && "cloud.alexa" in obj && "cloud.google_assistant" in obj) {
             const record = obj;
-            _voiceAssistantsMap = record;
-            if (!(ASSISTANT_ID in record)) {
-              record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
-              _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
+            const conv = record.conversation;
+            if (conv && typeof conv === "object" && "domain" in conv) {
+              _voiceAssistantsMap = record;
+              if (!(ASSISTANT_ID in record)) {
+                record[ASSISTANT_ID] = { domain: "google_assistant", name: ASSISTANT_NAME };
+                _info("Injected " + ASSISTANT_ID + " into voiceAssistants map");
+              }
+              Object.keys = origKeys;
+              _debug("Uninstalled Object.keys interceptor (voiceAssistants captured)");
             }
           }
         } catch (e) {
@@ -1115,29 +1118,42 @@
       _error("injectIntoAllAssistantsElements threw: " + _errorMessage(e));
     }
     try {
+      const _pendingNodes = /* @__PURE__ */ new Set();
+      let _scanScheduled = false;
+      const _scanPending = () => {
+        _scanScheduled = false;
+        const nodes = Array.from(_pendingNodes);
+        _pendingNodes.clear();
+        for (let i = 0; i < nodes.length; i++) {
+          try {
+            const elements = findAllAssistantsElements(nodes[i]);
+            for (let k = 0; k < elements.length; k++) {
+              try {
+                injectCardInto(elements[k]);
+              } catch (e) {
+                _error(
+                  "Error injecting card into dynamically added element: " + _errorMessage(e)
+                );
+              }
+            }
+          } catch (e) {
+            _debug(
+              "Error scanning dynamically added node: " + _errorMessage(e)
+            );
+          }
+        }
+      };
       const docObserver = new MutationObserver((mutations) => {
         for (let i = 0; i < mutations.length; i++) {
           const addedNodes = mutations[i].addedNodes;
           for (let j = 0; j < addedNodes.length; j++) {
             const node = addedNodes[j];
-            if (node.nodeType !== 1) continue;
-            try {
-              const elements = findAllAssistantsElements(node);
-              for (let k = 0; k < elements.length; k++) {
-                try {
-                  injectCardInto(elements[k]);
-                } catch (e) {
-                  _error(
-                    "Error injecting card into dynamically added element: " + _errorMessage(e)
-                  );
-                }
-              }
-            } catch (e) {
-              _debug(
-                "Error scanning dynamically added node: " + _errorMessage(e)
-              );
-            }
+            if (node.nodeType === 1) _pendingNodes.add(node);
           }
+        }
+        if (_pendingNodes.size > 0 && !_scanScheduled) {
+          _scanScheduled = true;
+          requestAnimationFrame(_scanPending);
         }
       });
       const target = document.body || document.documentElement;
