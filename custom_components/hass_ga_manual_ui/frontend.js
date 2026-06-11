@@ -185,12 +185,6 @@
     );
     return _entryIdPromise;
   }
-  function _safeAssistantsFold(ids) {
-    if (!_voiceAssistantsMap) {
-      return ids.filter((id) => id !== ASSISTANT_ID);
-    }
-    return ids;
-  }
   var _primeStarted = false;
   function _primeVoiceAssistantsMap() {
     if (_voiceAssistantsMap) return;
@@ -357,7 +351,10 @@
             }
             _primeVoiceAssistantsMap();
             const withUs = result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
-            return _safeExposeContext ? _safeAssistantsFold(withUs) : withUs;
+            if (_safeExposeContext && !_voiceAssistantsMap) {
+              return withUs.filter((id) => id !== ASSISTANT_ID);
+            }
+            return withUs;
           } catch (e) {
             _error("Error in _availableAssistants getter: " + _errorMessage(e));
             return orig.call(this);

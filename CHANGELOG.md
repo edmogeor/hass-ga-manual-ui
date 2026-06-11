@@ -5,6 +5,28 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-11
+
+### Fixed
+
+- Exposed entities showed zero on the Expose tab when the voiceAssistants map
+  hadn't been captured yet (e.g. on first page visit before any dialog opened).
+  The page now captures the map proactively and folds our assistant out of
+  dialog-internal contexts where the uncaptured map would cause errors.
+
+### Changed
+
+- `_toggleIntegration`, `refreshCardState`, and `_restorePinValue` now delegate
+  entry-gone retry to `_withEntryRetry`, removing duplicated retry logic.
+- Removed dead `_ensureVoiceAssistantEntry` and inlined single-use
+  `_safeAssistantsFold` — both superseded by the expose-page fix.
+
+### Added
+
+- Hard-refresh note in the README install steps.
+- Uninstalling section in the README documenting that configuration data is
+  removed when the integration is deleted.
+
 ## [0.1.2] - 2026-06-11
 
 ### Fixed

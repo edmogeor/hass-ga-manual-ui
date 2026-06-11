@@ -11,5 +11,5 @@
   "issue_tracker": "https://github.com/edmogeor/hass-ga-manual-ui/issues",
   "quality_scale": "internal",
   "single_config_entry": true,
-  "version": "0.1.2"
+  "version": "0.1.3"
 }
