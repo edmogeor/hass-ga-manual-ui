@@ -435,13 +435,13 @@ class TestGetVersion:
 
     def test_returns_version_from_manifest(self) -> None:
         version = _get_version()
-        assert version == "0.1.0"
+        assert version == "0.1.1"
 
     def test_load_version_reads_manifest(self) -> None:
         from hass_ga_manual_ui import _load_version
 
         version = _load_version()
-        assert version == "0.1.0"
+        assert version == "0.1.1"
 
     def test_load_version_falls_back_on_error(self) -> None:
         from hass_ga_manual_ui import _load_version
