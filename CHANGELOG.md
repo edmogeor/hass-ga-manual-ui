@@ -16,9 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Exposed entities did not show on the Voice assistants → Expose tab until an
   entity's settings dialog had been opened elsewhere; the page now populates on
   first visit.
-- The benign `KeyError: 'google_assistant'` logged once on every startup (a
-  self-healing boot-order race) is now suppressed. Genuine Google Assistant
-  errors are unaffected and still logged.
 
 ### Changed
 

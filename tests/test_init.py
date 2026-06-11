@@ -11,7 +11,6 @@ from hass_ga_manual_ui import (
     WS_CONFIG_SCHEMA,
     _add_assistant_to_schema,
     _build_core_config,
-    _CoreGaBootRaceFilter,
     _entity_assistant_options,
     _find_core_entry,
     _make_core_entry,
@@ -1370,60 +1369,3 @@ class TestPatchCoreAssistants:
             # Should not raise
         finally:
             ee.KNOWN_ASSISTANTS = original
-
-
-# =============================================================================
-# _CoreGaBootRaceFilter
-# =============================================================================
-
-
-def _log_record(
-    msg: str, exc: BaseException | None = None, level: int = logging.ERROR
-) -> logging.LogRecord:
-    """Build a LogRecord, optionally carrying an exception, for filter tests."""
-    exc_info = (type(exc), exc, None) if exc is not None else None
-    return logging.LogRecord(
-        "homeassistant.config_entries", level, "f.py", 1, msg, None, exc_info
-    )
-
-
-class TestCoreGaBootRaceFilter:
-    """Tests for the benign boot-race log suppression."""
-
-    def test_drops_benign_keyerror(self) -> None:
-        rec = _log_record(
-            "Error setting up entry proj for google_assistant",
-            KeyError("google_assistant"),
-        )
-        assert _CoreGaBootRaceFilter().filter(rec) is False
-
-    def test_keeps_keyerror_for_other_key(self) -> None:
-        rec = _log_record(
-            "Error setting up entry proj for google_assistant",
-            KeyError("something_else"),
-        )
-        assert _CoreGaBootRaceFilter().filter(rec) is True
-
-    def test_keeps_other_exception(self) -> None:
-        rec = _log_record(
-            "Error setting up entry proj for google_assistant",
-            RuntimeError("boom"),
-        )
-        assert _CoreGaBootRaceFilter().filter(rec) is True
-
-    def test_keeps_when_message_unrelated(self) -> None:
-        # Defensive: same KeyError but a message that isn't about our domain.
-        rec = _log_record("Totally unrelated failure", KeyError("google_assistant"))
-        assert _CoreGaBootRaceFilter().filter(rec) is True
-
-    def test_keeps_non_error_levels(self) -> None:
-        rec = _log_record(
-            "Error setting up entry proj for google_assistant",
-            KeyError("google_assistant"),
-            level=logging.WARNING,
-        )
-        assert _CoreGaBootRaceFilter().filter(rec) is True
-
-    def test_keeps_records_without_exception(self) -> None:
-        rec = _log_record("Error setting up entry proj for google_assistant")
-        assert _CoreGaBootRaceFilter().filter(rec) is True

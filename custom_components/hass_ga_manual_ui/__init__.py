@@ -9,7 +9,7 @@ import json
 import logging
 from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Protocol, override
+from typing import Any, Protocol
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
@@ -56,43 +56,6 @@ def _load_version() -> str:
 _VERSION: str = _load_version()
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
-
-
-class _CoreGaBootRaceFilter(logging.Filter):
-    """Silence the benign boot-order KeyError from core google_assistant.
-
-    Our shadow entry auto-loads before async_setup seeds DATA_CONFIG (we run
-    after google_assistant), so core GA raises ``KeyError('google_assistant')``
-    once; we reload it moments later and it loads cleanly. Drop only that exact
-    record — an ERROR carrying that KeyError whose message names the domain. A
-    real google_assistant failure raises a different exception and still logs.
-    """
-
-    @override
-    def filter(self, record: logging.LogRecord) -> bool:
-        if record.levelno < logging.ERROR:
-            return True
-        if record.exc_info is None:
-            return True
-        exc = record.exc_info[1]
-        if not isinstance(exc, KeyError):
-            return True
-        if exc.args != (CORE_GA_DOMAIN,):
-            return True
-        return CORE_GA_DOMAIN not in record.getMessage()
-
-
-def _install_core_ga_boot_race_filter() -> None:
-    """Attach the boot-race filter to core's config_entries logger, once.
-
-    Installed at import so it is in place before HA auto-loads the shadow entry.
-    """
-    logger = logging.getLogger("homeassistant.config_entries")
-    if not any(isinstance(f, _CoreGaBootRaceFilter) for f in logger.filters):
-        logger.addFilter(_CoreGaBootRaceFilter())
-
-
-_install_core_ga_boot_race_filter()
 
 # hass.data[DOMAIN] key: was a `google_assistant:` YAML section present at boot.
 _DATA_YAML_DETECTED = "_yaml_detected"
