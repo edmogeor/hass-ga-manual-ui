@@ -79,9 +79,8 @@ def _project_id(entry: ConfigEntry) -> str:
 def _owns_core_entry(core_entry: ConfigEntry) -> bool:
     """Whether this integration created the given core GA config entry.
 
-    Driven by the ownership marker written in _make_core_entry. Entries the
-    user configured independently (a plain ``google_assistant:`` config entry)
-    never carry it, so we can safely leave them alone when pruning.
+    Entries the user configured independently never carry the marker, so we
+    leave them alone when pruning.
     """
     return bool(core_entry.data.get(CORE_GA_CREATED_BY))
 
@@ -89,11 +88,9 @@ def _owns_core_entry(core_entry: ConfigEntry) -> bool:
 def _find_core_entry(hass: HomeAssistant, entry: ConfigEntry) -> ConfigEntry | None:
     """Return the core GA entry owned by (or matching) our entry, if one exists.
 
-    Prefers an exact ownership match via the parent-entry marker. Falls back to
-    a project_id match against an *unmarked* entry so we can adopt one created
-    by an older version that predates the marker (it gets stamped on adopt in
-    _setup_core_ga). A marked entry owned by a different parent is never
-    returned as a fallback.
+    Prefers an exact parent-marker match. Falls back to a project_id match
+    against an *unmarked* entry, to adopt one from a version that predates the
+    marker; never falls back to an entry owned by a different parent.
     """
     project_id = entry.data.get(CONF_PROJECT_ID)
     legacy_match: ConfigEntry | None = None
@@ -169,16 +166,13 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
     1. Populate ``hass.data["google_assistant"][DATA_CONFIG]`` from our config
        entry so that when HA auto-sets-up the persisted core entry on boot, it
        does not crash with ``KeyError: 'google_assistant'``.
-    2. Prune only the shadow entries *we own* (carrying our ownership marker)
-       that are orphaned (their parent entry of ours is gone) or duplicated
-       (a second shadow for the same parent). Entries the user configured
-       independently, and entries from older versions that predate the marker,
-       are left untouched. A present-but-disabled parent keeps its shadow — the
-       soft-disable path neutralises it via should_expose, so there is no need
-       to destroy the device-registry links on every restart.
+    2. Prune only the shadow entries *we own* that are orphaned (parent gone)
+       or duplicated (a second shadow for the same parent). Unmarked entries are
+       left untouched, and a present-but-disabled parent keeps its shadow (the
+       soft-disable path neutralises it via should_expose) so device-registry
+       links survive restarts.
     """
-    # Never act on uncertainty: if we cannot read our own entries, do nothing
-    # destructive — a transient failure must not cascade into deleting entries.
+    # Never act on uncertainty: if we cannot read our own entries, prune nothing.
     try:
         our_entries = list(hass.config_entries.async_entries(DOMAIN))
     except Exception as exc:
@@ -214,9 +208,7 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
 
     for core_entry in core_entries:
         if not _owns_core_entry(core_entry):
-            # Not created by us (user's own google_assistant entry, or a legacy
-            # unmarked one we may adopt later). Never prune it.
-            continue
+            continue  # not ours (user's own entry, or a legacy unmarked one)
 
         parent_id = core_entry.data.get(CORE_GA_PARENT_ENTRY_ID)
 
@@ -450,9 +442,8 @@ def _make_core_entry(entry: ConfigEntry) -> ConfigEntry:
         minor_version=1,
         domain=CORE_GA_DOMAIN,
         title=entry.data[CONF_PROJECT_ID],
-        # Carry over our entry's data and stamp ownership markers so this shadow
-        # entry can be matched and pruned deterministically later. The extra
-        # keys are inert to core GA (see CORE_GA_CREATED_BY in const).
+        # Stamp ownership markers (inert to core GA) so this shadow entry can be
+        # matched and pruned deterministically later.
         data={
             **entry.data,
             CORE_GA_CREATED_BY: True,
@@ -474,9 +465,8 @@ def _ensure_core_entry_marked(
 ) -> None:
     """Stamp ownership markers onto a core GA entry we are adopting.
 
-    Idempotent: only writes when the markers are missing or point at a
-    different parent. This converts a legacy unmarked entry (created before the
-    marker existed, matched by project_id) into one we can prune deterministically.
+    Idempotent: only writes when the markers are missing or point at a different
+    parent. Converts a legacy unmarked entry into one we can prune deterministically.
     """
     if (
         core_entry.data.get(CORE_GA_CREATED_BY)
@@ -631,8 +621,7 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
             "Registered + set up new core GA entry id=%s", core_entry.entry_id
         )
     else:
-        # Adopting an existing entry (possibly a legacy unmarked one): stamp
-        # ownership markers first so future matching and pruning are exact.
+        # Adopting an existing entry: stamp markers so future matching is exact.
         _ensure_core_entry_marked(hass, core_entry, entry)
         if core_entry.state is ConfigEntryState.LOADED:
             _LOGGER.debug(
@@ -760,11 +749,10 @@ async def _teardown_core_ga(
 
 
 def _purge_exposed_entities_store(hass: HomeAssistant) -> None:
-    """Step 1+2: drop our assistant from the exposed_entities store.
+    """Drop our assistant from the exposed_entities store.
 
-    Touches HA-internal attributes (no public "remove assistant entirely" API
-    exists), so it is isolated: if a future core version reshapes these, this
-    step degrades to a warning without blocking the entity-registry cleanup.
+    Touches HA-internal attributes (no public "remove assistant" API exists),
+    so it is isolated from the entity-registry cleanup.
     """
     from homeassistant.components.homeassistant.const import DATA_EXPOSED_ENTITIES
 
@@ -820,8 +808,7 @@ def _purge_entity_registry_options(hass: HomeAssistant) -> None:
 def _purge_entity_exposure(hass: HomeAssistant) -> None:
     """Remove all entity exposure settings for this assistant.
 
-    Each step is isolated so one failing (e.g. an HA-internal change) does not
-    abort the others — a half-done purge is worse than a fully-attempted one.
+    Each step is isolated so one failing does not abort the others.
     """
     _LOGGER.info("Purging entity exposure settings for assistant '%s'", ASSISTANT_ID)
 

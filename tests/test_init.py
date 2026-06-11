@@ -177,7 +177,7 @@ class TestMakeCoreEntry:
             private_key="key-data",
         )
         core_entry = _make_core_entry(entry)
-        # Original data is carried over verbatim...
+        # Original data is carried over (alongside the added ownership markers).
         for key, value in entry.data.items():
             assert core_entry.data[key] == value
 
