@@ -1,7 +1,7 @@
 """Tests for hass_ga_manual_ui/config_flow.py."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import voluptuous as vol
@@ -407,6 +407,88 @@ class TestConfigFlowServiceAccountStep:
         result = await config_flow.async_step_user()
         assert "description_placeholders" in result
         assert "guide_url" in result["description_placeholders"]
+        assert "yaml_notice" in result["description_placeholders"]
+
+    @pytest.mark.asyncio
+    async def test_yaml_notice_shown_when_yaml_present(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """When configuration.yaml has google_assistant:, the notice is injected."""
+        config_flow.hass = MagicMock()
+        config_flow.hass.config.language = "en"
+        with (
+            patch(
+                "hass_ga_manual_ui.config_flow.async_hass_config_yaml",
+                AsyncMock(return_value={"google_assistant": {}}),
+            ),
+            patch(
+                "hass_ga_manual_ui.config_flow.async_get_translations",
+                AsyncMock(
+                    return_value={
+                        "component.hass_ga_manual_ui.config.yaml_notice": "REMOVE IT"
+                    }
+                ),
+            ),
+        ):
+            result = await config_flow.async_step_user()
+        assert result["description_placeholders"]["yaml_notice"] == "REMOVE IT"
+
+    @pytest.mark.asyncio
+    async def test_yaml_notice_empty_when_absent(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """No google_assistant: section => empty notice (no translation lookup)."""
+        config_flow.hass = MagicMock()
+        with (
+            patch(
+                "hass_ga_manual_ui.config_flow.async_hass_config_yaml",
+                AsyncMock(return_value={"sensor": {}}),
+            ),
+            patch(
+                "hass_ga_manual_ui.config_flow.async_get_translations",
+                AsyncMock(),
+            ) as mock_translations,
+        ):
+            result = await config_flow.async_step_user()
+        assert result["description_placeholders"]["yaml_notice"] == ""
+        mock_translations.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_yaml_notice_empty_when_yaml_unreadable(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """A malformed/unreadable configuration.yaml degrades to an empty notice."""
+        config_flow.hass = MagicMock()
+        with patch(
+            "hass_ga_manual_ui.config_flow.async_hass_config_yaml",
+            AsyncMock(side_effect=OSError("boom")),
+        ):
+            result = await config_flow.async_step_user()
+        assert result["description_placeholders"]["yaml_notice"] == ""
+
+    @pytest.mark.asyncio
+    async def test_yaml_notice_detects_suffixed_domain_key(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """Split config keys like 'google_assistant 2:' are also detected."""
+        config_flow.hass = MagicMock()
+        config_flow.hass.config.language = "en"
+        with (
+            patch(
+                "hass_ga_manual_ui.config_flow.async_hass_config_yaml",
+                AsyncMock(return_value={"google_assistant 2": {}}),
+            ),
+            patch(
+                "hass_ga_manual_ui.config_flow.async_get_translations",
+                AsyncMock(
+                    return_value={
+                        "component.hass_ga_manual_ui.config.yaml_notice": "REMOVE IT"
+                    }
+                ),
+            ),
+        ):
+            result = await config_flow.async_step_user()
+        assert result["description_placeholders"]["yaml_notice"] == "REMOVE IT"
 
     @pytest.mark.asyncio
     async def test_description_placeholders_in_service_account_step(

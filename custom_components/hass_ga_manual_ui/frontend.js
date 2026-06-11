@@ -13,6 +13,61 @@
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
   var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
+  var EN_STRINGS = {
+    yaml_detected: "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
+    enable_success: "Google Assistant enabled successfully",
+    enable_failed: "Failed to enable Google Assistant.",
+    enable_fail_hint: "Try reloading the integration from Settings \u2192 Devices & Services.",
+    disable_success: "Google Assistant disabled successfully",
+    disable_failed: "Failed to disable Google Assistant.",
+    disable_fail_hint: "Try removing the integration from Settings \u2192 Devices & Services.",
+    check_logs: "Check Home Assistant logs for details.",
+    report_state_enable_failed: "Failed to enable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
+    report_state_disable_failed: "Failed to disable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
+    ready_banner: "{name} is ready \u2014 manage it under Settings \u2192 Voice assistants."
+  };
+  var _loadedStrings = {};
+  var _translationsPromise = null;
+  var _retranslate = [];
+  function t(key, args) {
+    let str = _loadedStrings[key] ?? EN_STRINGS[key];
+    if (args) {
+      for (const name of Object.keys(args)) {
+        str = str.split("{" + name + "}").join(String(args[name]));
+      }
+    }
+    return str;
+  }
+  function ensureTranslationsLoaded() {
+    if (_translationsPromise) return _translationsPromise;
+    const hass = getHass();
+    if (!hass?.callWS) return Promise.resolve();
+    const language = hass.locale?.language || hass.language || "en";
+    const prefix = `component.${ASSISTANT_ID}.frontend.`;
+    _translationsPromise = hass.callWS({
+      type: "frontend/get_translations",
+      language,
+      category: "frontend",
+      integration: ASSISTANT_ID
+    }).then(({ resources }) => {
+      const loaded = {};
+      for (const key of Object.keys(EN_STRINGS)) {
+        const val = resources?.[prefix + key];
+        if (typeof val === "string") loaded[key] = val;
+      }
+      _loadedStrings = loaded;
+      for (const fn of _retranslate) {
+        try {
+          fn();
+        } catch (e) {
+          _debug("retranslate callback failed: " + _errorMessage(e));
+        }
+      }
+    }).catch((e) => {
+      _debug("Failed to load frontend translations: " + _errorMessage(e));
+    });
+    return _translationsPromise;
+  }
   function _errorMessage(e) {
     if (e instanceof Error) return e.message;
     return String(e);
@@ -651,6 +706,7 @@
       };
       var addSetting = addSetting2;
       const hass = getHass();
+      ensureTranslationsLoaded();
       const brandIcon = document.createElement("voice-assistant-brand-icon");
       brandIcon.voiceAssistantId = ASSISTANT_ID;
       brandIcon.hass = hass;
@@ -667,7 +723,10 @@
       const headerActions = document.createElement("div");
       headerActions.style.cssText = "position:absolute;right:24px;inset-inline-end:24px;inset-inline-start:initial;top:50%;transform:translateY(-50%);display:flex;flex-direction:row;align-items:center";
       const helpBtn = document.createElement("ha-icon-button");
-      helpBtn.setAttribute("label", "Learn how it works");
+      helpBtn.setAttribute(
+        "label",
+        hass?.localize("ui.panel.config.cloud.account.remote.link_learn_how_it_works") || "Learn how it works"
+      );
       helpBtn.setAttribute(
         "href",
         "https://www.home-assistant.io/integrations/google_assistant/"
@@ -691,7 +750,10 @@
       const yamlAlert = document.createElement("ha-alert");
       yamlAlert.setAttribute("alert-type", "info");
       yamlAlert.style.display = "none";
-      yamlAlert.innerHTML = "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.";
+      yamlAlert.innerHTML = t("yaml_detected");
+      _retranslate.push(() => {
+        yamlAlert.innerHTML = t("yaml_detected");
+      });
       body.appendChild(yamlAlert);
       const settingsRows = [];
       let reportStateSwitch = null;
@@ -763,17 +825,17 @@
     enable: {
       action: "enable",
       wsType: WS_ENABLE,
-      successMsg: "Google Assistant enabled successfully",
-      failMsg: "Failed to enable Google Assistant.",
-      failHint: "Try reloading the integration from Settings \u2192 Devices & Services.",
+      successKey: "enable_success",
+      failKey: "enable_failed",
+      failHintKey: "enable_fail_hint",
       showCardOnSuccess: true
     },
     disable: {
       action: "disable",
       wsType: WS_DISABLE,
-      successMsg: "Google Assistant disabled successfully",
-      failMsg: "Failed to disable Google Assistant.",
-      failHint: "Try removing the integration from Settings \u2192 Devices & Services.",
+      successKey: "disable_success",
+      failKey: "disable_failed",
+      failHintKey: "disable_fail_hint",
       showCardOnSuccess: false
     }
   };
@@ -800,17 +862,18 @@
         _invalidateEntryId();
         await sendToggle();
       }
-      _info(config.successMsg);
+      _info(t(config.successKey));
       _gaManualEnabled = config.showCardOnSuccess;
       _refreshExposePage();
       _setRowsVisible(settingsRows, config.showCardOnSuccess);
       if (config.showCardOnSuccess) refreshExposeToggle(card);
     } catch (err) {
       const wsErr = err;
-      _error(config.failMsg + " " + _wsErrorMessage(err));
+      const failMsg = t(config.failKey);
+      _error(failMsg + " " + _wsErrorMessage(err));
       globalSwitch.checked = !config.showCardOnSuccess;
       _showToast(
-        config.failMsg + " " + (wsErr.message || wsErr.error || "Check Home Assistant logs for details.") + "\n\n" + config.failHint,
+        failMsg + " " + (wsErr.message || wsErr.error || t("check_logs")) + "\n\n" + t(config.failHintKey),
         true
       );
     }
@@ -1042,7 +1105,7 @@
       );
       e.target.checked = !checked;
       _showToast(
-        "Failed to " + (checked ? "enable" : "disable") + " state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
+        t(checked ? "report_state_enable_failed" : "report_state_disable_failed"),
         true
       );
     }
@@ -1094,9 +1157,8 @@
     }
   }
   function init() {
-    _banner(
-      ASSISTANT_NAME + " is ready \u2014 manage it under Settings \u2192 Voice assistants."
-    );
+    ensureTranslationsLoaded();
+    _banner(t("ready_banner", { name: ASSISTANT_NAME }));
     try {
       patchVoiceAssistants();
     } catch (e) {

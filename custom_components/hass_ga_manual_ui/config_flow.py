@@ -5,16 +5,19 @@ import logging
 from typing import Any
 
 import voluptuous as vol
+from homeassistant.config import async_hass_config_yaml
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
 )
+from homeassistant.helpers.translation import async_get_translations
 
 from .const import (
     CONF_CLIENT_EMAIL,
     CONF_PRIVATE_KEY,
     CONF_PROJECT_ID,
     CONF_SERVICE_ACCOUNT,
+    CORE_GA_DOMAIN,
     DOMAIN,
 )
 
@@ -100,6 +103,30 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         super().__init__()
         self._data: dict[str, Any] = {}
 
+    async def _yaml_notice(self) -> str:
+        """Return the localized 'remove your YAML' notice, or '' if none is needed.
+
+        Only shown when configuration.yaml actually declares a google_assistant:
+        section (which this integration overrides at runtime).
+        """
+        try:
+            config = await async_hass_config_yaml(self.hass)
+        except Exception as exc:  # malformed YAML, IO error, etc.
+            _LOGGER.debug("Could not read configuration.yaml for YAML check: %s", exc)
+            return ""
+
+        present = any(
+            key == CORE_GA_DOMAIN or key.startswith(f"{CORE_GA_DOMAIN} ")
+            for key in config
+        )
+        if not present:
+            return ""
+
+        translations = await async_get_translations(
+            self.hass, self.hass.config.language, "config", {DOMAIN}
+        )
+        return translations.get(f"component.{DOMAIN}.config.yaml_notice", "")
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -138,7 +165,10 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 }
             ),
             errors=errors,
-            description_placeholders={"guide_url": _GUIDE_URL},
+            description_placeholders={
+                "guide_url": _GUIDE_URL,
+                "yaml_notice": await self._yaml_notice(),
+            },
         )
 
     async def async_step_service_account(

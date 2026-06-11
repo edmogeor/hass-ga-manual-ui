@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import voluptuous as vol
 from hass_ga_manual_ui import (
+    _DATA_YAML_DETECTED,
     WS_CONFIG_SCHEMA,
     _add_assistant_to_schema,
     _build_core_config,
@@ -20,7 +21,9 @@ from hass_ga_manual_ui import (
     _reconcile_core_ga_entries,
     _register_sync_listeners,
     _safe_get_entry,
+    _sync_yaml_suppressed,
     _teardown_core_ga,
+    async_setup,
 )
 from hass_ga_manual_ui.const import (
     ASSISTANT_ID,
@@ -1121,6 +1124,66 @@ class TestReconcileCoreGaEntries:
         await _reconcile_core_ga_entries(hass)
 
         assert removed == ["core-a"]  # disabled => core entry pruned
+
+
+# =============================================================================
+# YAML detection -> yaml_suppressed
+# =============================================================================
+
+
+class TestYamlSuppressed:
+    """Tests for YAML google_assistant detection wiring."""
+
+    async def test_async_setup_records_yaml_present(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        hass.config_entries.async_entries.return_value = []
+
+        with patch("hass_ga_manual_ui.async_setup_frontend"):
+            await async_setup(hass, {CORE_GA_DOMAIN: {"project_id": "p"}})
+
+        assert hass.data[DOMAIN][_DATA_YAML_DETECTED] is True
+
+    async def test_async_setup_records_yaml_absent(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        hass.config_entries.async_entries.return_value = []
+
+        with patch("hass_ga_manual_ui.async_setup_frontend"):
+            await async_setup(hass, {"sensor": {}})
+
+        assert hass.data[DOMAIN][_DATA_YAML_DETECTED] is False
+
+    def test_sync_sets_flag_when_detected(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {DOMAIN: {_DATA_YAML_DETECTED: True}}
+        entry = mock_config_entry(options={"enabled": True})
+
+        _sync_yaml_suppressed(hass, entry)
+
+        hass.config_entries.async_update_entry.assert_called_once()
+        _, kwargs = hass.config_entries.async_update_entry.call_args
+        assert kwargs["options"]["yaml_suppressed"] is True
+        assert kwargs["options"]["enabled"] is True  # preserves existing options
+
+    def test_sync_clears_stale_flag_when_absent(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {DOMAIN: {_DATA_YAML_DETECTED: False}}
+        entry = mock_config_entry(options={"enabled": True, "yaml_suppressed": True})
+
+        _sync_yaml_suppressed(hass, entry)
+
+        _, kwargs = hass.config_entries.async_update_entry.call_args
+        assert kwargs["options"]["yaml_suppressed"] is False
+
+    def test_sync_no_write_when_unchanged(self) -> None:
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {DOMAIN: {_DATA_YAML_DETECTED: False}}
+        entry = mock_config_entry(options={"enabled": True})  # no yaml_suppressed
+
+        _sync_yaml_suppressed(hass, entry)
+
+        hass.config_entries.async_update_entry.assert_not_called()
 
 
 # =============================================================================

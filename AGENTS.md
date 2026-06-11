@@ -335,8 +335,34 @@ Integration files live in `custom_components/hass_ga_manual_ui/` (standard HACS 
 - **None at runtime.** Compiled JS targets ES2020 and runs as an IIFE.
 - At build time: `typescript`, `esbuild`.
 - Uses `hass.callWS()` for WebSocket calls (provided by HA frontend).
-- Uses `hass.localize()` for i18n where available, with English fallbacks.
 - Uses `hass.callService("persistent_notification", ...)` for user-facing error toasts.
+- i18n: see [Frontend localization](#frontend-localization).
+
+### Frontend localization
+
+UI strings come from three places, all backed by the translation JSON:
+
+1. **Config flow (Python)** — keys in `strings.json` / `translations/en.json`,
+   rendered by HA's backend. Conditional text (e.g. the YAML notice) is injected
+   via `description_placeholders`, with the text itself kept in the JSON.
+2. **Frontend strings that exist in HA core** — localized at the call site with
+   `hass.localize("ui.panel...")` and an English fallback. Free translations in
+   70+ languages; reuse a core key wherever one fits.
+3. **Frontend strings unique to this integration** — under the top-level
+   `frontend` key in `translations/<lang>.json`, fetched at runtime.
+
+For (3): `ensureTranslationsLoaded()` calls the `frontend/get_translations` WS
+command (`category: "frontend"`, our domain) once and maps
+`component.<domain>.frontend.<key>` into `_loadedStrings`. `t("key", { … })`
+returns the loaded string, falling back to `EN_STRINGS`, with `{placeholders}`
+substituted. `EN_STRINGS` (typed by `LocaleTable`) is the synchronous fallback
+and the canonical key list — keep it in sync with the `frontend` JSON block.
+Because the fetch is async, text rendered at card-build time registers a
+`_retranslate` callback so it refreshes once strings arrive.
+
+To add a language, add `config`/`options`/`frontend` blocks to
+`translations/<lang>.json` — no code changes. Keep `strings.json` and
+`translations/en.json` identical for English.
 
 ## Development Setup
 

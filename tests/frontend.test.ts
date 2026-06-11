@@ -300,6 +300,57 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
+  describe("localization", () => {
+    it("fetches frontend translations and applies them to the YAML alert", async () => {
+      const hass = createMockHass();
+      const TRANSLATED =
+        "Custom translated YAML notice <code>google_assistant:</code>";
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "frontend/get_translations") {
+          return Promise.resolve({
+            resources: {
+              "component.hass_ga_manual_ui.frontend.yaml_detected": TRANSLATED,
+            },
+          });
+        }
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "mock-entry" });
+        }
+        if (msg.type === "hass_ga_manual_ui/get_config") {
+          return Promise.resolve({
+            enabled: true,
+            report_state: false,
+            secure_devices_pin: "",
+            yaml_suppressed: true,
+          });
+        }
+        return Promise.resolve({});
+      });
+
+      setupDom(hass);
+      evalFrontend();
+      await flushMicrotasks();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      // The "frontend" category was requested for our integration.
+      expect(hass.callWS).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "frontend/get_translations",
+          category: "frontend",
+          integration: "hass_ga_manual_ui",
+        }),
+      );
+
+      // The build-time YAML alert text was re-applied from the fetched strings.
+      const alert = document
+        .querySelector("[data-ga-manual-card]")
+        ?.querySelector('ha-alert[alert-type="info"]');
+      expect(alert).not.toBeNull();
+      expect(alert!.innerHTML).toBe(TRANSLATED);
+    });
+  });
+
   describe("assistant card idempotency", () => {
     it("evaluating twice does not inject duplicate cards", () => {
       const hass = createMockHass();

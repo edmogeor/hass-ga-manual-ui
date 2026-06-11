@@ -54,6 +54,9 @@ _VERSION: str = _load_version()
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
+# hass.data[DOMAIN] key: was a `google_assistant:` YAML section present at boot.
+_DATA_YAML_DETECTED = "_yaml_detected"
+
 _WSC_PATCH_TARGETS = (
     "homeassistant/expose_entity",
     "homeassistant/expose_new_entities/get",
@@ -92,6 +95,25 @@ def _our_google_config(hass: HomeAssistant) -> Any | None:
 def _is_enabled(entry: ConfigEntry) -> bool:
     """Whether the user's soft-enable toggle is on (defaults to enabled)."""
     return bool(entry.options.get("enabled", True))
+
+
+def _sync_yaml_suppressed(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Persist this-boot's YAML detection onto the entry's ``yaml_suppressed`` option.
+
+    The card reads it via get_config to show its "we replaced your YAML config"
+    notice. Only written when changed, so it clears once the section is removed.
+    """
+    yaml_detected = bool(hass.data.get(DOMAIN, {}).get(_DATA_YAML_DETECTED, False))
+    if entry.options.get("yaml_suppressed", False) == yaml_detected:
+        return
+    hass.config_entries.async_update_entry(
+        entry, options={**entry.options, "yaml_suppressed": yaml_detected}
+    )
+    _LOGGER.debug(
+        "Set yaml_suppressed=%s for project='%s'",
+        yaml_detected,
+        _project_id(entry),
+    )
 
 
 def _entity_assistant_options(hass: HomeAssistant, entity_id: str) -> dict[str, Any]:
@@ -187,6 +209,18 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     _LOGGER.debug("async_setup starting for %s v%s", DOMAIN, _get_version())
     hass.data.setdefault(DOMAIN, {})
 
+    # Record whether the user has a `google_assistant:` YAML section (which this
+    # integration overrides) so the card can surface a notice. _sync_yaml_suppressed
+    # mirrors this onto the entry; recomputed each boot so it clears when removed.
+    yaml_detected = CORE_GA_DOMAIN in config
+    hass.data[DOMAIN][_DATA_YAML_DETECTED] = yaml_detected
+    if yaml_detected:
+        _LOGGER.info(
+            "Detected a 'google_assistant:' section in configuration.yaml; "
+            "this integration now manages Google Assistant and overrides it. "
+            "You can remove that section from your YAML configuration."
+        )
+
     hass.data.setdefault(CORE_GA_DOMAIN, {})
 
     await _reconcile_core_ga_entries(hass)
@@ -213,6 +247,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry
+
+    _sync_yaml_suppressed(hass, entry)
 
     _register_ws_commands(hass, entry)
 
