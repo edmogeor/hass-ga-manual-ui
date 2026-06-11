@@ -126,7 +126,7 @@ def _entity_assistant_options(hass: HomeAssistant, entity_id: str) -> dict[str, 
 
         try:
             settings = async_get_entity_settings(hass, entity_id)
-        except HomeAssistantError, KeyError:
+        except (HomeAssistantError, KeyError):
             return {}
         return dict(settings.get(ASSISTANT_ID, {}))
     except Exception:
