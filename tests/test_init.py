@@ -32,8 +32,10 @@ from hass_ga_manual_ui.const import (
     CONF_REPORT_STATE,
     CONF_SECURE_DEVICES_PIN,
     CONF_SERVICE_ACCOUNT,
+    CORE_GA_CREATED_BY,
     CORE_GA_DATA_CONFIG,
     CORE_GA_DOMAIN,
+    CORE_GA_PARENT_ENTRY_ID,
     DOMAIN,
 )
 from homeassistant.config_entries import ConfigEntry
@@ -175,7 +177,15 @@ class TestMakeCoreEntry:
             private_key="key-data",
         )
         core_entry = _make_core_entry(entry)
-        assert core_entry.data == entry.data
+        # Original data is carried over verbatim...
+        for key, value in entry.data.items():
+            assert core_entry.data[key] == value
+
+    def test_stamps_ownership_markers(self) -> None:
+        entry = mock_config_entry(project_id="proj", entry_id="our-entry-1")
+        core_entry = _make_core_entry(entry)
+        assert core_entry.data[CORE_GA_CREATED_BY] is True
+        assert core_entry.data[CORE_GA_PARENT_ENTRY_ID] == "our-entry-1"
 
     def test_entry_id_is_unique_per_call(self) -> None:
         entry = mock_config_entry()
@@ -1037,20 +1047,64 @@ class TestFindCoreEntry:
 
         assert _find_core_entry(hass, our) is None
 
+    def test_prefers_owned_entry_by_parent_marker(self) -> None:
+        """An exact parent-marker match wins, even if project_id differs."""
+        hass = MagicMock(spec=HomeAssistant)
+        our = mock_config_entry(project_id="proj-renamed", entry_id="our-a")
+        owned = _owned_core_entry("our-a", project_id="proj-old", entry_id="core-a")
+        hass.config_entries.async_entries.return_value = [owned]
+
+        assert _find_core_entry(hass, our) is owned
+
+    def test_ignores_entry_owned_by_a_different_parent(self) -> None:
+        """A marked entry owned by another parent is not adopted by project_id."""
+        hass = MagicMock(spec=HomeAssistant)
+        our = mock_config_entry(project_id="proj-a", entry_id="our-a")
+        other = _owned_core_entry("our-b", project_id="proj-a", entry_id="core-b")
+        hass.config_entries.async_entries.return_value = [other]
+
+        assert _find_core_entry(hass, our) is None
+
+
+def _owned_core_entry(
+    parent_id: str, project_id: str = "proj-a", entry_id: str = "core-a"
+) -> MagicMock:
+    """A shadow core GA entry stamped as owned by our `parent_id` entry."""
+    core = mock_config_entry(project_id=project_id, entry_id=entry_id)
+    core.data[CORE_GA_CREATED_BY] = True
+    core.data[CORE_GA_PARENT_ENTRY_ID] = parent_id
+    return core
+
+
+def _reconcile_harness(
+    our_entries: list[MagicMock], core_entries: list[MagicMock]
+) -> tuple[MagicMock, list[str]]:
+    """Wire a hass mock for _reconcile_core_ga_entries; return (hass, removed)."""
+    hass = MagicMock(spec=HomeAssistant)
+    hass.data = {}
+
+    def _entries(domain: str) -> list[MagicMock]:
+        return our_entries if domain == DOMAIN else core_entries
+
+    hass.config_entries.async_entries.side_effect = _entries
+    removed: list[str] = []
+
+    async def _remove(entry_id: str) -> None:
+        removed.append(entry_id)
+
+    hass.config_entries.async_remove.side_effect = _remove
+    return hass, removed
+
 
 class TestReconcileCoreGaEntries:
-    """Tests for _reconcile_core_ga_entries."""
+    """Tests for _reconcile_core_ga_entries (ownership-based pruning)."""
 
     async def test_seeds_data_config_from_enabled_entry(self) -> None:
-        hass = MagicMock(spec=HomeAssistant)
-        hass.data = {}
-        our = mock_config_entry(project_id="proj-a", options={"enabled": True})
-        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
-
-        def _entries(domain: str) -> list[MagicMock]:
-            return [our] if domain == DOMAIN else [core]
-
-        hass.config_entries.async_entries.side_effect = _entries
+        our = mock_config_entry(
+            project_id="proj-a", entry_id="our-a", options={"enabled": True}
+        )
+        core = _owned_core_entry("our-a")
+        hass, _ = _reconcile_harness([our], [core])
 
         await _reconcile_core_ga_entries(hass)
 
@@ -1059,71 +1113,71 @@ class TestReconcileCoreGaEntries:
             "proj-a"
         )
 
-    async def test_keeps_matching_core_entry(self) -> None:
-        hass = MagicMock(spec=HomeAssistant)
-        hass.data = {}
-        our = mock_config_entry(project_id="proj-a", options={"enabled": True})
-        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
-
-        def _entries(domain: str) -> list[MagicMock]:
-            return [our] if domain == DOMAIN else [core]
-
-        hass.config_entries.async_entries.side_effect = _entries
-        removed: list[str] = []
-
-        async def _remove(entry_id: str) -> None:
-            removed.append(entry_id)
-
-        hass.config_entries.async_remove.side_effect = _remove
+    async def test_keeps_owned_entry_with_live_parent(self) -> None:
+        our = mock_config_entry(
+            project_id="proj-a", entry_id="our-a", options={"enabled": True}
+        )
+        core = _owned_core_entry("our-a")
+        hass, removed = _reconcile_harness([our], [core])
 
         await _reconcile_core_ga_entries(hass)
 
-        assert removed == []  # matching entry preserved
+        assert removed == []  # owned + live parent => preserved
 
-    async def test_prunes_orphan_and_duplicate_core_entries(self) -> None:
-        hass = MagicMock(spec=HomeAssistant)
-        hass.data = {}
-        our = mock_config_entry(project_id="proj-a", options={"enabled": True})
-        keep = mock_config_entry(project_id="proj-a", entry_id="core-keep")
-        dup = mock_config_entry(project_id="proj-a", entry_id="core-dup")
-        orphan = mock_config_entry(project_id="proj-z", entry_id="core-orphan")
-
-        def _entries(domain: str) -> list[MagicMock]:
-            return [our] if domain == DOMAIN else [keep, dup, orphan]
-
-        hass.config_entries.async_entries.side_effect = _entries
-        removed: list[str] = []
-
-        async def _remove(entry_id: str) -> None:
-            removed.append(entry_id)
-
-        hass.config_entries.async_remove.side_effect = _remove
+    async def test_prunes_orphan_and_duplicate_owned_entries(self) -> None:
+        our = mock_config_entry(
+            project_id="proj-a", entry_id="our-a", options={"enabled": True}
+        )
+        keep = _owned_core_entry("our-a", entry_id="core-keep")
+        dup = _owned_core_entry("our-a", entry_id="core-dup")
+        orphan = _owned_core_entry(
+            "our-gone", project_id="proj-z", entry_id="core-orphan"
+        )
+        hass, removed = _reconcile_harness([our], [keep, dup, orphan])
 
         await _reconcile_core_ga_entries(hass)
 
         assert "core-keep" not in removed
         assert set(removed) == {"core-dup", "core-orphan"}
 
-    async def test_prunes_core_entry_for_disabled_project(self) -> None:
-        hass = MagicMock(spec=HomeAssistant)
-        hass.data = {}
-        our = mock_config_entry(project_id="proj-a", options={"enabled": False})
-        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
-
-        def _entries(domain: str) -> list[MagicMock]:
-            return [our] if domain == DOMAIN else [core]
-
-        hass.config_entries.async_entries.side_effect = _entries
-        removed: list[str] = []
-
-        async def _remove(entry_id: str) -> None:
-            removed.append(entry_id)
-
-        hass.config_entries.async_remove.side_effect = _remove
+    async def test_keeps_owned_entry_for_disabled_parent(self) -> None:
+        """A present-but-disabled parent keeps its shadow (links survive)."""
+        our = mock_config_entry(
+            project_id="proj-a", entry_id="our-a", options={"enabled": False}
+        )
+        core = _owned_core_entry("our-a")
+        hass, removed = _reconcile_harness([our], [core])
 
         await _reconcile_core_ga_entries(hass)
 
-        assert removed == ["core-a"]  # disabled => core entry pruned
+        assert removed == []  # disabled but present => kept
+
+    async def test_never_prunes_unmarked_entry(self) -> None:
+        """A google_assistant entry the user configured (no marker) is untouched."""
+        our = mock_config_entry(
+            project_id="proj-a", entry_id="our-a", options={"enabled": True}
+        )
+        # Unmarked, and an unrelated project the user set up themselves.
+        user_entry = mock_config_entry(project_id="proj-user", entry_id="core-user")
+        hass, removed = _reconcile_harness([our], [user_entry])
+
+        await _reconcile_core_ga_entries(hass)
+
+        assert removed == []  # never touch entries we did not create
+
+    async def test_bails_when_our_entries_unreadable(self) -> None:
+        """If we cannot read our own entries, prune nothing."""
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        hass.config_entries.async_entries.side_effect = RuntimeError("registry down")
+        removed: list[str] = []
+        hass.config_entries.async_remove.side_effect = (
+            lambda eid: removed.append(eid)  # type: ignore[func-returns-value]
+        )
+
+        await _reconcile_core_ga_entries(hass)
+
+        assert removed == []
 
 
 # =============================================================================

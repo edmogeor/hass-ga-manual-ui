@@ -23,3 +23,12 @@ PREF_DISABLE_2FA = "disable_2fa"
 
 CORE_GA_DOMAIN = "google_assistant"
 CORE_GA_DATA_CONFIG = "config"
+
+# Ownership markers written into the shadow `google_assistant` config entry's
+# data. They let us identify entries this integration created and which of our
+# entries owns each one, so pruning is deterministic and never touches a
+# google_assistant entry the user configured independently. These keys are
+# inert to core GA, which reads its runtime config from CORE_GA_DATA_CONFIG
+# (built by _build_core_config), not from the shadow entry's data.
+CORE_GA_CREATED_BY = "created_by_hass_ga_manual_ui"
+CORE_GA_PARENT_ENTRY_ID = "hass_ga_manual_ui_parent_entry_id"

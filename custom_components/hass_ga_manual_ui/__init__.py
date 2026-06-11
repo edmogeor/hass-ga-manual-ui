@@ -25,8 +25,10 @@ from .const import (
     CONF_REPORT_STATE,
     CONF_SECURE_DEVICES_PIN,
     CONF_SERVICE_ACCOUNT,
+    CORE_GA_CREATED_BY,
     CORE_GA_DATA_CONFIG,
     CORE_GA_DOMAIN,
+    CORE_GA_PARENT_ENTRY_ID,
     DOMAIN,
     PREF_DISABLE_2FA,
     WS_DISABLE,
@@ -74,13 +76,37 @@ def _project_id(entry: ConfigEntry) -> str:
     return entry.data.get(CONF_PROJECT_ID, "<missing>")
 
 
+def _owns_core_entry(core_entry: ConfigEntry) -> bool:
+    """Whether this integration created the given core GA config entry.
+
+    Driven by the ownership marker written in _make_core_entry. Entries the
+    user configured independently (a plain ``google_assistant:`` config entry)
+    never carry it, so we can safely leave them alone when pruning.
+    """
+    return bool(core_entry.data.get(CORE_GA_CREATED_BY))
+
+
 def _find_core_entry(hass: HomeAssistant, entry: ConfigEntry) -> ConfigEntry | None:
-    """Return the registered core GA entry for our project, if one exists."""
+    """Return the core GA entry owned by (or matching) our entry, if one exists.
+
+    Prefers an exact ownership match via the parent-entry marker. Falls back to
+    a project_id match against an *unmarked* entry so we can adopt one created
+    by an older version that predates the marker (it gets stamped on adopt in
+    _setup_core_ga). A marked entry owned by a different parent is never
+    returned as a fallback.
+    """
     project_id = entry.data.get(CONF_PROJECT_ID)
+    legacy_match: ConfigEntry | None = None
     for core_entry in hass.config_entries.async_entries(CORE_GA_DOMAIN):
-        if core_entry.data.get(CONF_PROJECT_ID) == project_id:
+        if core_entry.data.get(CORE_GA_PARENT_ENTRY_ID) == entry.entry_id:
             return core_entry
-    return None
+        if (
+            legacy_match is None
+            and not _owns_core_entry(core_entry)
+            and core_entry.data.get(CONF_PROJECT_ID) == project_id
+        ):
+            legacy_match = core_entry
+    return legacy_match
 
 
 def _our_google_config(hass: HomeAssistant) -> Any | None:
@@ -143,19 +169,25 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
     1. Populate ``hass.data["google_assistant"][DATA_CONFIG]`` from our config
        entry so that when HA auto-sets-up the persisted core entry on boot, it
        does not crash with ``KeyError: 'google_assistant'``.
-    2. Prune orphans and duplicates left behind by older versions — keep at most
-       one core entry per enabled project, drop the rest.
+    2. Prune only the shadow entries *we own* (carrying our ownership marker)
+       that are orphaned (their parent entry of ours is gone) or duplicated
+       (a second shadow for the same parent). Entries the user configured
+       independently, and entries from older versions that predate the marker,
+       are left untouched. A present-but-disabled parent keeps its shadow — the
+       soft-disable path neutralises it via should_expose, so there is no need
+       to destroy the device-registry links on every restart.
     """
-    our_entries: list[ConfigEntry]
+    # Never act on uncertainty: if we cannot read our own entries, do nothing
+    # destructive — a transient failure must not cascade into deleting entries.
     try:
         our_entries = list(hass.config_entries.async_entries(DOMAIN))
     except Exception as exc:
-        _LOGGER.debug("Could not enumerate our config entries: %s", exc)
-        our_entries = []
-
-    valid_project_ids = {
-        e.data.get(CONF_PROJECT_ID) for e in our_entries if _is_enabled(e)
-    }
+        _LOGGER.warning(
+            "Could not enumerate our config entries (%s); skipping core GA "
+            "reconciliation this boot to avoid acting on incomplete state.",
+            exc,
+        )
+        return
 
     # 1. Seed DATA_CONFIG early so a boot-time auto-setup of the core entry
     #    has a config to read.
@@ -170,27 +202,43 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
         except ValueError as exc:
             _LOGGER.debug("Skipping DATA_CONFIG seed for an entry: %s", exc)
 
-    # 2. Prune orphan / duplicate core GA entries.
-    seen: set[str | None] = set()
+    # 2. Prune orphan / duplicate shadow entries we own.
     try:
         core_entries = list(hass.config_entries.async_entries(CORE_GA_DOMAIN))
     except Exception as exc:
         _LOGGER.debug("Could not enumerate core GA entries: %s", exc)
         return
 
+    our_entry_ids = {e.entry_id for e in our_entries}
+    seen_parents: set[str | None] = set()
+
     for core_entry in core_entries:
-        pid = core_entry.data.get(CONF_PROJECT_ID)
-        if pid in valid_project_ids and pid not in seen:
-            seen.add(pid)
+        if not _owns_core_entry(core_entry):
+            # Not created by us (user's own google_assistant entry, or a legacy
+            # unmarked one we may adopt later). Never prune it.
+            continue
+
+        parent_id = core_entry.data.get(CORE_GA_PARENT_ENTRY_ID)
+
+        if parent_id not in our_entry_ids:
+            reason = "orphaned"
+        elif parent_id in seen_parents:
+            reason = "duplicate"
+        else:
+            seen_parents.add(parent_id)
             _LOGGER.debug(
-                "Keeping core GA entry '%s' (project='%s')", core_entry.entry_id, pid
+                "Keeping owned core GA entry '%s' (parent='%s')",
+                core_entry.entry_id,
+                parent_id,
             )
             continue
+
         try:
             _LOGGER.debug(
-                "Pruning stale/duplicate core GA entry '%s' (project='%s')",
+                "Pruning %s owned core GA entry '%s' (parent='%s')",
+                reason,
                 core_entry.entry_id,
-                pid,
+                parent_id,
             )
             await hass.config_entries.async_remove(core_entry.entry_id)
         except Exception as exc:
@@ -295,17 +343,24 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Handle removal of a config entry — purge all entity exposure settings."""
-    # Remove the matching core GA entry so it doesn't linger as an orphan.
+    # Remove the shadow core GA entry we created so it doesn't linger as an
+    # orphan. Only ever remove one we own — never a google_assistant entry the
+    # user configured independently, nor a legacy unmarked one we never adopted.
     core_entry = _find_core_entry(hass, entry)
-    if core_entry is not None:
+    if core_entry is not None and _owns_core_entry(core_entry):
         try:
             await hass.config_entries.async_remove(core_entry.entry_id)
             _LOGGER.debug(
-                "Removed orphaned core GA entry '%s' on entry removal",
+                "Removed owned core GA entry '%s' on entry removal",
                 core_entry.entry_id,
             )
         except Exception as exc:
             _LOGGER.warning("Could not remove core GA entry on removal: %s", exc)
+    elif core_entry is not None:
+        _LOGGER.debug(
+            "Leaving core GA entry '%s' in place on removal: not owned by us",
+            core_entry.entry_id,
+        )
 
     # Core removes the entry from the registry before invoking this hook, so
     # exclude it explicitly rather than relying on that ordering. Exposure data
@@ -395,7 +450,14 @@ def _make_core_entry(entry: ConfigEntry) -> ConfigEntry:
         minor_version=1,
         domain=CORE_GA_DOMAIN,
         title=entry.data[CONF_PROJECT_ID],
-        data=entry.data,
+        # Carry over our entry's data and stamp ownership markers so this shadow
+        # entry can be matched and pruned deterministically later. The extra
+        # keys are inert to core GA (see CORE_GA_CREATED_BY in const).
+        data={
+            **entry.data,
+            CORE_GA_CREATED_BY: True,
+            CORE_GA_PARENT_ENTRY_ID: entry.entry_id,
+        },
         source="system",
         options={},
         entry_id=None,
@@ -404,6 +466,35 @@ def _make_core_entry(entry: ConfigEntry) -> ConfigEntry:
         subentries_data=(),
         pref_disable_new_entities=False,
         pref_disable_polling=False,
+    )
+
+
+def _ensure_core_entry_marked(
+    hass: HomeAssistant, core_entry: ConfigEntry, entry: ConfigEntry
+) -> None:
+    """Stamp ownership markers onto a core GA entry we are adopting.
+
+    Idempotent: only writes when the markers are missing or point at a
+    different parent. This converts a legacy unmarked entry (created before the
+    marker existed, matched by project_id) into one we can prune deterministically.
+    """
+    if (
+        core_entry.data.get(CORE_GA_CREATED_BY)
+        and core_entry.data.get(CORE_GA_PARENT_ENTRY_ID) == entry.entry_id
+    ):
+        return
+    hass.config_entries.async_update_entry(
+        core_entry,
+        data={
+            **core_entry.data,
+            CORE_GA_CREATED_BY: True,
+            CORE_GA_PARENT_ENTRY_ID: entry.entry_id,
+        },
+    )
+    _LOGGER.debug(
+        "Stamped ownership markers on adopted core GA entry '%s' (parent='%s')",
+        core_entry.entry_id,
+        entry.entry_id,
     )
 
 
@@ -539,17 +630,23 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.debug(
             "Registered + set up new core GA entry id=%s", core_entry.entry_id
         )
-    elif core_entry.state is ConfigEntryState.LOADED:
-        _LOGGER.debug("Reusing already-loaded core GA entry id=%s", core_entry.entry_id)
     else:
-        # Persisted but not loaded (e.g. boot auto-setup failed before our
-        # DATA_CONFIG was ready, or never ran). Drive it now that config exists.
-        _LOGGER.debug(
-            "Setting up existing core GA entry id=%s (state=%s)",
-            core_entry.entry_id,
-            core_entry.state,
-        )
-        await hass.config_entries.async_reload(core_entry.entry_id)
+        # Adopting an existing entry (possibly a legacy unmarked one): stamp
+        # ownership markers first so future matching and pruning are exact.
+        _ensure_core_entry_marked(hass, core_entry, entry)
+        if core_entry.state is ConfigEntryState.LOADED:
+            _LOGGER.debug(
+                "Reusing already-loaded core GA entry id=%s", core_entry.entry_id
+            )
+        else:
+            # Persisted but not loaded (e.g. boot auto-setup failed before our
+            # DATA_CONFIG was ready, or never ran). Drive it now that config exists.
+            _LOGGER.debug(
+                "Setting up existing core GA entry id=%s (state=%s)",
+                core_entry.entry_id,
+                core_entry.state,
+            )
+            await hass.config_entries.async_reload(core_entry.entry_id)
 
     google_config = core_entry.runtime_data
 
@@ -603,9 +700,9 @@ async def _teardown_core_ga(
     webhook that can't be cleanly removed at runtime, so we do NOT unload/remove
     the core entry. Instead we turn off report_state and set enabled=False; the
     patched should_expose then returns False for every entity, so SYNC reports
-    no devices. (The core entry is fully removed only on entry deletion, or
-    pruned on the next restart by _reconcile_core_ga_entries since it is then
-    disabled.)
+    no devices. (The core entry is removed only on entry *deletion* — a
+    present-but-disabled parent keeps its shadow across restarts so its
+    device-registry links survive a disable → restart → re-enable cycle.)
     """
     project_id = _project_id(entry)
     runtime = entry.runtime_data
@@ -662,68 +759,82 @@ async def _teardown_core_ga(
 # ---------------------------------------------------------------------------
 
 
+def _purge_exposed_entities_store(hass: HomeAssistant) -> None:
+    """Step 1+2: drop our assistant from the exposed_entities store.
+
+    Touches HA-internal attributes (no public "remove assistant entirely" API
+    exists), so it is isolated: if a future core version reshapes these, this
+    step degrades to a warning without blocking the entity-registry cleanup.
+    """
+    from homeassistant.components.homeassistant.const import DATA_EXPOSED_ENTITIES
+
+    exposed_entities = hass.data.get(DATA_EXPOSED_ENTITIES)
+    if exposed_entities is None:
+        return
+
+    # "Expose new entities" preference for our assistant.
+    if ASSISTANT_ID in exposed_entities._assistants:
+        del exposed_entities._assistants[ASSISTANT_ID]
+        _LOGGER.debug("Removed '%s' from expose-new-entities preferences", ASSISTANT_ID)
+
+    # Per-entity legacy settings keyed by our assistant.
+    cleaned = 0
+    for entity_id in list(exposed_entities.entities):
+        entity = exposed_entities.entities[entity_id]
+        if ASSISTANT_ID in entity.assistants:
+            assistants = dict(entity.assistants)
+            del assistants[ASSISTANT_ID]
+            if assistants:
+                exposed_entities.entities[entity_id] = type(entity)(assistants)
+            else:
+                del exposed_entities.entities[entity_id]
+            cleaned += 1
+    if cleaned:
+        _LOGGER.debug(
+            "Removed '%s' from %d legacy entity settings", ASSISTANT_ID, cleaned
+        )
+
+    exposed_entities._async_schedule_save()
+
+
+def _purge_entity_registry_options(hass: HomeAssistant) -> None:
+    """Step 3: drop our assistant's options from entity registry entries."""
+    from homeassistant.helpers import entity_registry as er
+
+    ent_reg = er.async_get(hass)
+    cleaned = 0
+    for entity_id, entry in list(ent_reg.entities.items()):
+        if ASSISTANT_ID in entry.options:
+            options = dict(entry.options)
+            del options[ASSISTANT_ID]
+            ent_reg.async_update_entity_options(entity_id, options)
+            cleaned += 1
+    if cleaned:
+        _LOGGER.info(
+            "Removed '%s' assistant options from %d entity registry entries",
+            ASSISTANT_ID,
+            cleaned,
+        )
+
+
 def _purge_entity_exposure(hass: HomeAssistant) -> None:
-    """Remove all entity exposure settings for this assistant."""
+    """Remove all entity exposure settings for this assistant.
+
+    Each step is isolated so one failing (e.g. an HA-internal change) does not
+    abort the others — a half-done purge is worse than a fully-attempted one.
+    """
     _LOGGER.info("Purging entity exposure settings for assistant '%s'", ASSISTANT_ID)
 
-    try:
-        from homeassistant.components.homeassistant.const import (
-            DATA_EXPOSED_ENTITIES,
-        )
-        from homeassistant.helpers import entity_registry as er
-
-        exposed_entities = hass.data.get(DATA_EXPOSED_ENTITIES)
-
-        # 1. Remove "expose new entities" preference
-        if exposed_entities is not None:
-            if ASSISTANT_ID in exposed_entities._assistants:
-                del exposed_entities._assistants[ASSISTANT_ID]
-                _LOGGER.debug(
-                    "Removed '%s' from expose-new-entities preferences", ASSISTANT_ID
-                )
-
-            # 2. Remove from legacy entity settings
-            cleaned = 0
-            for entity_id in list(exposed_entities.entities):
-                entity = exposed_entities.entities[entity_id]
-                if ASSISTANT_ID in entity.assistants:
-                    assistants = dict(entity.assistants)
-                    del assistants[ASSISTANT_ID]
-                    if assistants:
-                        exposed_entities.entities[entity_id] = type(entity)(assistants)
-                    else:
-                        del exposed_entities.entities[entity_id]
-                    cleaned += 1
-            if cleaned:
-                _LOGGER.debug(
-                    "Removed '%s' from %d legacy entity settings",
-                    ASSISTANT_ID,
-                    cleaned,
-                )
-
-            exposed_entities._async_schedule_save()
-
-        # 3. Remove from entity registry options
-        ent_reg = er.async_get(hass)
-        cleaned = 0
-        for entity_id, entry in list(ent_reg.entities.items()):
-            if ASSISTANT_ID in entry.options:
-                options = dict(entry.options)
-                del options[ASSISTANT_ID]
-                ent_reg.async_update_entity_options(entity_id, options)
-                cleaned += 1
-        if cleaned:
-            _LOGGER.info(
-                "Removed '%s' assistant options from %d entity registry entries",
+    for step in (_purge_exposed_entities_store, _purge_entity_registry_options):
+        try:
+            step(hass)
+        except Exception as exc:
+            _LOGGER.warning(
+                "Purge step '%s' failed for '%s': %s. Continuing with remaining steps.",
+                step.__name__,
                 ASSISTANT_ID,
-                cleaned,
+                exc,
             )
-    except Exception as exc:
-        _LOGGER.warning(
-            "Could not fully purge entity exposure for '%s': %s",
-            ASSISTANT_ID,
-            exc,
-        )
 
     _LOGGER.info("Entity exposure cleanup for '%s' complete", ASSISTANT_ID)
 
