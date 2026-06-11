@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Skriv inn Google Cloud-prosjekt-ID-en din.\n\nFølg oppsettsveiledningen på {guide_url} (trinn 1–13). Du limer inn JSON-nøkkelen for tjenestekontoen i neste trinn.{yaml_notice}",
+        "data": {
+          "project_id": "Prosjekt-ID"
+        },
+        "data_description": {
+          "project_id": "Google Cloud-prosjekt-ID-en din"
+        }
+      },
+      "service_account": {
+        "title": "Tjenestekonto",
+        "description": "Lim inn innholdet i JSON-nøkkelfilen for tjenestekontoen.\n\nOpprett en på {docs_url} (trinn 12 i veiledningen på {guide_url}).",
+        "data": {
+          "service_account": "Tjenestekonto JSON"
+        },
+        "data_description": {
+          "service_account": "Lim inn den nedlastede JSON-nøkkelen for tjenestekontoen"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Prosjekt-ID er påkrevd",
+      "invalid_project_id": "Prosjekt-ID må være 6–30 tegn: små bokstaver, tall eller bindestreker",
+      "service_account_required": "Tjenestekonto JSON er påkrevd",
+      "Invalid JSON": "Teksten er ikke gyldig JSON",
+      "Missing 'client_email'": "JSON mangler feltet 'client_email'",
+      "Missing 'private_key'": "JSON mangler feltet 'private_key'"
+    },
+    "yaml_notice": "\n\nDu har en `google_assistant:`-seksjon i configuration.yaml. Denne integrasjonen administrerer nå Google Assistant og overstyrer den, så du kan fjerne den seksjonen."
+  },
+  "frontend": {
+    "yaml_detected": "Seksjonen <code>google_assistant:</code> ble oppdaget i <code>configuration.yaml</code> og er blitt deaktivert. Denne integrasjonen administrerer nå Google Assistant-konfigurasjonen din. Du kan trygt fjerne <code>google_assistant:</code>-seksjonen fra YAML-konfigurasjonen din.",
+    "enable_success": "Google Assistant aktivert",
+    "enable_failed": "Kunne ikke aktivere Google Assistant.",
+    "enable_fail_hint": "Prøv å laste inn integrasjonen på nytt fra Innstillinger → Enheter og tjenester.",
+    "disable_success": "Google Assistant deaktivert",
+    "disable_failed": "Kunne ikke deaktivere Google Assistant.",
+    "disable_fail_hint": "Prøv å fjerne integrasjonen fra Innstillinger → Enheter og tjenester.",
+    "check_logs": "Sjekk Home Assistant-loggene for detaljer.",
+    "report_state_enable_failed": "Kunne ikke aktivere statusrapportering. Prøv å slå av og på integrasjonen, eller sjekk Home Assistant-loggene.",
+    "report_state_disable_failed": "Kunne ikke deaktivere statusrapportering. Prøv å slå av og på integrasjonen, eller sjekk Home Assistant-loggene.",
+    "ready_banner": "{name} er klar — administrer det under Innstillinger → Stemmeassistenter."
+  }
+}

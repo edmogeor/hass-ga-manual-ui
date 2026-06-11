@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Ručno)",
+        "description": "Unesite ID svog Google Cloud projekta.\n\nSlijedite vodič za postavljanje na {guide_url} (koraci 1–13). U sljedećem koraku ćete zalijepiti JSON ključ servisnog računa.{yaml_notice}",
+        "data": {
+          "project_id": "ID projekta"
+        },
+        "data_description": {
+          "project_id": "ID vašeg Google Cloud projekta"
+        }
+      },
+      "service_account": {
+        "title": "Servisni račun",
+        "description": "Zalijepite sadržaj JSON ključne datoteke servisnog računa.\n\nNapravite ga na {docs_url} (korak 12 vodiča na {guide_url}).",
+        "data": {
+          "service_account": "JSON servisnog računa"
+        },
+        "data_description": {
+          "service_account": "Zalijepite preuzeti JSON ključ servisnog računa"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "ID projekta je obavezan",
+      "invalid_project_id": "ID projekta mora imati 6–30 znakova: mala slova, brojevi ili crtice",
+      "service_account_required": "JSON servisnog računa je obavezan",
+      "Invalid JSON": "Tekst nije valjani JSON",
+      "Missing 'client_email'": "JSON ne sadrži polje 'client_email'",
+      "Missing 'private_key'": "JSON ne sadrži polje 'private_key'"
+    },
+    "yaml_notice": "\n\nImate odjeljak `google_assistant:` u configuration.yaml. Ova integracija sada upravlja Google Assistantom i nadjačava ga, pa možete ukloniti taj odjeljak."
+  },
+  "frontend": {
+    "yaml_detected": "Odjeljak <code>google_assistant:</code> otkriven je u <code>configuration.yaml</code> i onemogućen je. Ova integracija sada upravlja konfiguracijom Google Assistanta. Možete sigurno ukloniti odjeljak <code>google_assistant:</code> iz YAML konfiguracije.",
+    "enable_success": "Google Assistant uspješno omogućen",
+    "enable_failed": "Omogućavanje Google Assistanta nije uspjelo.",
+    "enable_fail_hint": "Pokušajte ponovo učitati integraciju iz Postavke → Uređaji i servisi.",
+    "disable_success": "Google Assistant uspješno onemogućen",
+    "disable_failed": "Onemogućavanje Google Assistanta nije uspjelo.",
+    "disable_fail_hint": "Pokušajte ukloniti integraciju iz Postavke → Uređaji i servisi.",
+    "check_logs": "Za detalje provjerite dnevnike Home Assistanta.",
+    "report_state_enable_failed": "Omogućavanje izvještavanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
+    "report_state_disable_failed": "Onemogućavanje izvještavanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
+    "ready_banner": "{name} je spreman — upravljajte njime u Postavke → Glasovni asistenti."
+  }
+}

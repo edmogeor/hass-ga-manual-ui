@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Handmatig)",
+        "description": "Fier jo Google Cloud-projekt-ID yn.\n\nFolgje de ynstallaasjehandlieding op {guide_url} (stappen 1–13). Jo plakke jo tsjinsteaccount JSON-kaai yn de folgjende stap.{yaml_notice}",
+        "data": {
+          "project_id": "Projekt-ID"
+        },
+        "data_description": {
+          "project_id": "Jo Google Cloud-projekt-ID"
+        }
+      },
+      "service_account": {
+        "title": "Tsjinsteaccount",
+        "description": "Plakje de ynhâld fan jo tsjinsteaccount JSON-kaaibstân.\n\nMeitsje ien oan op {docs_url} (stap 12 fan de hantlieding op {guide_url}).",
+        "data": {
+          "service_account": "Tsjinsteaccount JSON"
+        },
+        "data_description": {
+          "service_account": "Plakje jo delleade tsjinsteaccount JSON-kaai"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekt-ID is ferplicht",
+      "invalid_project_id": "Projekt-ID moat 6–30 tekens wêze: lytse letters, sifers of keppelstreekjes",
+      "service_account_required": "Tsjinsteaccount JSON is ferplicht",
+      "Invalid JSON": "De tekst is gjin jildige JSON",
+      "Missing 'client_email'": "De JSON mist it fjild 'client_email'",
+      "Missing 'private_key'": "De JSON mist it fjild 'private_key'"
+    },
+    "yaml_notice": "\n\nJo hawwe in `google_assistant:`-seksje yn jo configuration.yaml. Dizze yntegraasje beheart no Google Assistant en oerskriuwt it, sadat jo dy seksje fuortsmite kinne."
+  },
+  "frontend": {
+    "yaml_detected": "De seksje <code>google_assistant:</code> is fûn yn jo <code>configuration.yaml</code> en is útskeakele. Dizze yntegraasje beheard no jo Google Assistant-konfiguraasje. Jo kinne de seksje <code>google_assistant:</code> feilich fuortsmite út jo YAML-konfiguraasje.",
+    "enable_success": "Google Assistant mei súkses ynskeakele",
+    "enable_failed": "Google Assistant ynskeakelje mislearre.",
+    "enable_fail_hint": "Besykje de yntegraasje opnij te laden fanút Ynstellingen → Apparaten en tsjinsten.",
+    "disable_success": "Google Assistant mei súkses útskeakele",
+    "disable_failed": "Google Assistant útskeakelje mislearre.",
+    "disable_fail_hint": "Besykje de yntegraasje te fuortsmiten fanút Ynstellingen → Apparaten en tsjinsten.",
+    "check_logs": "Kontrolearje de Home Assistant-logboeken foar details.",
+    "report_state_enable_failed": "Statusrapportaazje ynskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
+    "report_state_disable_failed": "Statusrapportaazje útskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
+    "ready_banner": "{name} is klear — behearsje it fia Ynstellingen → Spraakadjutanten."
+  }
+}

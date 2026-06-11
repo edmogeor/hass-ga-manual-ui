@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (دستی)",
+        "description": "اپنے Google Cloud پروجیکٹ ID درج کریں۔\n\n{guide_url} پر سیٹ اپ گائیڈ پر عمل کریں (مراحل 1–13)۔ آپ اگلے مرحلے میں اپنی سروس اکاؤنٹ JSON کلید پیسٹ کریں گے۔{yaml_notice}",
+        "data": {
+          "project_id": "پروجیکٹ ID"
+        },
+        "data_description": {
+          "project_id": "آپ کا Google Cloud پروجیکٹ ID"
+        }
+      },
+      "service_account": {
+        "title": "سروس اکاؤنٹ",
+        "description": "اپنی سروس اکاؤنٹ JSON کلید فائل کا مواد پیسٹ کریں۔\n\n{docs_url} پر ایک بنائیں ({guide_url} پر گائیڈ کا مرحلہ 12)۔",
+        "data": {
+          "service_account": "سروس اکاؤنٹ JSON"
+        },
+        "data_description": {
+          "service_account": "اپنی ڈاؤن لوڈ کردہ سروس اکاؤنٹ JSON کلید پیسٹ کریں"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "پروجیکٹ ID ضروری ہے",
+      "invalid_project_id": "پروجیکٹ ID 6–30 حروف کا ہونا چاہیے: چھوٹے حروف، اعداد یا ہائفن",
+      "service_account_required": "سروس اکاؤنٹ JSON ضروری ہے",
+      "Invalid JSON": "متن درست JSON نہیں ہے",
+      "Missing 'client_email'": "JSON میں 'client_email' فیلڈ موجود نہیں",
+      "Missing 'private_key'": "JSON میں 'private_key' فیلڈ موجود نہیں"
+    },
+    "yaml_notice": "\n\nآپ کے configuration.yaml میں `google_assistant:` سیکشن موجود ہے۔ یہ انٹیگریشن اب Google Assistant کا انتظام کرتی ہے اور اسے اوور رائیڈ کرتی ہے، اس لیے آپ وہ سیکشن ہٹا سکتے ہیں۔"
+  },
+  "frontend": {
+    "yaml_detected": "آپ کے <code>configuration.yaml</code> میں <code>google_assistant:</code> سیکشن پایا گیا اور اسے غیر فعال کر دیا گیا ہے۔ یہ انٹیگریشن اب آپ کی Google Assistant کنفیگریشن کا انتظام کرتی ہے۔ آپ اپنی YAML کنفیگریشن سے <code>google_assistant:</code> سیکشن محفوظ طریقے سے ہٹا سکتے ہیں۔",
+    "enable_success": "Google Assistant کامیابی سے فعال ہو گیا",
+    "enable_failed": "Google Assistant فعال کرنے میں ناکامی۔",
+    "enable_fail_hint": "ترتیبات ← آلات اور خدمات سے انٹیگریشن دوبارہ لوڈ کرنے کی کوشش کریں۔",
+    "disable_success": "Google Assistant کامیابی سے غیر فعال ہو گیا",
+    "disable_failed": "Google Assistant غیر فعال کرنے میں ناکامی۔",
+    "disable_fail_hint": "ترتیبات ← آلات اور خدمات سے انٹیگریشن ہٹانے کی کوشش کریں۔",
+    "check_logs": "تفصیلات کے لیے Home Assistant لاگز چیک کریں۔",
+    "report_state_enable_failed": "اسٹیٹس رپورٹنگ فعال کرنے میں ناکامی۔ انٹیگریشن بند اور دوبارہ چالو کرنے کی کوشش کریں، یا Home Assistant لاگز چیک کریں۔",
+    "report_state_disable_failed": "اسٹیٹس رپورٹنگ غیر فعال کرنے میں ناکامی۔ انٹیگریشن بند اور دوبارہ چالو کرنے کی کوشش کریں، یا Home Assistant لاگز چیک کریں۔",
+    "ready_banner": "{name} تیار ہے — اسے ترتیبات ← آواز کے معاونین میں منظم کریں۔"
+  }
+}

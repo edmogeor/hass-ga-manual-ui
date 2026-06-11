@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (മാനുവൽ)",
+        "description": "നിങ്ങളുടെ Google Cloud പ്രോജക്ട് ഐഡി നൽകുക.\n\n{guide_url}-ൽ സജ്ജീകരണ ഗൈഡ് പിന്തുടരുക (ഘട്ടങ്ങൾ 1–13). അടുത്ത ഘട്ടത്തിൽ നിങ്ങൾ സേവന അക്കൗണ്ട് JSON കീ ഒട്ടിക്കും.{yaml_notice}",
+        "data": {
+          "project_id": "പ്രോജക്ട് ഐഡി"
+        },
+        "data_description": {
+          "project_id": "നിങ്ങളുടെ Google Cloud പ്രോജക്ട് ഐഡി"
+        }
+      },
+      "service_account": {
+        "title": "സേവന അക്കൗണ്ട്",
+        "description": "നിങ്ങളുടെ സേവന അക്കൗണ്ട് JSON കീ ഫയലിന്റെ ഉള്ളടക്കം ഒട്ടിക്കുക.\n\n{docs_url}-ൽ ഒന്ന് സൃഷ്ടിക്കുക ({guide_url}-ൽ ഗൈഡിന്റെ ഘട്ടം 12).",
+        "data": {
+          "service_account": "സേവന അക്കൗണ്ട് JSON"
+        },
+        "data_description": {
+          "service_account": "ഡൗൺലോഡ് ചെയ്ത സേവന അക്കൗണ്ട് JSON കീ ഒട്ടിക്കുക"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "പ്രോജക്ട് ഐഡി ആവശ്യമാണ്",
+      "invalid_project_id": "പ്രോജക്ട് ഐഡി 6–30 പ്രതീകങ്ങൾ ആയിരിക്കണം: ചെറിയ അക്ഷരങ്ങൾ, അക്കങ്ങൾ അല്ലെങ്കിൽ ഹൈഫൻ",
+      "service_account_required": "സേവന അക്കൗണ്ട് JSON ആവശ്യമാണ്",
+      "Invalid JSON": "ടെക്സ്റ്റ് സാധുവായ JSON അല്ല",
+      "Missing 'client_email'": "JSON-ൽ 'client_email' ഫീൽഡ് ഇല്ല",
+      "Missing 'private_key'": "JSON-ൽ 'private_key' ഫീൽഡ് ഇല്ല"
+    },
+    "yaml_notice": "\n\nനിങ്ങളുടെ configuration.yaml-ൽ `google_assistant:` വിഭാഗം ഉണ്ട്. ഈ ഇന്റഗ്രേഷൻ ഇപ്പോൾ Google Assistant നിയന്ത്രിക്കുകയും അത് മറികടക്കുകയും ചെയ്യുന്നു, അതിനാൽ ആ വിഭാഗം നീക്കം ചെയ്യാം."
+  },
+  "frontend": {
+    "yaml_detected": "നിങ്ങളുടെ <code>configuration.yaml</code>-ൽ <code>google_assistant:</code> വിഭാഗം കണ്ടെത്തി നിഷ്ക്രിയമാക്കി. ഈ ഇന്റഗ്രേഷൻ ഇപ്പോൾ നിങ്ങളുടെ Google Assistant കോൺഫിഗറേഷൻ നിയന്ത്രിക്കുന്നു. YAML കോൺഫിഗറേഷനിൽ നിന്ന് <code>google_assistant:</code> വിഭാഗം സുരക്ഷിതമായി നീക്കം ചെയ്യാം.",
+    "enable_success": "Google Assistant വിജയകരമായി പ്രവർത്തനക്ഷമമാക്കി",
+    "enable_failed": "Google Assistant പ്രവർത്തനക്ഷമമാക്കൽ പരാജയപ്പെട്ടു.",
+    "enable_fail_hint": "ക്രമീകരണങ്ങൾ → ഉപകരണങ്ങൾ & സേവനങ്ങളിൽ നിന്ന് ഇന്റഗ്രേഷൻ വീണ്ടും ലോഡ് ചെയ്യാൻ ശ്രമിക്കുക.",
+    "disable_success": "Google Assistant വിജയകരമായി നിഷ്ക്രിയമാക്കി",
+    "disable_failed": "Google Assistant നിഷ്ക്രിയമാക്കൽ പരാജയപ്പെട്ടു.",
+    "disable_fail_hint": "ക്രമീകരണങ്ങൾ → ഉപകരണങ്ങൾ & സേവനങ്ങളിൽ നിന്ന് ഇന്റഗ്രേഷൻ നീക്കം ചെയ്യാൻ ശ്രമിക്കുക.",
+    "check_logs": "വിശദാംശങ്ങൾക്ക് Home Assistant ലോഗുകൾ പരിശോധിക്കുക.",
+    "report_state_enable_failed": "സ്റ്റേറ്റ് റിപ്പോർട്ടിംഗ് പ്രവർത്തനക്ഷമമാക്കൽ പരാജയപ്പെട്ടു. ഇന്റഗ്രേഷൻ ഓഫ് ചെയ്ത് വീണ്ടും ഓൺ ചെയ്യാൻ ശ്രമിക്കുക, അല്ലെങ്കിൽ Home Assistant ലോഗുകൾ പരിശോധിക്കുക.",
+    "report_state_disable_failed": "സ്റ്റേറ്റ് റിപ്പോർട്ടിംഗ് നിഷ്ക്രിയമാക്കൽ പരാജയപ്പെട്ടു. ഇന്റഗ്രേഷൻ ഓഫ് ചെയ്ത് വീണ്ടും ഓൺ ചെയ്യാൻ ശ്രമിക്കുക, അല്ലെങ്കിൽ Home Assistant ലോഗുകൾ പരിശോധിക്കുക.",
+    "ready_banner": "{name} തയ്യാർ — ക്രമീകരണങ്ങൾ → വോയ്സ് അസിസ്റ്റന്റുകളിൽ നിയന്ത്രിക്കുക."
+  }
+}

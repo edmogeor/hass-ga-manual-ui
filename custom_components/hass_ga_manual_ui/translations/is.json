@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Handvirkt)",
+        "description": "Sláðu inn verkefnis-ID þitt í Google Cloud.\n\nFylgdu uppsetningarleiðbeiningum á {guide_url} (skref 1–13). Þú límir þjónustureikningslykilinn JSON inn í næsta skrefi.{yaml_notice}",
+        "data": {
+          "project_id": "Verkefnis-ID"
+        },
+        "data_description": {
+          "project_id": "Verkefnis-ID þitt í Google Cloud"
+        }
+      },
+      "service_account": {
+        "title": "Þjónustureikningur",
+        "description": "Límdu innihald JSON-lykilskrárinnar þjónustureiknings.\n\nBúðu til einn á {docs_url} (skref 12 í leiðbeiningum á {guide_url}).",
+        "data": {
+          "service_account": "Þjónustureikningur JSON"
+        },
+        "data_description": {
+          "service_account": "Límdu niðurhalsta JSON-lykil þjónustureiknings"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Verkefnis-ID er nauðsynlegt",
+      "invalid_project_id": "Verkefnis-ID verður að vera 6–30 stafir: lágstafir, tölur eða bandstrik",
+      "service_account_required": "Þjónustureikningur JSON er nauðsynlegt",
+      "Invalid JSON": "Textinn er ekki gilt JSON",
+      "Missing 'client_email'": "JSON vantar reitinn 'client_email'",
+      "Missing 'private_key'": "JSON vantar reitinn 'private_key'"
+    },
+    "yaml_notice": "\n\nÞú ert með `google_assistant:` hluta í configuration.yaml. Þessi samþætting sér nú um Google Assistant og hnekkir honum, svo þú getur fjarlægt þann hluta."
+  },
+  "frontend": {
+    "yaml_detected": "Hlutinn <code>google_assistant:</code> fannst í <code>configuration.yaml</code> og hefur verið gerður óvirkur. Þessi samþætting sér nú um Google Assistant stillingar þínar. Þú getur fjarlægt <code>google_assistant:</code> hlutann örugglega úr YAML-stillingum þínum.",
+    "enable_success": "Google Assistant virkjaður",
+    "enable_failed": "Tókst ekki að virkja Google Assistant.",
+    "enable_fail_hint": "Reyndu að endurhlaða samþættinguna frá Stillingar → Tæki og þjónustur.",
+    "disable_success": "Google Assistant gerður óvirkur",
+    "disable_failed": "Tókst ekki að gera Google Assistant óvirkan.",
+    "disable_fail_hint": "Reyndu að fjarlægja samþættinguna frá Stillingar → Tæki og þjónustur.",
+    "check_logs": "Athugaðu Home Assistant kladdana fyrir upplýsingar.",
+    "report_state_enable_failed": "Tókst ekki að virkja stöðuskýrslugjöf. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
+    "report_state_disable_failed": "Tókst ekki að gera stöðuskýrslugjöf óvirka. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
+    "ready_banner": "{name} er tilbúið — sjáðu um það undir Stillingar → Raddaðstoðarmenn."
+  }
+}

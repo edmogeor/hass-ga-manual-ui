@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Ręczna konfiguracja)",
+        "description": "Wprowadź identyfikator projektu Google Cloud.\n\nPostępuj zgodnie z przewodnikiem konfiguracji na {guide_url} (kroki 1–13). Klucz JSON konta usługi wkleisz w następnym kroku.{yaml_notice}",
+        "data": {
+          "project_id": "Identyfikator projektu"
+        },
+        "data_description": {
+          "project_id": "Identyfikator projektu Google Cloud"
+        }
+      },
+      "service_account": {
+        "title": "Konto usługi",
+        "description": "Wklej zawartość pliku klucza JSON konta usługi.\n\nUtwórz go na {docs_url} (krok 12 przewodnika na {guide_url}).",
+        "data": {
+          "service_account": "JSON konta usługi"
+        },
+        "data_description": {
+          "service_account": "Wklej pobrany klucz JSON konta usługi"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Identyfikator projektu jest wymagany",
+      "invalid_project_id": "Identyfikator projektu musi mieć 6–30 znaków: małe litery, cyfry lub myślniki",
+      "service_account_required": "JSON konta usługi jest wymagany",
+      "Invalid JSON": "Tekst nie jest prawidłowym JSON",
+      "Missing 'client_email'": "W JSON brakuje pola 'client_email'",
+      "Missing 'private_key'": "W JSON brakuje pola 'private_key'"
+    },
+    "yaml_notice": "\n\nMasz sekcję `google_assistant:` w pliku configuration.yaml. Ta integracja zarządza teraz Google Assistant i nadpisuje tę sekcję, więc możesz ją usunąć."
+  },
+  "frontend": {
+    "yaml_detected": "Sekcja <code>google_assistant:</code> została wykryta w pliku <code>configuration.yaml</code> i została wyłączona. Ta integracja zarządza teraz konfiguracją Google Assistant. Możesz bezpiecznie usunąć sekcję <code>google_assistant:</code> z konfiguracji YAML.",
+    "enable_success": "Google Assistant włączony pomyślnie",
+    "enable_failed": "Nie udało się włączyć Google Assistant.",
+    "enable_fail_hint": "Spróbuj ponownie załadować integrację w Ustawienia → Urządzenia i usługi.",
+    "disable_success": "Google Assistant wyłączony pomyślnie",
+    "disable_failed": "Nie udało się wyłączyć Google Assistant.",
+    "disable_fail_hint": "Spróbuj usunąć integrację w Ustawienia → Urządzenia i usługi.",
+    "check_logs": "Sprawdź logi Home Assistant, aby uzyskać szczegóły.",
+    "report_state_enable_failed": "Nie udało się włączyć raportowania stanu. Spróbuj wyłączyć i ponownie włączyć integrację lub sprawdź logi Home Assistant.",
+    "report_state_disable_failed": "Nie udało się wyłączyć raportowania stanu. Spróbuj wyłączyć i ponownie włączyć integrację lub sprawdź logi Home Assistant.",
+    "ready_banner": "{name} jest gotowy — zarządzaj nim w Ustawienia → Asystenci głosowi."
+  }
+}

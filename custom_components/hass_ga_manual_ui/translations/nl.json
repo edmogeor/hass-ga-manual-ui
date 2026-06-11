@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Handmatig)",
+        "description": "Voer uw Google Cloud-project-ID in.\n\nVolg de installatiehandleiding op {guide_url} (stappen 1–13). U plakt uw serviceaccount JSON-sleutel in de volgende stap.{yaml_notice}",
+        "data": {
+          "project_id": "Project-ID"
+        },
+        "data_description": {
+          "project_id": "Uw Google Cloud-project-ID"
+        }
+      },
+      "service_account": {
+        "title": "Serviceaccount",
+        "description": "Plak de inhoud van uw serviceaccount JSON-sleutelbestand.\n\nMaak er een aan op {docs_url} (stap 12 van de handleiding op {guide_url}).",
+        "data": {
+          "service_account": "Serviceaccount JSON"
+        },
+        "data_description": {
+          "service_account": "Plak uw gedownloade serviceaccount JSON-sleutel"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Project-ID is vereist",
+      "invalid_project_id": "Project-ID moet 6–30 tekens bevatten: kleine letters, cijfers of koppeltekens",
+      "service_account_required": "Serviceaccount JSON is vereist",
+      "Invalid JSON": "De tekst is geen geldige JSON",
+      "Missing 'client_email'": "De JSON mist het veld 'client_email'",
+      "Missing 'private_key'": "De JSON mist het veld 'private_key'"
+    },
+    "yaml_notice": "\n\nU heeft een `google_assistant:`-sectie in uw configuration.yaml. Deze integratie beheert nu Google Assistant en overschrijft die sectie, zodat u die kunt verwijderen."
+  },
+  "frontend": {
+    "yaml_detected": "De sectie <code>google_assistant:</code> is gedetecteerd in uw <code>configuration.yaml</code> en is uitgeschakeld. Deze integratie beheert nu uw Google Assistant-configuratie. U kunt de sectie <code>google_assistant:</code> veilig verwijderen uit uw YAML-configuratie.",
+    "enable_success": "Google Assistant succesvol ingeschakeld",
+    "enable_failed": "Google Assistant inschakelen mislukt.",
+    "enable_fail_hint": "Probeer de integratie opnieuw te laden via Instellingen → Apparaten & services.",
+    "disable_success": "Google Assistant succesvol uitgeschakeld",
+    "disable_failed": "Google Assistant uitschakelen mislukt.",
+    "disable_fail_hint": "Probeer de integratie te verwijderen via Instellingen → Apparaten & services.",
+    "check_logs": "Bekijk de Home Assistant-logboeken voor details.",
+    "report_state_enable_failed": "Statusrapportage inschakelen mislukt. Probeer de integratie uit en weer in te schakelen, of bekijk de Home Assistant-logboeken.",
+    "report_state_disable_failed": "Statusrapportage uitschakelen mislukt. Probeer de integratie uit en weer in te schakelen, of bekijk de Home Assistant-logboeken.",
+    "ready_banner": "{name} is gereed — beheer het via Instellingen → Spraakassistenten."
+  }
+}

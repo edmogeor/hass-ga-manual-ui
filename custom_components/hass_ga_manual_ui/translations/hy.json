@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Ձեռքով)",
+        "description": "Մուտքագրեք ձեր Google Cloud նախագծի ID-ն։\n\nHետևեք կարգավորումների ձեռնարկին {guide_url} հասցեում (1–13 քայլեր)։ Հաջորդ քայլում կտեղադրեք ձեր ծառայության հաշվի JSON բանալին։{yaml_notice}",
+        "data": {
+          "project_id": "Նախագծի ID"
+        },
+        "data_description": {
+          "project_id": "Ձեր Google Cloud նախագծի ID-ն"
+        }
+      },
+      "service_account": {
+        "title": "Ծառայության հաշիվ",
+        "description": "Տեղադրեք ձեր ծառայության հաշվի JSON բանալու ֆայլի բովանդակությունը։\n\nՍтvorեք մեկը {docs_url} հասցեում ({guide_url}-ի ձեռնարկի 12-րդ քայլ)։",
+        "data": {
+          "service_account": "Ծառայության հաշվի JSON"
+        },
+        "data_description": {
+          "service_account": "Տեղադրեք ձեր ներբեռնած ծառայության հաշվի JSON բանալին"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Նախագծի ID-ն պարտադիր է",
+      "invalid_project_id": "Նախագծի ID-ն պետք է լինի 6–30 նիշ. փոքրատառ, թվեր կամ գծիկ",
+      "service_account_required": "Ծառայության հաշվի JSON-ն պարտադիր է",
+      "Invalid JSON": "Տեքստը վավեր JSON չէ",
+      "Missing 'client_email'": "JSON-ում բացակայում է 'client_email' դաշտը",
+      "Missing 'private_key'": "JSON-ում բացակայում է 'private_key' դաշտը"
+    },
+    "yaml_notice": "\n\nՁեր configuration.yaml-ում կա `google_assistant:` բաժին։ Այս ինտեգրումն այժm կառավարում է Google Assistant-ը և վերագրում է այն, ուստի կարող եք հեռացնել այդ բաժինը։"
+  },
+  "frontend": {
+    "yaml_detected": "<code>google_assistant:</code> բաժինը հայտնաբերվեց ձեր <code>configuration.yaml</code>-ում և անջատված է։ Այս ինտեգրումն այժm կառավարում է ձեր Google Assistant կազմաձևումը։ Կարող եք ապահով կերպով հեռացնել <code>google_assistant:</code> բաժինը ձեր YAML կազմաձևումից։",
+    "enable_success": "Google Assistant-ը հաջողությամբ միացվեց",
+    "enable_failed": "Google Assistant-ի միացումը ձախողվեց։",
+    "enable_fail_hint": "Փորձեք վերբեռնել ինտեգրումը Կարգավորումներ → Սարքեր & ծառայություններ-ից։",
+    "disable_success": "Google Assistant-ը հաջողությամբ անջատվեց",
+    "disable_failed": "Google Assistant-ի անջատումը ձախողվեց։",
+    "disable_fail_hint": "Փորձեք հեռացնել ինտեգրումը Կարգավորումներ → Սարքեր & ծառայություններ-ից։",
+    "check_logs": "Մանրամասների համար ստուգեք Home Assistant-ի գրանցամատյանները։",
+    "report_state_enable_failed": "Կարգավիճակի հաղորդման միացումը ձախողվեց։ Փորձեք անջատել և վերամիացնել ինտեգրումը, կամ ստուգեք Home Assistant-ի գրանցամատյանները։",
+    "report_state_disable_failed": "Կարգավիճակի հաղորդման անջատումը ձախողվեց։ Փորձեք անջատել և վերամիացնել ինտեգրումը, կամ ստուգեք Home Assistant-ի գրանցամատյանները։",
+    "ready_banner": "{name}-ը պատրաստ է — կառավարեք այն Կարգավորումներ → Ձայնային օգնականներ-ի ներքո։"
+  }
+}

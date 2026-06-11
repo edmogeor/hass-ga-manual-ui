@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Geben Sie Ihre Google Cloud-Projekt-ID ein.\n\nFolgen Sie dem Einrichtungsleitfaden unter {guide_url} (Schritte 1–13). Im nächsten Schritt fügen Sie Ihren Dienstkonto-JSON-Schlüssel ein.{yaml_notice}",
+        "data": {
+          "project_id": "Projekt-ID"
+        },
+        "data_description": {
+          "project_id": "Ihre Google Cloud-Projekt-ID"
+        }
+      },
+      "service_account": {
+        "title": "Dienstkonto",
+        "description": "Fügen Sie den Inhalt Ihrer Dienstkonto-JSON-Schlüsseldatei ein.\n\nErstellen Sie eine unter {docs_url} (Schritt 12 des Leitfadens unter {guide_url}).",
+        "data": {
+          "service_account": "Dienstkonto-JSON"
+        },
+        "data_description": {
+          "service_account": "Fügen Sie Ihren heruntergeladenen Dienstkonto-JSON-Schlüssel ein"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekt-ID ist erforderlich",
+      "invalid_project_id": "Projekt-ID muss 6–30 Zeichen lang sein: Kleinbuchstaben, Zahlen oder Bindestriche",
+      "service_account_required": "Dienstkonto-JSON ist erforderlich",
+      "Invalid JSON": "Der Text ist kein gültiges JSON",
+      "Missing 'client_email'": "Im JSON fehlt das Feld 'client_email'",
+      "Missing 'private_key'": "Im JSON fehlt das Feld 'private_key'"
+    },
+    "yaml_notice": "\n\nSie haben einen `google_assistant:`-Abschnitt in Ihrer configuration.yaml. Diese Integration verwaltet jetzt Google Assistant und überschreibt ihn, sodass Sie diesen Abschnitt entfernen können."
+  },
+  "frontend": {
+    "yaml_detected": "Der Abschnitt <code>google_assistant:</code> wurde in Ihrer <code>configuration.yaml</code> gefunden und deaktiviert. Diese Integration verwaltet jetzt Ihre Google Assistant-Konfiguration. Sie können den Abschnitt <code>google_assistant:</code> sicher aus Ihrer YAML-Konfiguration entfernen.",
+    "enable_success": "Google Assistant erfolgreich aktiviert",
+    "enable_failed": "Google Assistant konnte nicht aktiviert werden.",
+    "enable_fail_hint": "Versuchen Sie, die Integration unter Einstellungen → Geräte & Dienste neu zu laden.",
+    "disable_success": "Google Assistant erfolgreich deaktiviert",
+    "disable_failed": "Google Assistant konnte nicht deaktiviert werden.",
+    "disable_fail_hint": "Versuchen Sie, die Integration unter Einstellungen → Geräte & Dienste zu entfernen.",
+    "check_logs": "Überprüfen Sie die Home Assistant-Protokolle für Details.",
+    "report_state_enable_failed": "Statusmeldung konnte nicht aktiviert werden. Versuchen Sie, die Integration aus- und wieder einzuschalten, oder prüfen Sie die Home Assistant-Protokolle.",
+    "report_state_disable_failed": "Statusmeldung konnte nicht deaktiviert werden. Versuchen Sie, die Integration aus- und wieder einzuschalten, oder prüfen Sie die Home Assistant-Protokolle.",
+    "ready_banner": "{name} ist bereit – verwalten Sie es unter Einstellungen → Sprachassistenten."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Gib dini Google Cloud Projekt-ID ii.\n\nFolg em Iirrichtigsleitfade uf {guide_url} (Schritt 1–13). Im nächste Schritt chasch du dini Dienstkonto JSON-Schlüssel ychlege.{yaml_notice}",
+        "data": {
+          "project_id": "Projekt-ID"
+        },
+        "data_description": {
+          "project_id": "Dini Google Cloud Projekt-ID"
+        }
+      },
+      "service_account": {
+        "title": "Dienstkonto",
+        "description": "Chlege de Inhalt vo dim Dienstkonto JSON-Schlüsseldatei ii.\n\nErstell eis uf {docs_url} (Schritt 12 vom Leitfade uf {guide_url}).",
+        "data": {
+          "service_account": "Dienstkonto JSON"
+        },
+        "data_description": {
+          "service_account": "Chlege dine rundergelade Dienstkonto JSON-Schlüssel ii"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekt-ID isch erforderlich",
+      "invalid_project_id": "Projekt-ID mues 6–30 Zeiche ha: Chliibuechstabe, Zahle oder Bindestriche",
+      "service_account_required": "Dienstkonto JSON isch erforderlich",
+      "Invalid JSON": "De Text isch kei gültigs JSON",
+      "Missing 'client_email'": "Im JSON fehlt s'Feld 'client_email'",
+      "Missing 'private_key'": "Im JSON fehlt s'Feld 'private_key'"
+    },
+    "yaml_notice": "\n\nDu hesch en `google_assistant:`-Abschnitt in dim configuration.yaml. Die Integration verwaltet jetzt Google Assistant und überschreibt en, so chasch du die Abschnitt entferne."
+  },
+  "frontend": {
+    "yaml_detected": "De Abschnitt <code>google_assistant:</code> isch in dim <code>configuration.yaml</code> gfunde worde und isch deaktiviert worde. Die Integration verwaltet jetzt dini Google Assistant-Konfiguration. Du chasch de Abschnitt <code>google_assistant:</code> sicher us dimere YAML-Konfiguration entferne.",
+    "enable_success": "Google Assistant erfolgreich aktiviert",
+    "enable_failed": "Google Assistant aktiviere isch gscheitert.",
+    "enable_fail_hint": "Versuechi d'Integration under Istellunge → Geräte & Dienste neu z'lade.",
+    "disable_success": "Google Assistant erfolgreich deaktiviert",
+    "disable_failed": "Google Assistant deaktiviere isch gscheitert.",
+    "disable_fail_hint": "Versuechi d'Integration under Istellunge → Geräte & Dienste z'entferne.",
+    "check_logs": "Überprüef d'Home Assistant-Protokolle für Details.",
+    "report_state_enable_failed": "Statusmäldig aktiviere isch gscheitert. Versuechi d'Integration uus- und wider iizschalte, oder überprüef d'Home Assistant-Protokolle.",
+    "report_state_disable_failed": "Statusmäldig deaktiviere isch gscheitert. Versuechi d'Integration uus- und wider iizschalte, oder überprüef d'Home Assistant-Protokolle.",
+    "ready_banner": "{name} isch parat – verwalte s'under Istellunge → Sprachassistente."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Mana)",
+        "description": "Enigu vian Google Cloud projektan ID-on.\n\nSekvu la agordgvidon ĉe {guide_url} (paŝoj 1–13). Vi algluu vian servo-konton JSON-ŝlosilon en la sekva paŝo.{yaml_notice}",
+        "data": {
+          "project_id": "Projekta ID"
+        },
+        "data_description": {
+          "project_id": "Via Google Cloud projekta ID"
+        }
+      },
+      "service_account": {
+        "title": "Servo-konto",
+        "description": "Algluu la enhavon de via servo-konta JSON-ŝlosila dosiero.\n\nKreu unu ĉe {docs_url} (paŝo 12 de la gvido ĉe {guide_url}).",
+        "data": {
+          "service_account": "Servo-konto JSON"
+        },
+        "data_description": {
+          "service_account": "Algluu vian elŝutitan servo-konton JSON-ŝlosilon"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekta ID estas bezonata",
+      "invalid_project_id": "Projekta ID devas havi 6–30 signojn: minuskloj, ciferoj aŭ streketo",
+      "service_account_required": "Servo-konto JSON estas bezonata",
+      "Invalid JSON": "La teksto ne estas valida JSON",
+      "Missing 'client_email'": "La JSON mankas la kampo 'client_email'",
+      "Missing 'private_key'": "La JSON mankas la kampo 'private_key'"
+    },
+    "yaml_notice": "\n\nVi havas `google_assistant:`-sekcion en via configuration.yaml. Ĉi tiu integriĝo nun administras Google Assistant kaj anstataŭas ĝin, do vi povas forigi tiun sekcion."
+  },
+  "frontend": {
+    "yaml_detected": "La sekcio <code>google_assistant:</code> estis trovita en via <code>configuration.yaml</code> kaj estis malaktivigita. Ĉi tiu integriĝo nun administras vian Google Assistant agordon. Vi povas sekure forigi la sekcion <code>google_assistant:</code> el via YAML-agordaro.",
+    "enable_success": "Google Assistant sukcese aktivigita",
+    "enable_failed": "Malsukcesis aktivigi Google Assistant.",
+    "enable_fail_hint": "Provu reŝargi la integriĝon de Agordoj → Aparatoj kaj servoj.",
+    "disable_success": "Google Assistant sukcese malaktivigita",
+    "disable_failed": "Malsukcesis malaktivigi Google Assistant.",
+    "disable_fail_hint": "Provu forigi la integriĝon de Agordoj → Aparatoj kaj servoj.",
+    "check_logs": "Kontrolu la protokolojn de Home Assistant por detaloj.",
+    "report_state_enable_failed": "Malsukcesis aktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
+    "report_state_disable_failed": "Malsukcesis malaktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
+    "ready_banner": "{name} estas preta — administru ĝin sub Agordoj → Voĉasistantoj."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manuaalinen)",
+        "description": "Anna Google Cloud -projektisi tunnus.\n\nSeuraa asennusopasta osoitteessa {guide_url} (vaiheet 1–13). Liität palvelutilin JSON-avaimen seuraavassa vaiheessa.{yaml_notice}",
+        "data": {
+          "project_id": "Projektin tunnus"
+        },
+        "data_description": {
+          "project_id": "Google Cloud -projektisi tunnus"
+        }
+      },
+      "service_account": {
+        "title": "Palvelutili",
+        "description": "Liitä palvelutilisi JSON-avaintiedoston sisältö.\n\nLuo sellainen osoitteessa {docs_url} (opas {guide_url} vaihe 12).",
+        "data": {
+          "service_account": "Palvelutilin JSON"
+        },
+        "data_description": {
+          "service_account": "Liitä ladattu palvelutilin JSON-avain"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projektin tunnus vaaditaan",
+      "invalid_project_id": "Projektin tunnuksen on oltava 6–30 merkkiä: pienet kirjaimet, numerot tai yhdysviivat",
+      "service_account_required": "Palvelutilin JSON vaaditaan",
+      "Invalid JSON": "Teksti ei ole kelvollista JSON:ia",
+      "Missing 'client_email'": "JSON:sta puuttuu kenttä 'client_email'",
+      "Missing 'private_key'": "JSON:sta puuttuu kenttä 'private_key'"
+    },
+    "yaml_notice": "\n\nConfiguration.yaml-tiedostossasi on `google_assistant:`-osio. Tämä integraatio hallitsee nyt Google Assistantia ja ohittaa sen, joten voit poistaa kyseisen osion."
+  },
+  "frontend": {
+    "yaml_detected": "<code>google_assistant:</code>-osio havaittiin <code>configuration.yaml</code>-tiedostossasi ja se on poistettu käytöstä. Tämä integraatio hallitsee nyt Google Assistant -määritystäsi. Voit turvallisesti poistaa <code>google_assistant:</code>-osion YAML-määrityksestäsi.",
+    "enable_success": "Google Assistant otettu käyttöön",
+    "enable_failed": "Google Assistantin käyttöönotto epäonnistui.",
+    "enable_fail_hint": "Yritä ladata integraatio uudelleen kohdasta Asetukset → Laitteet ja palvelut.",
+    "disable_success": "Google Assistant poistettu käytöstä",
+    "disable_failed": "Google Assistantin poistaminen käytöstä epäonnistui.",
+    "disable_fail_hint": "Yritä poistaa integraatio kohdasta Asetukset → Laitteet ja palvelut.",
+    "check_logs": "Tarkista Home Assistantin lokit yksityiskohtia varten.",
+    "report_state_enable_failed": "Tilaraportoinnin käyttöönotto epäonnistui. Yritä kytkeä integraatio pois päältä ja takaisin päälle tai tarkista Home Assistantin lokit.",
+    "report_state_disable_failed": "Tilaraportoinnin poistaminen käytöstä epäonnistui. Yritä kytkeä integraatio pois päältä ja takaisin päälle tai tarkista Home Assistantin lokit.",
+    "ready_banner": "{name} on valmis — hallinnoi sitä kohdassa Asetukset → Ääniavustajat."
+  }
+}

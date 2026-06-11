@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (ম্যানুয়াল)",
+        "description": "আপনার Google Cloud প্রকল্প আইডি লিখুন।\n\n{guide_url}-এ সেটআপ গাইড অনুসরণ করুন (ধাপ ১–১৩)। আপনি পরবর্তী ধাপে আপনার সার্ভিস অ্যাকাউন্ট JSON কী পেস্ট করবেন।{yaml_notice}",
+        "data": {
+          "project_id": "প্রকল্প আইডি"
+        },
+        "data_description": {
+          "project_id": "আপনার Google Cloud প্রকল্প আইডি"
+        }
+      },
+      "service_account": {
+        "title": "সার্ভিস অ্যাকাউন্ট",
+        "description": "আপনার সার্ভিস অ্যাকাউন্ট JSON কী ফাইলের বিষয়বস্তু পেস্ট করুন।\n\n{docs_url}-এ একটি তৈরি করুন ({guide_url}-এ গাইডের ধাপ ১২)।",
+        "data": {
+          "service_account": "সার্ভিস অ্যাকাউন্ট JSON"
+        },
+        "data_description": {
+          "service_account": "আপনার ডাউনলোড করা সার্ভিস অ্যাকাউন্ট JSON কী পেস্ট করুন"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "প্রকল্প আইডি আবশ্যক",
+      "invalid_project_id": "প্রকল্প আইডি ৬–৩০ অক্ষরের হতে হবে: ছোট হাতের অক্ষর, সংখ্যা বা হাইফেন",
+      "service_account_required": "সার্ভিস অ্যাকাউন্ট JSON আবশ্যক",
+      "Invalid JSON": "টেক্সটটি বৈধ JSON নয়",
+      "Missing 'client_email'": "JSON-এ 'client_email' ফিল্ড অনুপস্থিত",
+      "Missing 'private_key'": "JSON-এ 'private_key' ফিল্ড অনুপস্থিত"
+    },
+    "yaml_notice": "\n\nআপনার configuration.yaml-এ `google_assistant:` বিভাগ আছে। এই ইন্টিগ্রেশন এখন Google Assistant পরিচালনা করে এবং সেটি ওভাররাইড করে, তাই আপনি সেই বিভাগটি সরাতে পারেন।"
+  },
+  "frontend": {
+    "yaml_detected": "আপনার <code>configuration.yaml</code>-এ <code>google_assistant:</code> বিভাগ পাওয়া গেছে এবং নিষ্ক্রিয় করা হয়েছে। এই ইন্টিগ্রেশন এখন আপনার Google Assistant কনফিগারেশন পরিচালনা করে। আপনি নিরাপদে আপনার YAML কনফিগারেশন থেকে <code>google_assistant:</code> বিভাগটি সরাতে পারেন।",
+    "enable_success": "Google Assistant সফলভাবে সক্রিয় করা হয়েছে",
+    "enable_failed": "Google Assistant সক্রিয় করতে ব্যর্থ হয়েছে।",
+    "enable_fail_hint": "সেটিংস → ডিভাইস ও পরিষেবা থেকে ইন্টিগ্রেশন পুনরায় লোড করার চেষ্টা করুন।",
+    "disable_success": "Google Assistant সফলভাবে নিষ্ক্রিয় করা হয়েছে",
+    "disable_failed": "Google Assistant নিষ্ক্রিয় করতে ব্যর্থ হয়েছে।",
+    "disable_fail_hint": "সেটিংস → ডিভাইস ও পরিষেবা থেকে ইন্টিগ্রেশন সরানোর চেষ্টা করুন।",
+    "check_logs": "বিস্তারিত জানতে Home Assistant লগ চেক করুন।",
+    "report_state_enable_failed": "স্টেটাস রিপোর্টিং সক্রিয় করতে ব্যর্থ হয়েছে। ইন্টিগ্রেশন বন্ধ করে আবার চালু করুন, বা Home Assistant লগ চেক করুন।",
+    "report_state_disable_failed": "স্টেটাস রিপোর্টিং নিষ্ক্রিয় করতে ব্যর্থ হয়েছে। ইন্টিগ্রেশন বন্ধ করে আবার চালু করুন, বা Home Assistant লগ চেক করুন।",
+    "ready_banner": "{name} প্রস্তুত — সেটিংস → ভয়েস অ্যাসিস্ট্যান্ট-এ পরিচালনা করুন।"
+  }
+}

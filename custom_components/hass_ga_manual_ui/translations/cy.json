@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Llawlyfr)",
+        "description": "Rhowch ID eich prosiect Google Cloud.\n\nDilynwch y canllaw gosod ar {guide_url} (camau 1–13). Byddwch yn gludo eich allwedd JSON cyfrif gwasanaeth yn y cam nesaf.{yaml_notice}",
+        "data": {
+          "project_id": "ID Prosiect"
+        },
+        "data_description": {
+          "project_id": "ID eich prosiect Google Cloud"
+        }
+      },
+      "service_account": {
+        "title": "Cyfrif Gwasanaeth",
+        "description": "Gludwch gynnwys eich ffeil allwedd JSON cyfrif gwasanaeth.\n\nCrëwch un ar {docs_url} (cam 12 o'r canllaw ar {guide_url}).",
+        "data": {
+          "service_account": "JSON Cyfrif Gwasanaeth"
+        },
+        "data_description": {
+          "service_account": "Gludwch eich allwedd JSON cyfrif gwasanaeth a lawrlwythwyd"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Mae angen ID Prosiect",
+      "invalid_project_id": "Rhaid i ID Prosiect fod yn 6–30 o nodau: llythrennau bach, rhifau neu gysylltnodau",
+      "service_account_required": "Mae angen JSON Cyfrif Gwasanaeth",
+      "Invalid JSON": "Nid yw'r testun yn JSON dilys",
+      "Missing 'client_email'": "Mae'r JSON yn colli'r maes 'client_email'",
+      "Missing 'private_key'": "Mae'r JSON yn colli'r maes 'private_key'"
+    },
+    "yaml_notice": "\n\nMae gennych adran `google_assistant:` yn eich configuration.yaml. Mae'r integreiddiad hwn bellach yn rheoli Google Assistant ac yn ei ddiystyru, felly gallwch dynnu'r adran honno."
+  },
+  "frontend": {
+    "yaml_detected": "Canfuwyd yr adran <code>google_assistant:</code> yn eich <code>configuration.yaml</code> ac mae wedi'i analluogi. Mae'r integreiddiad hwn bellach yn rheoli eich ffurfweddiad Google Assistant. Gallwch dynnu'r adran <code>google_assistant:</code> yn ddiogel o'ch ffurfweddiad YAML.",
+    "enable_success": "Google Assistant wedi'i alluogi'n llwyddiannus",
+    "enable_failed": "Methodd alluogi Google Assistant.",
+    "enable_fail_hint": "Ceisiwch ail-lwytho'r integreiddiad o Gosodiadau → Dyfeisiau a Gwasanaethau.",
+    "disable_success": "Google Assistant wedi'i analluogi'n llwyddiannus",
+    "disable_failed": "Methodd analluogi Google Assistant.",
+    "disable_fail_hint": "Ceisiwch dynnu'r integreiddiad o Gosodiadau → Dyfeisiau a Gwasanaethau.",
+    "check_logs": "Gwiriwch logiau Home Assistant am fanylion.",
+    "report_state_enable_failed": "Methodd alluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
+    "report_state_disable_failed": "Methodd analluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
+    "ready_banner": "Mae {name} yn barod — rheolwch ef o dan Gosodiadau → Cynorthwywyr Llais."
+  }
+}

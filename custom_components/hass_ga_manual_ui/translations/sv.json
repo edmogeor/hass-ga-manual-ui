@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Ange ditt Google Cloud-projekt-ID.\n\nFollj installationsguiden på {guide_url} (steg 1–13). Du klistrar in din JSON-nyckel för tjänstkontot i nästa steg.{yaml_notice}",
+        "data": {
+          "project_id": "Projekt-ID"
+        },
+        "data_description": {
+          "project_id": "Ditt Google Cloud-projekt-ID"
+        }
+      },
+      "service_account": {
+        "title": "Tjänstkonto",
+        "description": "Klistra in innehållet i din JSON-nyckelfil för tjänstkontot.\n\nSkapa en på {docs_url} (steg 12 i guiden på {guide_url}).",
+        "data": {
+          "service_account": "Tjänstkonto JSON"
+        },
+        "data_description": {
+          "service_account": "Klistra in din nedladdade JSON-nyckel för tjänstkontot"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekt-ID krävs",
+      "invalid_project_id": "Projekt-ID måste vara 6–30 tecken: gemener, siffror eller bindestreck",
+      "service_account_required": "Tjänstkonto JSON krävs",
+      "Invalid JSON": "Texten är inte giltig JSON",
+      "Missing 'client_email'": "JSON saknar fältet 'client_email'",
+      "Missing 'private_key'": "JSON saknar fältet 'private_key'"
+    },
+    "yaml_notice": "\n\nDu har ett `google_assistant:`-avsnitt i din configuration.yaml. Den här integrationen hanterar nu Google Assistant och åsidosätter det, så du kan ta bort det avsnittet."
+  },
+  "frontend": {
+    "yaml_detected": "Avsnittet <code>google_assistant:</code> hittades i din <code>configuration.yaml</code> och har inaktiverats. Den här integrationen hanterar nu din Google Assistant-konfiguration. Du kan ta bort avsnittet <code>google_assistant:</code> från din YAML-konfiguration.",
+    "enable_success": "Google Assistant aktiverades",
+    "enable_failed": "Det gick inte att aktivera Google Assistant.",
+    "enable_fail_hint": "Försök att läsa in integrationen igen från Inställningar → Enheter och tjänster.",
+    "disable_success": "Google Assistant inaktiverades",
+    "disable_failed": "Det gick inte att inaktivera Google Assistant.",
+    "disable_fail_hint": "Försök att ta bort integrationen från Inställningar → Enheter och tjänster.",
+    "check_logs": "Kontrollera Home Assistants loggar för mer information.",
+    "report_state_enable_failed": "Det gick inte att aktivera statusrapportering. Försök att stänga av och slå på integrationen igen, eller kontrollera Home Assistants loggar.",
+    "report_state_disable_failed": "Det gick inte att inaktivera statusrapportering. Försök att stänga av och slå på integrationen igen, eller kontrollera Home Assistants loggar.",
+    "ready_banner": "{name} är redo — hantera det under Inställningar → Röstassistenter."
+  }
+}

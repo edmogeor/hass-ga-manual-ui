@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (ಕೈಪಿಡಿ)",
+        "description": "ನಿಮ್ಮ Google Cloud ಯೋಜನೆ ಐಡಿ ನಮೂದಿಸಿ.\n\n{guide_url} ನಲ್ಲಿ ಸೆಟಪ್ ಮಾರ್ಗದರ್ಶಿ ಅನುಸರಿಸಿ (ಹಂತಗಳು 1–13). ಮುಂದಿನ ಹಂತದಲ್ಲಿ ನಿಮ್ಮ ಸೇವಾ ಖಾತೆ JSON ಕೀಲಿಯನ್ನು ಅಂಟಿಸುತ್ತೀರಿ.{yaml_notice}",
+        "data": {
+          "project_id": "ಯೋಜನೆ ಐಡಿ"
+        },
+        "data_description": {
+          "project_id": "ನಿಮ್ಮ Google Cloud ಯೋಜನೆ ಐಡಿ"
+        }
+      },
+      "service_account": {
+        "title": "ಸೇವಾ ಖಾತೆ",
+        "description": "ನಿಮ್ಮ ಸೇವಾ ಖಾತೆ JSON ಕೀಲಿ ಫೈಲ್ ವಿಷಯಗಳನ್ನು ಅಂಟಿಸಿ.\n\n{docs_url} ನಲ್ಲಿ ಒಂದನ್ನು ರಚಿಸಿ ({guide_url} ನಲ್ಲಿ ಮಾರ್ಗದರ್ಶಿಯ ಹಂತ 12).",
+        "data": {
+          "service_account": "ಸೇವಾ ಖಾತೆ JSON"
+        },
+        "data_description": {
+          "service_account": "ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಸೇವಾ ಖಾತೆ JSON ಕೀಲಿಯನ್ನು ಅಂಟಿಸಿ"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "ಯೋಜನೆ ಐಡಿ ಅಗತ್ಯವಿದೆ",
+      "invalid_project_id": "ಯೋಜನೆ ಐಡಿ 6–30 ಅಕ್ಷರಗಳು ಇರಬೇಕು: ಸಣ್ಣ ಅಕ್ಷರಗಳು, ಸಂಖ್ಯೆಗಳು ಅಥವಾ ಹೈಫನ್‌ಗಳು",
+      "service_account_required": "ಸೇವಾ ಖಾತೆ JSON ಅಗತ್ಯವಿದೆ",
+      "Invalid JSON": "ಪಠ್ಯವು ಮಾನ್ಯ JSON ಅಲ್ಲ",
+      "Missing 'client_email'": "JSON ನಲ್ಲಿ 'client_email' ಕ್ಷೇತ್ರ ಇಲ್ಲ",
+      "Missing 'private_key'": "JSON ನಲ್ಲಿ 'private_key' ಕ್ಷೇತ್ರ ಇಲ್ಲ"
+    },
+    "yaml_notice": "\n\nನಿಮ್ಮ configuration.yaml ನಲ್ಲಿ `google_assistant:` ವಿಭಾಗ ಇದೆ. ಈ ಸಂಯೋಜನೆ ಈಗ Google Assistant ಅನ್ನು ನಿರ್ವಹಿಸುತ್ತದೆ ಮತ್ತು ಅದನ್ನು ಅತಿಕ್ರಮಿಸುತ್ತದೆ, ಆದ್ದರಿಂದ ನೀವು ಆ ವಿಭಾಗವನ್ನು ತೆಗೆದುಹಾಕಬಹುದು."
+  },
+  "frontend": {
+    "yaml_detected": "ನಿಮ್ಮ <code>configuration.yaml</code> ನಲ್ಲಿ <code>google_assistant:</code> ವಿಭಾಗ ಪತ್ತೆಯಾಗಿದೆ ಮತ್ತು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ. ಈ ಸಂಯೋಜನೆ ಈಗ ನಿಮ್ಮ Google Assistant ಸಂರಚನೆಯನ್ನು ನಿರ್ವಹಿಸುತ್ತದೆ. ನಿಮ್ಮ YAML ಸಂರಚನೆಯಿಂದ <code>google_assistant:</code> ವಿಭಾಗವನ್ನು ಸುರಕ್ಷಿತವಾಗಿ ತೆಗೆದುಹಾಕಬಹುದು.",
+    "enable_success": "Google Assistant ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ",
+    "enable_failed": "Google Assistant ಸಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+    "enable_fail_hint": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಸಾಧನಗಳು & ಸೇವೆಗಳಿಂದ ಸಂಯೋಜನೆಯನ್ನು ಮರುಲೋಡ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ.",
+    "disable_success": "Google Assistant ಯಶಸ್ವಿಯಾಗಿ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ",
+    "disable_failed": "Google Assistant ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
+    "disable_fail_hint": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಸಾಧನಗಳು & ಸೇವೆಗಳಿಂದ ಸಂಯೋಜನೆಯನ್ನು ತೆಗೆದುಹಾಕಲು ಪ್ರಯತ್ನಿಸಿ.",
+    "check_logs": "ವಿವರಗಳಿಗಾಗಿ Home Assistant ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
+    "report_state_enable_failed": "ಸ್ಥಿತಿ ವರದಿ ಸಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ. ಸಂಯೋಜನೆ ಆಫ್ ಮಾಡಿ ಮತ್ತೆ ಆನ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ Home Assistant ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
+    "report_state_disable_failed": "ಸ್ಥಿತಿ ವರದಿ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ. ಸಂಯೋಜನೆ ಆಫ್ ಮಾಡಿ ಮತ್ತೆ ಆನ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ Home Assistant ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
+    "ready_banner": "{name} ಸಿದ್ಧವಾಗಿದೆ — ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಧ್ವನಿ ಸಹಾಯಕರಲ್ಲಿ ನಿರ್ವಹಿಸಿ."
+  }
+}

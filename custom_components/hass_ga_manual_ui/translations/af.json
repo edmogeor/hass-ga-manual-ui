@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Handmatig)",
+        "description": "Voer jou Google Cloud-projek-ID in.\n\nVolg die opstelgids by {guide_url} (stappe 1–13). Jy sal jou diensrekening-JSON-sleutel in die volgende stap plak.{yaml_notice}",
+        "data": {
+          "project_id": "Projek-ID"
+        },
+        "data_description": {
+          "project_id": "Jou Google Cloud-projek-ID"
+        }
+      },
+      "service_account": {
+        "title": "Diensrekening",
+        "description": "Plak die inhoud van jou diensrekening-JSON-sleutellêer.\n\nSkep een by {docs_url} (stap 12 van die gids by {guide_url}).",
+        "data": {
+          "service_account": "Diensrekening-JSON"
+        },
+        "data_description": {
+          "service_account": "Plak jou afgelaaide diensrekening-JSON-sleutel"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projek-ID is vereis",
+      "invalid_project_id": "Projek-ID moet 6–30 karakters wees: kleinletters, syfers of koppeltekens",
+      "service_account_required": "Diensrekening-JSON is vereis",
+      "Invalid JSON": "Die teks is nie geldige JSON nie",
+      "Missing 'client_email'": "Die JSON ontbreek die 'client_email'-veld",
+      "Missing 'private_key'": "Die JSON ontbreek die 'private_key'-veld"
+    },
+    "yaml_notice": "\n\nJy het 'n `google_assistant:`-afdeling in jou configuration.yaml. Hierdie integrasie bestuur nou Google Assistant en oorheers dit, so jy kan daardie afdeling verwyder."
+  },
+  "frontend": {
+    "yaml_detected": "Die <code>google_assistant:</code>-afdeling is in jou <code>configuration.yaml</code> opgespoor en is gedeaktiveer. Hierdie integrasie bestuur nou jou Google Assistant-konfigurasie. Jy kan die <code>google_assistant:</code>-afdeling veilig uit jou YAML-konfigurasie verwyder.",
+    "enable_success": "Google Assistant suksesvol geaktiveer",
+    "enable_failed": "Kon nie Google Assistant aktiveer nie.",
+    "enable_fail_hint": "Probeer die integrasie herlaai van Instellings → Toestelle & Dienste.",
+    "disable_success": "Google Assistant suksesvol gedeaktiveer",
+    "disable_failed": "Kon nie Google Assistant deaktiveer nie.",
+    "disable_fail_hint": "Probeer die integrasie verwyder van Instellings → Toestelle & Dienste.",
+    "check_logs": "Kyk Home Assistant-logboeke vir besonderhede.",
+    "report_state_enable_failed": "Kon nie toestandrapportering aktiveer nie. Probeer die integrasie af- en aanskakel, of kyk Home Assistant-logboeke.",
+    "report_state_disable_failed": "Kon nie toestandrapportering deaktiveer nie. Probeer die integrasie af- en aanskakel, of kyk Home Assistant-logboeke.",
+    "ready_banner": "{name} is gereed — bestuur dit onder Instellings → Stemassistente."
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Гараар)",
+        "description": "Өөрийн Google Cloud төслийн ID-г оруулна уу.\n\n{guide_url}-д байгаа тохиргооны гарын авлагыг дагана уу (1–13-р алхамууд). Дараагийн алхамд үйлчилгээний бүртгэлийн JSON түлхүүрийг буулгана уу.{yaml_notice}",
+        "data": {
+          "project_id": "Төслийн ID"
+        },
+        "data_description": {
+          "project_id": "Таны Google Cloud төслийн ID"
+        }
+      },
+      "service_account": {
+        "title": "Үйлчилгээний бүртгэл",
+        "description": "Үйлчилгээний бүртгэлийн JSON түлхүүрийн файлын агуулгыг буулгана уу.\n\n{docs_url}-д нэгийг үүсгэнэ үү ({guide_url}-д байгаа гарын авлагын 12-р алхам).",
+        "data": {
+          "service_account": "Үйлчилгээний бүртгэлийн JSON"
+        },
+        "data_description": {
+          "service_account": "Татаж авсан үйлчилгээний бүртгэлийн JSON түлхүүрийг буулгана уу"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Төслийн ID шаардлагатай",
+      "invalid_project_id": "Төслийн ID нь 6–30 тэмдэгт байх ёстой: жижиг үсэг, тоо эсвэл зураас",
+      "service_account_required": "Үйлчилгээний бүртгэлийн JSON шаардлагатай",
+      "Invalid JSON": "Текст нь хүчинтэй JSON биш байна",
+      "Missing 'client_email'": "JSON-д 'client_email' талбар байхгүй байна",
+      "Missing 'private_key'": "JSON-д 'private_key' талбар байхгүй байна"
+    },
+    "yaml_notice": "\n\nТаны configuration.yaml-д `google_assistant:` хэсэг байна. Энэ интеграци одоо Google Assistant-ийг удирдаж, дарж байна, тиймээс та тэр хэсгийг устгаж болно."
+  },
+  "frontend": {
+    "yaml_detected": "Таны <code>configuration.yaml</code>-д <code>google_assistant:</code> хэсэг илэрсэн бөгөөд идэвхгүй болгосон. Энэ интеграци одоо таны Google Assistant тохиргоог удирдаж байна. Та YAML тохиргооноосоо <code>google_assistant:</code> хэсгийг аюулгүйгээр устгаж болно.",
+    "enable_success": "Google Assistant амжилттай идэвхжүүлэгдлээ",
+    "enable_failed": "Google Assistant-ийг идэвхжүүлж чадсангүй.",
+    "enable_fail_hint": "Тохиргоо → Төхөөрөмж ба үйлчилгээнээс интеграцийг дахин ачаалж үзнэ үү.",
+    "disable_success": "Google Assistant амжилттай идэвхгүй болголоо",
+    "disable_failed": "Google Assistant-ийг идэвхгүй болгож чадсангүй.",
+    "disable_fail_hint": "Тохиргоо → Төхөөрөмж ба үйлчилгээнээс интеграцийг устгаж үзнэ үү.",
+    "check_logs": "Дэлгэрэнгүй мэдээллийг авахын тулд Home Assistant бүртгэлийг шалгана уу.",
+    "report_state_enable_failed": "Төлөвийн тайлагналыг идэвхжүүлж чадсангүй. Интеграцийг унтраагаад дахин асаах эсвэл Home Assistant бүртгэлийг шалгана уу.",
+    "report_state_disable_failed": "Төлөвийн тайлагналыг идэвхгүй болгож чадсангүй. Интеграцийг унтраагаад дахин асаах эсвэл Home Assistant бүртгэлийг шалгана уу.",
+    "ready_banner": "{name} бэлэн боллоо — Тохиргоо → Дуут туслахуудад удирдана уу."
+  }
+}

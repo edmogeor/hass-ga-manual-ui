@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Ruční nastavení)",
+        "description": "Zadejte ID svého projektu Google Cloud.\n\nŘiďte se průvodcem nastavením na {guide_url} (kroky 1–13). Klíč JSON účtu služby vložíte v dalším kroku.{yaml_notice}",
+        "data": {
+          "project_id": "ID projektu"
+        },
+        "data_description": {
+          "project_id": "ID vašeho projektu Google Cloud"
+        }
+      },
+      "service_account": {
+        "title": "Účet služby",
+        "description": "Vložte obsah souboru klíče JSON účtu služby.\n\nVytvořte jej na {docs_url} (krok 12 průvodce na {guide_url}).",
+        "data": {
+          "service_account": "JSON účtu služby"
+        },
+        "data_description": {
+          "service_account": "Vložte stažený klíč JSON účtu služby"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "ID projektu je povinné",
+      "invalid_project_id": "ID projektu musí mít 6–30 znaků: malá písmena, číslice nebo pomlčky",
+      "service_account_required": "JSON účtu služby je povinný",
+      "Invalid JSON": "Text není platný JSON",
+      "Missing 'client_email'": "V JSON chybí pole 'client_email'",
+      "Missing 'private_key'": "V JSON chybí pole 'private_key'"
+    },
+    "yaml_notice": "\n\nVe svém souboru configuration.yaml máte sekci `google_assistant:`. Tato integrace nyní spravuje Google Assistant a přepisuje ji, takže tuto sekci můžete odstranit."
+  },
+  "frontend": {
+    "yaml_detected": "Sekce <code>google_assistant:</code> byla nalezena ve vašem <code>configuration.yaml</code> a byla deaktivována. Tato integrace nyní spravuje vaši konfiguraci Google Assistant. Sekci <code>google_assistant:</code> lze bezpečně odstranit z konfigurace YAML.",
+    "enable_success": "Google Assistant byl úspěšně povolen",
+    "enable_failed": "Nepodařilo se aktivovat Google Assistant.",
+    "enable_fail_hint": "Zkuste znovu načíst integraci v Nastavení → Zařízení a služby.",
+    "disable_success": "Google Assistant byl úspěšně zakázán",
+    "disable_failed": "Nepodařilo se deaktivovat Google Assistant.",
+    "disable_fail_hint": "Zkuste odebrat integraci v Nastavení → Zařízení a služby.",
+    "check_logs": "Podrobnosti najdete v protokolech Home Assistant.",
+    "report_state_enable_failed": "Nepodařilo se aktivovat hlášení stavu. Zkuste integraci vypnout a znovu zapnout nebo zkontrolujte protokoly Home Assistant.",
+    "report_state_disable_failed": "Nepodařilo se deaktivovat hlášení stavu. Zkuste integraci vypnout a znovu zapnout nebo zkontrolujte protokoly Home Assistant.",
+    "ready_banner": "{name} je připraven — spravujte jej v Nastavení → Hlasoví asistenti."
+  }
+}

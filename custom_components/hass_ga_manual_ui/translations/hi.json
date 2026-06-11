@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (मैन्युअल)",
+        "description": "अपना Google Cloud प्रोजेक्ट ID दर्ज करें।\n\n{guide_url} पर सेटअप गाइड का पालन करें (चरण 1–13)। आप अगले चरण में अपनी सेवा खाता JSON कुंजी चिपकाएँगे।{yaml_notice}",
+        "data": {
+          "project_id": "प्रोजेक्ट ID"
+        },
+        "data_description": {
+          "project_id": "आपका Google Cloud प्रोजेक्ट ID"
+        }
+      },
+      "service_account": {
+        "title": "सेवा खाता",
+        "description": "अपनी सेवा खाता JSON कुंजी फ़ाइल की सामग्री चिपकाएँ।\n\n{docs_url} पर एक बनाएं ({guide_url} पर गाइड का चरण 12)।",
+        "data": {
+          "service_account": "सेवा खाता JSON"
+        },
+        "data_description": {
+          "service_account": "अपनी डाउनलोड की गई सेवा खाता JSON कुंजी चिपकाएँ"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "प्रोजेक्ट ID आवश्यक है",
+      "invalid_project_id": "प्रोजेक्ट ID 6–30 वर्णों का होना चाहिए: छोटे अक्षर, संख्याएँ या हाइफ़न",
+      "service_account_required": "सेवा खाता JSON आवश्यक है",
+      "Invalid JSON": "टेक्स्ट वैध JSON नहीं है",
+      "Missing 'client_email'": "JSON में 'client_email' फ़ील्ड अनुपस्थित है",
+      "Missing 'private_key'": "JSON में 'private_key' फ़ील्ड अनुपस्थित है"
+    },
+    "yaml_notice": "\n\nआपके configuration.yaml में `google_assistant:` अनुभाग है। यह इंटीग्रेशन अब Google Assistant का प्रबंधन करता है और उसे ओवरराइड करता है, इसलिए आप उस अनुभाग को हटा सकते हैं।"
+  },
+  "frontend": {
+    "yaml_detected": "आपके <code>configuration.yaml</code> में <code>google_assistant:</code> अनुभाग पाया गया और अक्षम कर दिया गया है। यह इंटीग्रेशन अब आपकी Google Assistant कॉन्फ़िगरेशन का प्रबंधन करता है। आप अपनी YAML कॉन्फ़िगरेशन से <code>google_assistant:</code> अनुभाग सुरक्षित रूप से हटा सकते हैं।",
+    "enable_success": "Google Assistant सफलतापूर्वक सक्षम किया गया",
+    "enable_failed": "Google Assistant सक्षम करने में विफल।",
+    "enable_fail_hint": "सेटिंग → डिवाइस और सेवाएँ से इंटीग्रेशन पुनः लोड करने का प्रयास करें।",
+    "disable_success": "Google Assistant सफलतापूर्वक अक्षम किया गया",
+    "disable_failed": "Google Assistant अक्षम करने में विफल।",
+    "disable_fail_hint": "सेटिंग → डिवाइस और सेवाएँ से इंटीग्रेशन हटाने का प्रयास करें।",
+    "check_logs": "विवरण के लिए Home Assistant लॉग देखें।",
+    "report_state_enable_failed": "स्थिति रिपोर्टिंग सक्षम करने में विफल। इंटीग्रेशन को बंद और चालू करने का प्रयास करें, या Home Assistant लॉग देखें।",
+    "report_state_disable_failed": "स्थिति रिपोर्टिंग अक्षम करने में विफल। इंटीग्रेशन को बंद और चालू करने का प्रयास करें, या Home Assistant लॉग देखें।",
+    "ready_banner": "{name} तैयार है — इसे सेटिंग → वॉयस असिस्टेंट में प्रबंधित करें।"
+  }
+}

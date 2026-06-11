@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manuális)",
+        "description": "Adja meg a Google Cloud projektazonosítóját.\n\nKövesse a beállítási útmutatót a következő helyen: {guide_url} (1–13. lépések). A következő lépésben illessze be a szolgáltatásfiók JSON-kulcsát.{yaml_notice}",
+        "data": {
+          "project_id": "Projektazonosító"
+        },
+        "data_description": {
+          "project_id": "Google Cloud projektazonosítója"
+        }
+      },
+      "service_account": {
+        "title": "Szolgáltatásfiók",
+        "description": "Illessze be a szolgáltatásfiók JSON-kulcsfájljának tartalmát.\n\nHozzon létre egyet a következő helyen: {docs_url} ({guide_url} útmutató 12. lépése).",
+        "data": {
+          "service_account": "Szolgáltatásfiók JSON"
+        },
+        "data_description": {
+          "service_account": "Illessze be a letöltött szolgáltatásfiók JSON-kulcsát"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "A projektazonosító megadása kötelező",
+      "invalid_project_id": "A projektazonosítónak 6–30 karakterből kell állnia: kisbetűk, számok vagy kötőjelek",
+      "service_account_required": "A szolgáltatásfiók JSON megadása kötelező",
+      "Invalid JSON": "A szöveg nem érvényes JSON",
+      "Missing 'client_email'": "A JSON-ból hiányzik a 'client_email' mező",
+      "Missing 'private_key'": "A JSON-ból hiányzik a 'private_key' mező"
+    },
+    "yaml_notice": "\n\nA configuration.yaml fájlban szerepel egy `google_assistant:` szakasz. Ez az integráció mostantól kezeli a Google Assistantt és felülírja azt, így eltávolíthatja azt a szakaszt."
+  },
+  "frontend": {
+    "yaml_detected": "A <code>google_assistant:</code> szakasz észlelve lett a <code>configuration.yaml</code> fájlban, és le lett tiltva. Ez az integráció mostantól kezeli a Google Assistant konfigurációját. Biztonságosan eltávolíthatja a <code>google_assistant:</code> szakaszt a YAML-konfigurációból.",
+    "enable_success": "A Google Assistant sikeresen engedélyezve",
+    "enable_failed": "A Google Assistant engedélyezése sikertelen.",
+    "enable_fail_hint": "Próbálja meg újratölteni az integrációt a Beállítások → Eszközök és szolgáltatások menüből.",
+    "disable_success": "A Google Assistant sikeresen letiltva",
+    "disable_failed": "A Google Assistant letiltása sikertelen.",
+    "disable_fail_hint": "Próbálja meg eltávolítani az integrációt a Beállítások → Eszközök és szolgáltatások menüből.",
+    "check_logs": "Részletekért tekintse meg a Home Assistant naplóit.",
+    "report_state_enable_failed": "Az állapotjelentés engedélyezése sikertelen. Próbálja ki- és bekapcsolni az integrációt, vagy tekintse meg a Home Assistant naplóit.",
+    "report_state_disable_failed": "Az állapotjelentés letiltása sikertelen. Próbálja ki- és bekapcsolni az integrációt, vagy tekintse meg a Home Assistant naplóit.",
+    "ready_banner": "{name} készen áll — kezelje a Beállítások → Hangalapú asszisztensek menüben."
+  }
+}

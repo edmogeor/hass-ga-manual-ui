@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Rankinis)",
+        "description": "Įveskite savo Google Cloud projekto ID.\n\nVadovaukitės sąrankos vadovu {guide_url} (1–13 veiksmai). Kitame veiksme įklijuosite savo paslaugos paskyros JSON raktą.{yaml_notice}",
+        "data": {
+          "project_id": "Projekto ID"
+        },
+        "data_description": {
+          "project_id": "Jūsų Google Cloud projekto ID"
+        }
+      },
+      "service_account": {
+        "title": "Paslaugos paskyra",
+        "description": "Įklijuokite savo paslaugos paskyros JSON rakto failo turinį.\n\nSukurkite jį {docs_url} ({guide_url} vadovo 12 veiksmas).",
+        "data": {
+          "service_account": "Paslaugos paskyros JSON"
+        },
+        "data_description": {
+          "service_account": "Įklijuokite atsisiųstą paslaugos paskyros JSON raktą"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekto ID yra būtinas",
+      "invalid_project_id": "Projekto ID turi būti 6–30 simbolių: mažosios raidės, skaičiai arba brūkšneliai",
+      "service_account_required": "Paslaugos paskyros JSON yra būtinas",
+      "Invalid JSON": "Tekstas nėra galiojantis JSON",
+      "Missing 'client_email'": "JSON trūksta lauko 'client_email'",
+      "Missing 'private_key'": "JSON trūksta lauko 'private_key'"
+    },
+    "yaml_notice": "\n\nJūsų configuration.yaml faile yra `google_assistant:` skyrius. Ši integracija dabar valdo Google Assistant ir jį pakeičia, todėl galite pašalinti tą skyrių."
+  },
+  "frontend": {
+    "yaml_detected": "Skyrius <code>google_assistant:</code> buvo rastas jūsų <code>configuration.yaml</code> faile ir buvo išjungtas. Ši integracija dabar valdo jūsų Google Assistant konfigūraciją. Galite saugiai pašalinti skyrių <code>google_assistant:</code> iš YAML konfigūracijos.",
+    "enable_success": "Google Assistant sėkmingai įjungtas",
+    "enable_failed": "Nepavyko įjungti Google Assistant.",
+    "enable_fail_hint": "Pabandykite iš naujo įkelti integraciją iš Nustatymai → Įrenginiai ir paslaugos.",
+    "disable_success": "Google Assistant sėkmingai išjungtas",
+    "disable_failed": "Nepavyko išjungti Google Assistant.",
+    "disable_fail_hint": "Pabandykite pašalinti integraciją iš Nustatymai → Įrenginiai ir paslaugos.",
+    "check_logs": "Norėdami gauti daugiau informacijos, peržiūrėkite Home Assistant žurnalus.",
+    "report_state_enable_failed": "Nepavyko įjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
+    "report_state_disable_failed": "Nepavyko išjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
+    "ready_banner": "{name} yra paruoštas — tvarkykite jį Nustatymai → Balso asistentai."
+  }
+}

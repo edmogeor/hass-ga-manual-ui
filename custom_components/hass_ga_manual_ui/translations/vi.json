@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Thủ công)",
+        "description": "Nhập ID dự án Google Cloud của bạn.\n\nTheo dõi hướng dẫn thiết lập tại {guide_url} (bước 1–13). Bạn sẽ dán khóa JSON tài khoản dịch vụ ở bước tiếp theo.{yaml_notice}",
+        "data": {
+          "project_id": "ID dự án"
+        },
+        "data_description": {
+          "project_id": "ID dự án Google Cloud của bạn"
+        }
+      },
+      "service_account": {
+        "title": "Tài khoản dịch vụ",
+        "description": "Dán nội dung tệp khóa JSON tài khoản dịch vụ của bạn.\n\nTạo một tài khoản tại {docs_url} (bước 12 trong hướng dẫn tại {guide_url}).",
+        "data": {
+          "service_account": "JSON tài khoản dịch vụ"
+        },
+        "data_description": {
+          "service_account": "Dán khóa JSON tài khoản dịch vụ đã tải xuống"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "ID dự án là bắt buộc",
+      "invalid_project_id": "ID dự án phải có 6–30 ký tự: chữ thường, số hoặc dấu gạch ngang",
+      "service_account_required": "JSON tài khoản dịch vụ là bắt buộc",
+      "Invalid JSON": "Văn bản không phải là JSON hợp lệ",
+      "Missing 'client_email'": "JSON thiếu trường 'client_email'",
+      "Missing 'private_key'": "JSON thiếu trường 'private_key'"
+    },
+    "yaml_notice": "\n\nBạn có mục `google_assistant:` trong configuration.yaml. Tích hợp này hiện quản lý Google Assistant và ghi đè nó, vì vậy bạn có thể xóa mục đó."
+  },
+  "frontend": {
+    "yaml_detected": "Mục <code>google_assistant:</code> đã được phát hiện trong <code>configuration.yaml</code> của bạn và đã bị vô hiệu hóa. Tích hợp này hiện quản lý cấu hình Google Assistant của bạn. Bạn có thể xóa mục <code>google_assistant:</code> khỏi cấu hình YAML một cách an toàn.",
+    "enable_success": "Google Assistant đã được bật thành công",
+    "enable_failed": "Không thể bật Google Assistant.",
+    "enable_fail_hint": "Thử tải lại tích hợp từ Cài đặt → Thiết bị & Dịch vụ.",
+    "disable_success": "Google Assistant đã được tắt thành công",
+    "disable_failed": "Không thể tắt Google Assistant.",
+    "disable_fail_hint": "Thử xóa tích hợp từ Cài đặt → Thiết bị & Dịch vụ.",
+    "check_logs": "Kiểm tra nhật ký Home Assistant để biết chi tiết.",
+    "report_state_enable_failed": "Không thể bật báo cáo trạng thái. Thử tắt và bật lại tích hợp, hoặc kiểm tra nhật ký Home Assistant.",
+    "report_state_disable_failed": "Không thể tắt báo cáo trạng thái. Thử tắt và bật lại tích hợp, hoặc kiểm tra nhật ký Home Assistant.",
+    "ready_banner": "{name} đã sẵn sàng — quản lý trong Cài đặt → Trợ lý giọng nói."
+  }
+}

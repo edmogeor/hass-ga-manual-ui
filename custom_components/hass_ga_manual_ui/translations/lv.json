@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manuāls)",
+        "description": "Ievadiet sava Google Cloud projekta ID.\n\nIevērojiet iestatīšanas rokasgrāmatu vietnē {guide_url} (1.–13. darbība). Nākamajā darbībā ielīmēsiet sava pakalpojuma konta JSON atslēgu.{yaml_notice}",
+        "data": {
+          "project_id": "Projekta ID"
+        },
+        "data_description": {
+          "project_id": "Jūsu Google Cloud projekta ID"
+        }
+      },
+      "service_account": {
+        "title": "Pakalpojuma konts",
+        "description": "Ielīmējiet sava pakalpojuma konta JSON atslēgas faila saturu.\n\nIzveido to vietnē {docs_url} ({guide_url} rokasgrāmatas 12. darbība).",
+        "data": {
+          "service_account": "Pakalpojuma konta JSON"
+        },
+        "data_description": {
+          "service_account": "Ielīmējiet lejupielādēto pakalpojuma konta JSON atslēgu"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekta ID ir obligāts",
+      "invalid_project_id": "Projekta ID jāsastāv no 6–30 rakstzīmēm: mazie burti, cipari vai defises",
+      "service_account_required": "Pakalpojuma konta JSON ir obligāts",
+      "Invalid JSON": "Teksts nav derīgs JSON",
+      "Missing 'client_email'": "JSON trūkst lauka 'client_email'",
+      "Missing 'private_key'": "JSON trūkst lauka 'private_key'"
+    },
+    "yaml_notice": "\n\nJūsu configuration.yaml failā ir sadaļa `google_assistant:`. Šī integrācija tagad pārvalda Google Assistant un to ignorē, tāpēc varat noņemt šo sadaļu."
+  },
+  "frontend": {
+    "yaml_detected": "Sadaļa <code>google_assistant:</code> tika atrasta jūsu <code>configuration.yaml</code> failā un ir atspējota. Šī integrācija tagad pārvalda jūsu Google Assistant konfigurāciju. Varat droši noņemt sadaļu <code>google_assistant:</code> no YAML konfigurācijas.",
+    "enable_success": "Google Assistant veiksmīgi iespējots",
+    "enable_failed": "Neizdevās iespējot Google Assistant.",
+    "enable_fail_hint": "Mēģiniet atkārtoti ielādēt integrāciju sadaļā Iestatījumi → Ierīces un pakalpojumi.",
+    "disable_success": "Google Assistant veiksmīgi atspējots",
+    "disable_failed": "Neizdevās atspējot Google Assistant.",
+    "disable_fail_hint": "Mēģiniet noņemt integrāciju sadaļā Iestatījumi → Ierīces un pakalpojumi.",
+    "check_logs": "Papildinformācijai skatiet Home Assistant žurnālus.",
+    "report_state_enable_failed": "Neizdevās iespējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
+    "report_state_disable_failed": "Neizdevās atspējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
+    "ready_banner": "{name} ir gatavs — pārvaldiet to sadaļā Iestatījumi → Balss asistenti."
+  }
+}

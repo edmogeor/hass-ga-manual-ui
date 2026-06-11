@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manual)",
+        "description": "Introduïu l'ID del vostre projecte de Google Cloud.\n\nSeguiu la guia de configuració a {guide_url} (passos 1–13). Enganxareu la clau JSON del compte de servei al pas següent.{yaml_notice}",
+        "data": {
+          "project_id": "ID del projecte"
+        },
+        "data_description": {
+          "project_id": "L'ID del vostre projecte de Google Cloud"
+        }
+      },
+      "service_account": {
+        "title": "Compte de servei",
+        "description": "Enganxeu el contingut del fitxer de clau JSON del compte de servei.\n\nCreeu-ne un a {docs_url} (pas 12 de la guia a {guide_url}).",
+        "data": {
+          "service_account": "JSON del compte de servei"
+        },
+        "data_description": {
+          "service_account": "Enganxeu la clau JSON del compte de servei baixada"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "L'ID del projecte és obligatori",
+      "invalid_project_id": "L'ID del projecte ha de tenir entre 6 i 30 caràcters: lletres minúscules, números o guions",
+      "service_account_required": "El JSON del compte de servei és obligatori",
+      "Invalid JSON": "El text no és un JSON vàlid",
+      "Missing 'client_email'": "Al JSON li falta el camp 'client_email'",
+      "Missing 'private_key'": "Al JSON li falta el camp 'private_key'"
+    },
+    "yaml_notice": "\n\nTeniu una secció `google_assistant:` al configuration.yaml. Aquesta integració ara gestiona Google Assistant i la substitueix, de manera que podeu eliminar aquella secció."
+  },
+  "frontend": {
+    "yaml_detected": "S'ha detectat la secció <code>google_assistant:</code> al <code>configuration.yaml</code> i s'ha desactivat. Aquesta integració ara gestiona la vostra configuració de Google Assistant. Podeu eliminar de forma segura la secció <code>google_assistant:</code> de la vostra configuració YAML.",
+    "enable_success": "Google Assistant activat correctament",
+    "enable_failed": "No s'ha pogut activar Google Assistant.",
+    "enable_fail_hint": "Proveu de tornar a carregar la integració des de Configuració → Dispositius i serveis.",
+    "disable_success": "Google Assistant desactivat correctament",
+    "disable_failed": "No s'ha pogut desactivar Google Assistant.",
+    "disable_fail_hint": "Proveu d'eliminar la integració des de Configuració → Dispositius i serveis.",
+    "check_logs": "Consulteu els registres de Home Assistant per obtenir detalls.",
+    "report_state_enable_failed": "No s'ha pogut activar l'informe d'estat. Proveu de desactivar i tornar a activar la integració, o consulteu els registres de Home Assistant.",
+    "report_state_disable_failed": "No s'ha pogut desactivar l'informe d'estat. Proveu de desactivar i tornar a activar la integració, o consulteu els registres de Home Assistant.",
+    "ready_banner": "{name} està llest — gestioneu-lo a Configuració → Assistents de veu."
+  }
+}

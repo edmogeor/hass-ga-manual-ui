@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant（手動設定）",
+        "description": "請輸入您的 Google Cloud 專案 ID。\n\n請依照 {guide_url} 上的設定指南操作（第 1–13 步）。您將在下一步中貼上服務帳戶 JSON 金鑰。{yaml_notice}",
+        "data": {
+          "project_id": "專案 ID"
+        },
+        "data_description": {
+          "project_id": "您的 Google Cloud 專案 ID"
+        }
+      },
+      "service_account": {
+        "title": "服務帳戶",
+        "description": "請貼上服務帳戶 JSON 金鑰檔案的內容。\n\n請在 {docs_url} 上建立一個（參照 {guide_url} 指南的第 12 步）。",
+        "data": {
+          "service_account": "服務帳戶 JSON"
+        },
+        "data_description": {
+          "service_account": "貼上您下載的服務帳戶 JSON 金鑰"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "專案 ID 為必填項目",
+      "invalid_project_id": "專案 ID 必須為 6–30 個字元：小寫字母、數字或連字號",
+      "service_account_required": "服務帳戶 JSON 為必填項目",
+      "Invalid JSON": "文字不是有效的 JSON",
+      "Missing 'client_email'": "JSON 中缺少 'client_email' 欄位",
+      "Missing 'private_key'": "JSON 中缺少 'private_key' 欄位"
+    },
+    "yaml_notice": "\n\n您的 configuration.yaml 中有 `google_assistant:` 區段。此整合現已接管 Google Assistant 的管理並覆寫該設定，您可以將其刪除。"
+  },
+  "frontend": {
+    "yaml_detected": "在您的 <code>configuration.yaml</code> 中偵測到 <code>google_assistant:</code> 區段，已將其停用。此整合現已接管您的 Google Assistant 設定。您可以安全地從 YAML 設定中刪除 <code>google_assistant:</code> 區段。",
+    "enable_success": "Google Assistant 已成功啟用",
+    "enable_failed": "啟用 Google Assistant 失敗。",
+    "enable_fail_hint": "請嘗試從設定 → 裝置與服務中重新載入此整合。",
+    "disable_success": "Google Assistant 已成功停用",
+    "disable_failed": "停用 Google Assistant 失敗。",
+    "disable_fail_hint": "請嘗試從設定 → 裝置與服務中移除此整合。",
+    "check_logs": "請查看 Home Assistant 記錄以取得詳細資訊。",
+    "report_state_enable_failed": "啟用狀態回報失敗。請嘗試關閉並重新開啟整合，或查看 Home Assistant 記錄。",
+    "report_state_disable_failed": "停用狀態回報失敗。請嘗試關閉並重新開啟整合，或查看 Home Assistant 記錄。",
+    "ready_banner": "{name} 已就緒 — 請在設定 → 語音助理中進行管理。"
+  }
+}

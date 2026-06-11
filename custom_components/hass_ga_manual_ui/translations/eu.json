@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Eskuzkoa)",
+        "description": "Sartu zure Google Cloud proiektuaren IDa.\n\nJarraitu konfigurazio-gida {guide_url} helbidean (1–13 urratsak). Hurrengo urratsean zure zerbitzu-kontuaren JSON gakoa itsatsiko duzu.{yaml_notice}",
+        "data": {
+          "project_id": "Proiektuaren IDa"
+        },
+        "data_description": {
+          "project_id": "Zure Google Cloud proiektuaren IDa"
+        }
+      },
+      "service_account": {
+        "title": "Zerbitzu-kontua",
+        "description": "Itsatsi zure zerbitzu-kontuaren JSON gako-fitxategiaren edukia.\n\nSortu bat {docs_url} helbidean ({guide_url} gidako 12. urratsa).",
+        "data": {
+          "service_account": "Zerbitzu-kontuaren JSON"
+        },
+        "data_description": {
+          "service_account": "Itsatsi deskargatutako zerbitzu-kontuaren JSON gakoa"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Proiektuaren IDa beharrezkoa da",
+      "invalid_project_id": "Proiektuaren IDak 6–30 karaktere izan behar ditu: letra xeheak, zenbakiak edo gidoiak",
+      "service_account_required": "Zerbitzu-kontuaren JSON beharrezkoa da",
+      "Invalid JSON": "Testua ez da JSON baliodun bat",
+      "Missing 'client_email'": "JSONean 'client_email' eremua falta da",
+      "Missing 'private_key'": "JSONean 'private_key' eremua falta da"
+    },
+    "yaml_notice": "\n\nZure configuration.yaml fitxategian `google_assistant:` atala daukazu. Integrazio honek orain Google Assistant kudeatzen du eta gainidazten du, beraz atal hori ken dezakezu."
+  },
+  "frontend": {
+    "yaml_detected": "<code>google_assistant:</code> atala aurkitu da zure <code>configuration.yaml</code> fitxategian eta desgaitu da. Integrazio honek orain zure Google Assistant konfigurazioa kudeatzen du. <code>google_assistant:</code> atala YAML konfigurazio fitxategitik modu seguruan ken dezakezu.",
+    "enable_success": "Google Assistant arrakastaz gaitu da",
+    "enable_failed": "Ezin izan da Google Assistant gaitu.",
+    "enable_fail_hint": "Saiatu integrazioa berriz kargatzen Ezarpenak → Gailuak eta zerbitzuak ataletik.",
+    "disable_success": "Google Assistant arrakastaz desgaitu da",
+    "disable_failed": "Ezin izan da Google Assistant desgaitu.",
+    "disable_fail_hint": "Saiatu integrazioa kentzen Ezarpenak → Gailuak eta zerbitzuak ataletik.",
+    "check_logs": "Begiratu Home Assistant erregistroak xehetasunetarako.",
+    "report_state_enable_failed": "Ezin izan da egoera-txostena gaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
+    "report_state_disable_failed": "Ezin izan da egoera-txostena desgaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
+    "ready_banner": "{name} prest dago — kudeatu Ezarpenak → Ahots-laguntzaileak atalean."
+  }
+}

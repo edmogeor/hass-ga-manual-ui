@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Ручне налаштування)",
+        "description": "Введіть ідентифікатор вашого проєкту Google Cloud.\n\nДотримуйтесь посібника з налаштування на {guide_url} (кроки 1–13). На наступному кроці ви вставите JSON-ключ сервісного облікового запису.{yaml_notice}",
+        "data": {
+          "project_id": "Ідентифікатор проєкту"
+        },
+        "data_description": {
+          "project_id": "Ідентифікатор вашого проєкту Google Cloud"
+        }
+      },
+      "service_account": {
+        "title": "Сервісний обліковий запис",
+        "description": "Вставте вміст JSON-файлу ключа сервісного облікового запису.\n\nСтворіть його на {docs_url} (крок 12 посібника на {guide_url}).",
+        "data": {
+          "service_account": "JSON сервісного облікового запису"
+        },
+        "data_description": {
+          "service_account": "Вставте завантажений JSON-ключ сервісного облікового запису"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Ідентифікатор проєкту є обов'язковим",
+      "invalid_project_id": "Ідентифікатор проєкту має містити 6–30 символів: малі літери, цифри або дефіси",
+      "service_account_required": "JSON сервісного облікового запису є обов'язковим",
+      "Invalid JSON": "Текст не є дійсним JSON",
+      "Missing 'client_email'": "У JSON відсутнє поле 'client_email'",
+      "Missing 'private_key'": "У JSON відсутнє поле 'private_key'"
+    },
+    "yaml_notice": "\n\nУ вашому файлі configuration.yaml є розділ `google_assistant:`. Ця інтеграція тепер керує Google Assistant і замінює його, тому ви можете видалити цей розділ."
+  },
+  "frontend": {
+    "yaml_detected": "Розділ <code>google_assistant:</code> виявлено у вашому файлі <code>configuration.yaml</code> і було вимкнено. Ця інтеграція тепер керує конфігурацією Google Assistant. Ви можете безпечно видалити розділ <code>google_assistant:</code> із конфігурації YAML.",
+    "enable_success": "Google Assistant успішно ввімкнено",
+    "enable_failed": "Не вдалося ввімкнути Google Assistant.",
+    "enable_fail_hint": "Спробуйте перезавантажити інтеграцію в Налаштування → Пристрої та служби.",
+    "disable_success": "Google Assistant успішно вимкнено",
+    "disable_failed": "Не вдалося вимкнути Google Assistant.",
+    "disable_fail_hint": "Спробуйте видалити інтеграцію в Налаштування → Пристрої та служби.",
+    "check_logs": "Перевірте журнали Home Assistant для отримання деталей.",
+    "report_state_enable_failed": "Не вдалося ввімкнути звітування про стан. Спробуйте вимкнути та знову ввімкнути інтеграцію або перевірте журнали Home Assistant.",
+    "report_state_disable_failed": "Не вдалося вимкнути звітування про стан. Спробуйте вимкнути та знову ввімкнути інтеграцію або перевірте журнали Home Assistant.",
+    "ready_banner": "{name} готовий — керуйте ним у Налаштування → Голосові помічники."
+  }
+}

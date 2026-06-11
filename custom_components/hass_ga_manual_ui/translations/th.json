@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (ตั้งค่าเอง)",
+        "description": "ป้อนรหัสโปรเจกต์ Google Cloud ของคุณ\n\nทำตามคู่มือการตั้งค่าที่ {guide_url} (ขั้นตอนที่ 1–13) คุณจะวางคีย์ JSON ของบัญชีบริการในขั้นตอนถัดไป{yaml_notice}",
+        "data": {
+          "project_id": "รหัสโปรเจกต์"
+        },
+        "data_description": {
+          "project_id": "รหัสโปรเจกต์ Google Cloud ของคุณ"
+        }
+      },
+      "service_account": {
+        "title": "บัญชีบริการ",
+        "description": "วางเนื้อหาของไฟล์คีย์ JSON ของบัญชีบริการ\n\nสร้างที่ {docs_url} (ขั้นตอนที่ 12 ของคู่มือที่ {guide_url})",
+        "data": {
+          "service_account": "JSON บัญชีบริการ"
+        },
+        "data_description": {
+          "service_account": "วางคีย์ JSON ของบัญชีบริการที่ดาวน์โหลด"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "ต้องระบุรหัสโปรเจกต์",
+      "invalid_project_id": "รหัสโปรเจกต์ต้องมี 6–30 อักขระ: ตัวพิมพ์เล็ก ตัวเลข หรือเครื่องหมายขีดกลาง",
+      "service_account_required": "ต้องระบุ JSON บัญชีบริการ",
+      "Invalid JSON": "ข้อความไม่ใช่ JSON ที่ถูกต้อง",
+      "Missing 'client_email'": "JSON ไม่มีฟิลด์ 'client_email'",
+      "Missing 'private_key'": "JSON ไม่มีฟิลด์ 'private_key'"
+    },
+    "yaml_notice": "\n\nคุณมีส่วน `google_assistant:` ใน configuration.yaml การรวมระบบนี้จัดการ Google Assistant แล้วและแทนที่มัน คุณสามารถลบส่วนนั้นได้"
+  },
+  "frontend": {
+    "yaml_detected": "ตรวจพบส่วน <code>google_assistant:</code> ใน <code>configuration.yaml</code> ของคุณและถูกปิดใช้งานแล้ว การรวมระบบนี้จัดการการกำหนดค่า Google Assistant ของคุณแล้ว คุณสามารถลบส่วน <code>google_assistant:</code> ออกจากการกำหนดค่า YAML ได้อย่างปลอดภัย",
+    "enable_success": "เปิดใช้งาน Google Assistant สำเร็จ",
+    "enable_failed": "ไม่สามารถเปิดใช้งาน Google Assistant",
+    "enable_fail_hint": "ลองโหลดการรวมระบบใหม่จาก การตั้งค่า → อุปกรณ์และบริการ",
+    "disable_success": "ปิดใช้งาน Google Assistant สำเร็จ",
+    "disable_failed": "ไม่สามารถปิดใช้งาน Google Assistant",
+    "disable_fail_hint": "ลองลบการรวมระบบจาก การตั้งค่า → อุปกรณ์และบริการ",
+    "check_logs": "ตรวจสอบบันทึก Home Assistant สำหรับรายละเอียด",
+    "report_state_enable_failed": "ไม่สามารถเปิดใช้งานการรายงานสถานะ ลองปิดและเปิดการรวมระบบใหม่ หรือตรวจสอบบันทึก Home Assistant",
+    "report_state_disable_failed": "ไม่สามารถปิดใช้งานการรายงานสถานะ ลองปิดและเปิดการรวมระบบใหม่ หรือตรวจสอบบันทึก Home Assistant",
+    "ready_banner": "{name} พร้อมแล้ว — จัดการได้ที่ การตั้งค่า → ผู้ช่วยเสียง"
+  }
+}

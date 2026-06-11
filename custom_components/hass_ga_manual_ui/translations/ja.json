@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant（手動設定）",
+        "description": "Google Cloud プロジェクト ID を入力してください。\n\n{guide_url} のセットアップガイドに従ってください（手順 1〜13）。次の手順でサービスアカウントの JSON キーを貼り付けます。{yaml_notice}",
+        "data": {
+          "project_id": "プロジェクト ID"
+        },
+        "data_description": {
+          "project_id": "Google Cloud プロジェクト ID"
+        }
+      },
+      "service_account": {
+        "title": "サービスアカウント",
+        "description": "サービスアカウントの JSON キーファイルの内容を貼り付けてください。\n\n{docs_url} で作成できます（{guide_url} のガイドの手順 12）。",
+        "data": {
+          "service_account": "サービスアカウント JSON"
+        },
+        "data_description": {
+          "service_account": "ダウンロードしたサービスアカウントの JSON キーを貼り付けてください"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "プロジェクト ID は必須です",
+      "invalid_project_id": "プロジェクト ID は 6〜30 文字で、小文字、数字、またはハイフンを使用してください",
+      "service_account_required": "サービスアカウント JSON は必須です",
+      "Invalid JSON": "テキストが有効な JSON ではありません",
+      "Missing 'client_email'": "JSON に 'client_email' フィールドがありません",
+      "Missing 'private_key'": "JSON に 'private_key' フィールドがありません"
+    },
+    "yaml_notice": "\n\nconfiguration.yaml に `google_assistant:` セクションがあります。このインテグレーションが Google Assistant を管理し、そのセクションを上書きするため、削除してかまいません。"
+  },
+  "frontend": {
+    "yaml_detected": "<code>configuration.yaml</code> に <code>google_assistant:</code> セクションが見つかったため、無効化されました。このインテグレーションが Google Assistant の設定を管理するようになりました。YAML 設定から <code>google_assistant:</code> セクションを安全に削除できます。",
+    "enable_success": "Google Assistant が正常に有効化されました",
+    "enable_failed": "Google Assistant の有効化に失敗しました。",
+    "enable_fail_hint": "設定 → デバイスとサービスからインテグレーションをリロードしてみてください。",
+    "disable_success": "Google Assistant が正常に無効化されました",
+    "disable_failed": "Google Assistant の無効化に失敗しました。",
+    "disable_fail_hint": "設定 → デバイスとサービスからインテグレーションを削除してみてください。",
+    "check_logs": "詳細については Home Assistant のログを確認してください。",
+    "report_state_enable_failed": "状態レポートの有効化に失敗しました。インテグレーションをオフにしてからオンに切り替えるか、Home Assistant のログを確認してください。",
+    "report_state_disable_failed": "状態レポートの無効化に失敗しました。インテグレーションをオフにしてからオンに切り替えるか、Home Assistant のログを確認してください。",
+    "ready_banner": "{name} の準備ができました — 設定 → 音声アシスタントで管理してください。"
+  }
+}

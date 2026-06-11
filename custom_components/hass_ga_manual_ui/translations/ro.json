@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manual)",
+        "description": "Introduceți ID-ul proiectului dvs. Google Cloud.\n\nUrmați ghidul de configurare de la {guide_url} (pașii 1–13). Veți lipi cheia JSON a contului de serviciu în pasul următor.{yaml_notice}",
+        "data": {
+          "project_id": "ID proiect"
+        },
+        "data_description": {
+          "project_id": "ID-ul proiectului dvs. Google Cloud"
+        }
+      },
+      "service_account": {
+        "title": "Cont de serviciu",
+        "description": "Lipiți conținutul fișierului cheie JSON al contului de serviciu.\n\nCreați unul la {docs_url} (pasul 12 din ghidul de la {guide_url}).",
+        "data": {
+          "service_account": "JSON cont de serviciu"
+        },
+        "data_description": {
+          "service_account": "Lipiți cheia JSON descărcată a contului de serviciu"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "ID-ul proiectului este obligatoriu",
+      "invalid_project_id": "ID-ul proiectului trebuie să aibă 6–30 caractere: litere mici, cifre sau cratime",
+      "service_account_required": "JSON-ul contului de serviciu este obligatoriu",
+      "Invalid JSON": "Textul nu este un JSON valid",
+      "Missing 'client_email'": "JSON-ului îi lipsește câmpul 'client_email'",
+      "Missing 'private_key'": "JSON-ului îi lipsește câmpul 'private_key'"
+    },
+    "yaml_notice": "\n\nAveți o secțiune `google_assistant:` în configuration.yaml. Această integrare gestionează acum Google Assistant și o suprascrie, deci puteți elimina acea secțiune."
+  },
+  "frontend": {
+    "yaml_detected": "Secțiunea <code>google_assistant:</code> a fost detectată în <code>configuration.yaml</code> și a fost dezactivată. Această integrare gestionează acum configurația Google Assistant. Puteți elimina în siguranță secțiunea <code>google_assistant:</code> din configurația YAML.",
+    "enable_success": "Google Assistant activat cu succes",
+    "enable_failed": "Activarea Google Assistant a eșuat.",
+    "enable_fail_hint": "Încercați să reîncărcați integrarea din Setări → Dispozitive și servicii.",
+    "disable_success": "Google Assistant dezactivat cu succes",
+    "disable_failed": "Dezactivarea Google Assistant a eșuat.",
+    "disable_fail_hint": "Încercați să eliminați integrarea din Setări → Dispozitive și servicii.",
+    "check_logs": "Verificați jurnalele Home Assistant pentru detalii.",
+    "report_state_enable_failed": "Activarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
+    "report_state_disable_failed": "Dezactivarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
+    "ready_banner": "{name} este pregătit — gestionați-l în Setări → Asistenți vocali."
+  }
+}

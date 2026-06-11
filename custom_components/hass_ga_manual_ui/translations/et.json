@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Käsitsi)",
+        "description": "Sisestage oma Google Cloud projekti ID.\n\nJärgige seadistusjuhendit aadressil {guide_url} (sammud 1–13). Järgmises sammus kleepite oma teenusekonto JSON-võtme.{yaml_notice}",
+        "data": {
+          "project_id": "Projekti ID"
+        },
+        "data_description": {
+          "project_id": "Teie Google Cloud projekti ID"
+        }
+      },
+      "service_account": {
+        "title": "Teenusekonto",
+        "description": "Kleepige oma teenusekonto JSON-võtmefaili sisu.\n\nLooge see aadressil {docs_url} ({guide_url} juhendi samm 12).",
+        "data": {
+          "service_account": "Teenusekonto JSON"
+        },
+        "data_description": {
+          "service_account": "Kleepige allalaaditud teenusekonto JSON-võti"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Projekti ID on kohustuslik",
+      "invalid_project_id": "Projekti ID peab olema 6–30 märki: väiketähed, numbrid või sidekriipsud",
+      "service_account_required": "Teenusekonto JSON on kohustuslik",
+      "Invalid JSON": "Tekst ei ole kehtiv JSON",
+      "Missing 'client_email'": "JSON-ist puudub väli 'client_email'",
+      "Missing 'private_key'": "JSON-ist puudub väli 'private_key'"
+    },
+    "yaml_notice": "\n\nTeie configuration.yaml-is on jaotis `google_assistant:`. See integratsioon haldab nüüd Google Assistanti ja alistab selle, nii et saate selle jaotise eemaldada."
+  },
+  "frontend": {
+    "yaml_detected": "Jaotis <code>google_assistant:</code> leiti teie <code>configuration.yaml</code>-ist ja keelati. See integratsioon haldab nüüd teie Google Assistanti konfiguratsiooni. Saate <code>google_assistant:</code> jaotise YAML-konfiguratsioonist turvaliselt eemaldada.",
+    "enable_success": "Google Assistant on edukalt lubatud",
+    "enable_failed": "Google Assistanti lubamine ebaõnnestus.",
+    "enable_fail_hint": "Proovige integratsioon uuesti laadida jaotises Seaded → Seadmed ja teenused.",
+    "disable_success": "Google Assistant on edukalt keelatud",
+    "disable_failed": "Google Assistanti keelamine ebaõnnestus.",
+    "disable_fail_hint": "Proovige integratsioon eemaldada jaotises Seaded → Seadmed ja teenused.",
+    "check_logs": "Üksikasjade jaoks kontrollige Home Assistanti logisid.",
+    "report_state_enable_failed": "Oleku aruandluse lubamine ebaõnnestus. Proovige integratsioon välja ja uuesti sisse lülitada või kontrollige Home Assistanti logisid.",
+    "report_state_disable_failed": "Oleku aruandluse keelamine ebaõnnestus. Proovige integratsioon välja ja uuesti sisse lülitada või kontrollige Home Assistanti logisid.",
+    "ready_banner": "{name} on valmis — hallake seda jaotises Seaded → Häälassistendid."
+  }
+}

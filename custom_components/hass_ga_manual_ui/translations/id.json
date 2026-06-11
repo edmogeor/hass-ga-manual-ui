@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Google Assistant (Manual)",
+        "description": "Masukkan ID proyek Google Cloud Anda.\n\nIkuti panduan penyiapan di {guide_url} (langkah 1–13). Anda akan menempelkan kunci JSON akun layanan di langkah berikutnya.{yaml_notice}",
+        "data": {
+          "project_id": "ID Proyek"
+        },
+        "data_description": {
+          "project_id": "ID proyek Google Cloud Anda"
+        }
+      },
+      "service_account": {
+        "title": "Akun Layanan",
+        "description": "Tempelkan isi file kunci JSON akun layanan Anda.\n\nBuat satu di {docs_url} (langkah 12 panduan di {guide_url}).",
+        "data": {
+          "service_account": "JSON akun layanan"
+        },
+        "data_description": {
+          "service_account": "Tempelkan kunci JSON akun layanan yang telah diunduh"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "ID Proyek wajib diisi",
+      "invalid_project_id": "ID Proyek harus 6–30 karakter: huruf kecil, angka, atau tanda hubung",
+      "service_account_required": "JSON akun layanan wajib diisi",
+      "Invalid JSON": "Teks bukan JSON yang valid",
+      "Missing 'client_email'": "JSON tidak memiliki kolom 'client_email'",
+      "Missing 'private_key'": "JSON tidak memiliki kolom 'private_key'"
+    },
+    "yaml_notice": "\n\nAnda memiliki bagian `google_assistant:` di configuration.yaml. Integrasi ini sekarang mengelola Google Assistant dan menggantikannya, sehingga Anda dapat menghapus bagian tersebut."
+  },
+  "frontend": {
+    "yaml_detected": "Bagian <code>google_assistant:</code> terdeteksi di <code>configuration.yaml</code> Anda dan telah dinonaktifkan. Integrasi ini sekarang mengelola konfigurasi Google Assistant Anda. Anda dapat menghapus bagian <code>google_assistant:</code> dari konfigurasi YAML dengan aman.",
+    "enable_success": "Google Assistant berhasil diaktifkan",
+    "enable_failed": "Gagal mengaktifkan Google Assistant.",
+    "enable_fail_hint": "Coba muat ulang integrasi dari Pengaturan → Perangkat & Layanan.",
+    "disable_success": "Google Assistant berhasil dinonaktifkan",
+    "disable_failed": "Gagal menonaktifkan Google Assistant.",
+    "disable_fail_hint": "Coba hapus integrasi dari Pengaturan → Perangkat & Layanan.",
+    "check_logs": "Periksa log Home Assistant untuk detail.",
+    "report_state_enable_failed": "Gagal mengaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
+    "report_state_disable_failed": "Gagal menonaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
+    "ready_banner": "{name} siap — kelola di Pengaturan → Asisten suara."
+  }
+}
