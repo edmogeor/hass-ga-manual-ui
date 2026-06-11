@@ -758,12 +758,15 @@
       card.setAttribute("data-ga-manual-card", "1");
       const header = document.createElement("h1");
       header.className = "card-header";
-      header.style.cssText = "display:flex;align-items:center;position:relative";
+      header.style.cssText = "display:flex;align-items:center;line-height:normal";
       header.appendChild(brandIcon);
-      header.appendChild(document.createTextNode(ASSISTANT_NAME));
+      const titleText = document.createElement("span");
+      titleText.textContent = ASSISTANT_NAME;
+      titleText.style.cssText = "flex:1;min-width:0;overflow-wrap:anywhere";
+      header.appendChild(titleText);
       card.appendChild(header);
       const headerActions = document.createElement("div");
-      headerActions.style.cssText = "position:absolute;right:24px;inset-inline-end:24px;inset-inline-start:initial;top:50%;transform:translateY(-50%);display:flex;flex-direction:row;align-items:center";
+      headerActions.style.cssText = "flex-shrink:0;margin-left:16px;margin-inline-start:16px;margin-inline-end:initial;display:flex;flex-direction:row;align-items:center";
       const helpBtn = document.createElement("ha-icon-button");
       helpBtn.setAttribute(
         "label",
