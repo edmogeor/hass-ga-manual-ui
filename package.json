@@ -1,6 +1,6 @@
 {
   "name": "hass-ga-manual-ui",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
   "scripts": {
     "build": "esbuild frontend.ts --bundle --outfile=custom_components/hass_ga_manual_ui/frontend.js --target=es2020 --format=iife",

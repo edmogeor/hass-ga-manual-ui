@@ -9,7 +9,6 @@ Google Assistant integration, reaching feature parity with the Nabu Casa Cloud G
 **Assistant ID:** `hass_ga_manual_ui`
 **Type:** HA custom integration (Python 3 + vanilla JS)
 **Install:** Place this entire project folder as `custom_components/hass_ga_manual_ui/` in HA config, then restart.
-**Version:** 0.1.1
 
 ## Problem Solved
 

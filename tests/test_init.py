@@ -14,7 +14,6 @@ from hass_ga_manual_ui import (
     _CoreGaBootRaceFilter,
     _entity_assistant_options,
     _find_core_entry,
-    _get_version,
     _make_core_entry,
     _our_google_config,
     _patch_google_config_properties,
@@ -437,22 +436,12 @@ class TestAddAssistantToSchema:
 
 
 # =============================================================================
-# _get_version
+# _load_version
 # =============================================================================
 
 
-class TestGetVersion:
-    """Tests for _get_version."""
-
-    def test_returns_version_from_manifest(self) -> None:
-        version = _get_version()
-        assert version == "0.1.1"
-
-    def test_load_version_reads_manifest(self) -> None:
-        from hass_ga_manual_ui import _load_version
-
-        version = _load_version()
-        assert version == "0.1.1"
+class TestLoadVersion:
+    """Tests for _load_version (version-independent behavior only)."""
 
     def test_load_version_falls_back_on_error(self) -> None:
         from hass_ga_manual_ui import _load_version
