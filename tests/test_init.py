@@ -1026,11 +1026,20 @@ class TestFindCoreEntry:
 
     def test_finds_matching_core_entry(self) -> None:
         hass = MagicMock(spec=HomeAssistant)
-        our = mock_config_entry(project_id="proj-a")
-        core = mock_config_entry(project_id="proj-a", entry_id="core-a")
+        our = mock_config_entry(project_id="proj-a", entry_id="our-a")
+        core = _owned_core_entry("our-a", project_id="proj-a", entry_id="core-a")
         hass.config_entries.async_entries.return_value = [core]
 
         assert _find_core_entry(hass, our) is core
+
+    def test_ignores_unmarked_entry_with_matching_project(self) -> None:
+        """An unmarked google_assistant entry is never adopted (no legacy match)."""
+        hass = MagicMock(spec=HomeAssistant)
+        our = mock_config_entry(project_id="proj-a", entry_id="our-a")
+        unmarked = mock_config_entry(project_id="proj-a", entry_id="core-a")
+        hass.config_entries.async_entries.return_value = [unmarked]
+
+        assert _find_core_entry(hass, our) is None
 
     def test_returns_none_when_no_match(self) -> None:
         hass = MagicMock(spec=HomeAssistant)

@@ -86,24 +86,11 @@ def _owns_core_entry(core_entry: ConfigEntry) -> bool:
 
 
 def _find_core_entry(hass: HomeAssistant, entry: ConfigEntry) -> ConfigEntry | None:
-    """Return the core GA entry owned by (or matching) our entry, if one exists.
-
-    Prefers an exact parent-marker match. Falls back to a project_id match
-    against an *unmarked* entry, to adopt one from a version that predates the
-    marker; never falls back to an entry owned by a different parent.
-    """
-    project_id = entry.data.get(CONF_PROJECT_ID)
-    legacy_match: ConfigEntry | None = None
+    """Return the core GA entry we created for our entry, matched by marker."""
     for core_entry in hass.config_entries.async_entries(CORE_GA_DOMAIN):
         if core_entry.data.get(CORE_GA_PARENT_ENTRY_ID) == entry.entry_id:
             return core_entry
-        if (
-            legacy_match is None
-            and not _owns_core_entry(core_entry)
-            and core_entry.data.get(CONF_PROJECT_ID) == project_id
-        ):
-            legacy_match = core_entry
-    return legacy_match
+    return None
 
 
 def _our_google_config(hass: HomeAssistant) -> Any | None:
@@ -460,34 +447,6 @@ def _make_core_entry(entry: ConfigEntry) -> ConfigEntry:
     )
 
 
-def _ensure_core_entry_marked(
-    hass: HomeAssistant, core_entry: ConfigEntry, entry: ConfigEntry
-) -> None:
-    """Stamp ownership markers onto a core GA entry we are adopting.
-
-    Idempotent: only writes when the markers are missing or point at a different
-    parent. Converts a legacy unmarked entry into one we can prune deterministically.
-    """
-    if (
-        core_entry.data.get(CORE_GA_CREATED_BY)
-        and core_entry.data.get(CORE_GA_PARENT_ENTRY_ID) == entry.entry_id
-    ):
-        return
-    hass.config_entries.async_update_entry(
-        core_entry,
-        data={
-            **core_entry.data,
-            CORE_GA_CREATED_BY: True,
-            CORE_GA_PARENT_ENTRY_ID: entry.entry_id,
-        },
-    )
-    _LOGGER.debug(
-        "Stamped ownership markers on adopted core GA entry '%s' (parent='%s')",
-        core_entry.entry_id,
-        entry.entry_id,
-    )
-
-
 def _register_sync_listeners(
     hass: HomeAssistant, entry: ConfigEntry, google_config: Any
 ) -> list[Any]:
@@ -620,22 +579,17 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.debug(
             "Registered + set up new core GA entry id=%s", core_entry.entry_id
         )
+    elif core_entry.state is ConfigEntryState.LOADED:
+        _LOGGER.debug("Reusing already-loaded core GA entry id=%s", core_entry.entry_id)
     else:
-        # Adopting an existing entry: stamp markers so future matching is exact.
-        _ensure_core_entry_marked(hass, core_entry, entry)
-        if core_entry.state is ConfigEntryState.LOADED:
-            _LOGGER.debug(
-                "Reusing already-loaded core GA entry id=%s", core_entry.entry_id
-            )
-        else:
-            # Persisted but not loaded (e.g. boot auto-setup failed before our
-            # DATA_CONFIG was ready, or never ran). Drive it now that config exists.
-            _LOGGER.debug(
-                "Setting up existing core GA entry id=%s (state=%s)",
-                core_entry.entry_id,
-                core_entry.state,
-            )
-            await hass.config_entries.async_reload(core_entry.entry_id)
+        # Persisted but not loaded (e.g. boot auto-setup failed before our
+        # DATA_CONFIG was ready, or never ran). Drive it now that config exists.
+        _LOGGER.debug(
+            "Setting up existing core GA entry id=%s (state=%s)",
+            core_entry.entry_id,
+            core_entry.state,
+        )
+        await hass.config_entries.async_reload(core_entry.entry_id)
 
     google_config = core_entry.runtime_data
 
