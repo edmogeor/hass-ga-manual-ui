@@ -381,6 +381,55 @@ function _ensureVoiceAssistantEntry(): boolean {
   return true;
 }
 
+let _primeStarted = false;
+
+/**
+ * Force the voiceAssistants map to be captured.
+ *
+ * Capture is otherwise passive — it only happens when HA calls
+ * Object.keys(voiceAssistants) (e.g. opening an entity's voice settings). The
+ * expose page never does, so on a fresh visit the map stays null, our assistant
+ * is gated out of _availableAssistants, and the table shows "no data" until
+ * something incidental triggers the capture.
+ *
+ * We trip it deterministically by constructing a throwaway
+ * ha-filter-voice-assistants and calling its firstUpdated(), whose body runs
+ * Object.keys(voiceAssistants). requestUpdate is stubbed first so the element
+ * never renders — no DOM insertion, no localize context, no side effects. On
+ * success the captured map is injected (via the interceptor) and the expose
+ * page is refreshed so its getter now advertises us.
+ */
+function _primeVoiceAssistantsMap(): void {
+  if (_voiceAssistantsMap) return;
+  const PROBE = "ha-filter-voice-assistants";
+  const cls = customElements.get(PROBE);
+  if (!cls) {
+    // Not loaded yet — retry once it is (e.g. when the filter pane first opens).
+    if (!_primeStarted) {
+      _primeStarted = true;
+      customElements
+        .whenDefined(PROBE)
+        .then(() => _primeVoiceAssistantsMap())
+        .catch(() => undefined);
+    }
+    return;
+  }
+  try {
+    const probe = new cls() as {
+      requestUpdate?: () => void;
+      firstUpdated?: (changed: Map<PropertyKey, unknown>) => void;
+    };
+    probe.requestUpdate = () => undefined;
+    probe.firstUpdated?.(new Map());
+    if (_voiceAssistantsMap) {
+      _info("Primed voiceAssistants map proactively (expose page)");
+      _refreshExposePage();
+    }
+  } catch (e) {
+    _debug("Could not prime voiceAssistants map: " + _errorMessage(e));
+  }
+}
+
 /** Forget the cached entry_id so the next getEntryId() re-resolves it. */
 function _invalidateEntryId(): void {
   _entryId = null;
@@ -586,6 +635,9 @@ async function patchExposePage(): Promise<void> {
           // voiceAssistants map can resolve its name — otherwise dialogs that do
           // voiceAssistants[id].name (e.g. dialog-expose-entity) throw.
           if (!_gaManualEnabled || !_ensureVoiceAssistantEntry()) {
+            // Enabled but the map isn't captured yet: force the capture, which
+            // re-renders the page so this getter advertises us on the next read.
+            if (_gaManualEnabled) _primeVoiceAssistantsMap();
             return result.filter((id) => id !== ASSISTANT_ID);
           }
           return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
@@ -596,6 +648,10 @@ async function patchExposePage(): Promise<void> {
       },
     });
     _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
+
+    // Capture the voiceAssistants map up front so the page advertises us on its
+    // very first render, not only after the user visits an entity's settings.
+    _primeVoiceAssistantsMap();
 
     const el =
       (document.querySelector("ha-config-voice-assistants-expose") as AssistantsPageElement | null) ||

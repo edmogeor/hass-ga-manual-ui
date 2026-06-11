@@ -195,6 +195,30 @@
     }
     return true;
   }
+  var _primeStarted = false;
+  function _primeVoiceAssistantsMap() {
+    if (_voiceAssistantsMap) return;
+    const PROBE = "ha-filter-voice-assistants";
+    const cls = customElements.get(PROBE);
+    if (!cls) {
+      if (!_primeStarted) {
+        _primeStarted = true;
+        customElements.whenDefined(PROBE).then(() => _primeVoiceAssistantsMap()).catch(() => void 0);
+      }
+      return;
+    }
+    try {
+      const probe = new cls();
+      probe.requestUpdate = () => void 0;
+      probe.firstUpdated?.(/* @__PURE__ */ new Map());
+      if (_voiceAssistantsMap) {
+        _info("Primed voiceAssistants map proactively (expose page)");
+        _refreshExposePage();
+      }
+    } catch (e) {
+      _debug("Could not prime voiceAssistants map: " + _errorMessage(e));
+    }
+  }
   function _invalidateEntryId() {
     _entryId = null;
     _entryIdPromise = null;
@@ -331,6 +355,7 @@
             const result = orig.call(this);
             if (!Array.isArray(result)) return result;
             if (!_gaManualEnabled || !_ensureVoiceAssistantEntry()) {
+              if (_gaManualEnabled) _primeVoiceAssistantsMap();
               return result.filter((id) => id !== ASSISTANT_ID);
             }
             return result.includes(ASSISTANT_ID) ? result : result.concat(ASSISTANT_ID);
@@ -341,6 +366,7 @@
         }
       });
       _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
+      _primeVoiceAssistantsMap();
       const el = document.querySelector("ha-config-voice-assistants-expose") || findExposeElement(document.documentElement);
       if (el) {
         try {
