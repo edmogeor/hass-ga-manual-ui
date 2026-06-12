@@ -595,6 +595,7 @@
     if (el.__gaEntityId === entityId) return;
     el.__gaEntityId = entityId;
     el.__gaInfo = void 0;
+    _setOurUnsupported(el, false);
     const hass = el.hass || getHass();
     if (!hass) return;
     hass.callWS({ type: WS_GET_ENTITY, entity_id: entityId }).then((info) => {
@@ -608,8 +609,23 @@
         return;
       }
       el.__gaInfo = null;
+      if (_isNotSupported(err)) _setOurUnsupported(el, true);
       _injectAskPin(el);
     });
+  }
+  function _setOurUnsupported(el, unsupported) {
+    const map = el._unsupported;
+    if (!map) return;
+    if (!!map[ASSISTANT_ID] === unsupported) return;
+    if (unsupported) map[ASSISTANT_ID] = true;
+    else delete map[ASSISTANT_ID];
+    el.requestUpdate?.();
+  }
+  function _isNotSupported(err) {
+    const wsErr = err;
+    if (wsErr && wsErr.code === "not_supported") return true;
+    const msg = (wsErr && (wsErr.message || wsErr.error) || "").toLowerCase();
+    return msg.includes("not supported");
   }
   function _is2faFetchRecoverable(err) {
     const wsErr = err;
@@ -668,30 +684,35 @@
       _error("Error injecting ask_pin checkbox: " + _errorMessage(e));
     }
   }
-  function _patchToggleAll(proto) {
-    const protoRec = proto;
-    const origToggleAll = protoRec._toggleAll;
-    if (typeof origToggleAll !== "function") {
-      _debug("entity-voice-settings._toggleAll not found (HA may have renamed it)");
+  function _patchVoiceSettingsRender(proto) {
+    const origRender = proto.render;
+    if (typeof origRender !== "function") {
+      _debug("entity-voice-settings.render not found (HA may have renamed it)");
       return;
     }
-    protoRec._toggleAll = function(ev) {
-      try {
-        if (_gaManualEnabled) {
-          const list = ev.target.assistants;
-          if (Array.isArray(list) && !list.includes(ASSISTANT_ID)) {
-            list.push(ASSISTANT_ID);
-          }
+    proto.render = function() {
+      const origKeys = Object.keys;
+      Object.keys = function(obj) {
+        const keys = origKeys(obj);
+        const conv = obj.conversation;
+        if (_gaManualEnabled && conv && typeof conv === "object" && "domain" in conv && keys.includes(ASSISTANT_ID)) {
+          return [
+            ...keys.filter((k) => !k.startsWith("cloud.")),
+            ...keys.filter((k) => k.startsWith("cloud."))
+          ];
         }
-      } catch (e) {
-        _debug("Failed to add our assistant to _toggleAll: " + _errorMessage(e));
+        return keys;
+      };
+      try {
+        return origRender.call(this);
+      } finally {
+        Object.keys = origKeys;
       }
-      return origToggleAll.call(this, ev);
     };
   }
   function _patchEntityVoiceSettingsProto(proto) {
     try {
-      _patchToggleAll(proto);
+      _patchVoiceSettingsRender(proto);
       const origFirstUpdated = proto.firstUpdated;
       const origUpdated = proto.updated;
       proto.firstUpdated = function(changedProps) {

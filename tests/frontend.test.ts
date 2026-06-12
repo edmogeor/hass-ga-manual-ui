@@ -604,48 +604,130 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
-  // We wrap _toggleAll so the master Expose toggle re-adds our id, which HA's
-  // splice bug drops from its assistant list.
+  // We wrap render() to neutralise HA's splice bug, which drops our id from the
+  // list driving the master Expose toggle and per-assistant row visibility.
   describe("entity dialog master expose toggle", () => {
+    // Mirrors HA's render() assistant-list computation, including the splice
+    // bug. Cloud enablement is configurable to cover mixed cloud setups.
     class FakeEntityVoiceSettings extends HTMLElement {
-      captured: string[] | null = null;
-      _toggleAll(ev: Event) {
-        this.captured = [
-          ...(ev.target as unknown as { assistants: string[] }).assistants,
-        ];
+      exposed: Record<string, boolean> = {};
+      googleEnabled = false;
+      alexaEnabled = false;
+      uiAssistants: string[] = [];
+      showAssistants: string[] = [];
+      anyExposed = false;
+      // Fields HA's element exposes that our patches read.
+      hass: unknown;
+      entityId?: string;
+      _unsupported: Record<string, boolean> = {};
+      requestUpdate = vi.fn();
+      render() {
+        const voiceAssistants: Record<string, { domain: string; name: string }> = {
+          conversation: { domain: "assist_pipeline", name: "Assist" },
+          "cloud.alexa": { domain: "cloud", name: "Amazon Alexa" },
+          "cloud.google_assistant": { domain: "cloud", name: "Google Assistant" },
+          hass_ga_manual_ui: { domain: "google_assistant", name: "GA Manual" },
+        };
+        const showAssistants = [...Object.keys(voiceAssistants)];
+        const uiAssistants = [...showAssistants];
+        if (!this.googleEnabled) {
+          showAssistants.splice(showAssistants.indexOf("cloud.google_assistant"), 1);
+          uiAssistants.splice(showAssistants.indexOf("cloud.google_assistant"), 1);
+        }
+        if (!this.alexaEnabled) {
+          showAssistants.splice(showAssistants.indexOf("cloud.alexa"), 1);
+          uiAssistants.splice(showAssistants.indexOf("cloud.alexa"), 1);
+        }
+        this.showAssistants = showAssistants;
+        this.uiAssistants = uiAssistants;
+        this.anyExposed = uiAssistants.some((k) => this.exposed[k]);
+        return null;
       }
     }
     if (!customElements.get("entity-voice-settings")) {
       customElements.define("entity-voice-settings", FakeEntityVoiceSettings);
     }
 
-    it("re-adds our assistant that HA's splice bug dropped", () => {
-      evalFrontend();
-      const el = document.createElement(
+    const make = () =>
+      document.createElement(
         "entity-voice-settings",
       ) as unknown as FakeEntityVoiceSettings;
-      // HA's mangled uiAssistants — our (last-injected) id is missing.
-      const target = { assistants: ["conversation", "cloud.alexa"], checked: false };
-      el._toggleAll({ target } as unknown as Event);
 
-      expect(el.captured).toContain("hass_ga_manual_ui");
-      expect(el.captured).toContain("conversation"); // existing entries preserved
+    it("keeps our assistant in uiAssistants (master toggle + row visibility)", () => {
+      evalFrontend();
+      const el = make();
+      el.render();
+
+      expect(el.uiAssistants).toContain("hass_ga_manual_ui");
+      expect(el.uiAssistants).not.toContain("cloud.alexa");
+      // With no cloud enabled, our row still renders last.
+      expect(el.showAssistants).toEqual(["conversation", "hass_ga_manual_ui"]);
     });
 
-    it("does not duplicate our assistant when already present", () => {
+    it("master toggle reflects exposure when only our assistant is exposed", () => {
       evalFrontend();
-      const el = document.createElement(
-        "entity-voice-settings",
-      ) as unknown as FakeEntityVoiceSettings;
-      const target = {
-        assistants: ["conversation", "hass_ga_manual_ui"],
-        checked: false,
-      };
-      el._toggleAll({ target } as unknown as Event);
+      const el = make();
+      el.exposed = { hass_ga_manual_ui: true };
+      el.render();
 
-      expect(
-        el.captured!.filter((a) => a === "hass_ga_manual_ui").length,
-      ).toBe(1);
+      expect(el.anyExposed).toBe(true);
+    });
+
+    // Regression: Alexa cloud on, Google cloud off (a plausible manual-Google
+    // setup). The fix must keep enabled Alexa and drop disabled Google cloud —
+    // i.e. not diverge from stock HA — while still including our assistant.
+    it("does not corrupt cloud rows in mixed cloud setups", () => {
+      evalFrontend();
+      const el = make();
+      el.alexaEnabled = true;
+      el.googleEnabled = false;
+      el.render();
+
+      expect(el.uiAssistants).toContain("cloud.alexa");
+      expect(el.uiAssistants).not.toContain("cloud.google_assistant");
+      expect(el.uiAssistants).toContain("hass_ga_manual_ui");
+    });
+
+    // When the backend reports the entity isn't supported by Google Assistant,
+    // we set HA's `_unsupported` flag so its render greys out our toggle —
+    // matching the stock cloud Google Assistant row.
+    it("marks our assistant unsupported when the backend says not_supported", async () => {
+      evalFrontend();
+      const el = make();
+      el.entityId = "light.demo";
+      el.hass = {
+        callWS: vi.fn(() => Promise.reject({ code: "not_supported" })),
+      };
+
+      (el as unknown as { updated: (m: Map<string, unknown>) => void }).updated(
+        new Map(),
+      );
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(el._unsupported["hass_ga_manual_ui"]).toBe(true);
+      expect(el.requestUpdate).toHaveBeenCalled();
+    });
+
+    it("keeps our assistant supported when the backend returns entity info", async () => {
+      evalFrontend();
+      const el = make();
+      el.entityId = "light.demo";
+      el.hass = {
+        callWS: vi.fn(() =>
+          Promise.resolve({
+            entity_id: "light.demo",
+            might_2fa: false,
+            disable_2fa: false,
+          }),
+        ),
+      };
+
+      (el as unknown as { updated: (m: Map<string, unknown>) => void }).updated(
+        new Map(),
+      );
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(el._unsupported["hass_ga_manual_ui"]).toBeUndefined();
     });
   });
 });

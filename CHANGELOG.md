@@ -5,6 +5,25 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- The Google Assistant (Manual) row in the entity dialog now shows the same
+  "not supported" notice and greyed-out toggle as the cloud Google Assistant row
+  when an entity's domain can't be handled by Google Assistant.
+
+### Fixed
+
+- The entity dialog's expose toggles ignored Google Assistant (Manual) when
+  deciding what to show: the master "Expose" toggle and the per-assistant rows
+  reflected only the cloud/Assist assistants, so an entity exposed only to us
+  showed the master off with no rows, and toggling the master off didn't hide
+  the rows when our toggle was the one left on. This was a splice bug in Home
+  Assistant's dialog dropping our injected entry from the list that drives the
+  master toggle and row visibility; the dialog now counts our assistant like any
+  other (which also subsumes the earlier master-toggle unexpose fix).
+
 ## [0.1.8] - 2026-06-12
 
 ### Fixed

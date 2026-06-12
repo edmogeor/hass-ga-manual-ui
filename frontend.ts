@@ -71,8 +71,10 @@ interface EntityVoiceSettingsElement extends HTMLElement, LitLifecycle {
   entityId?: string;
   __gaEntityId?: string;
   __gaInfo?: GaEntityInfo | null;
-  // HA's master "Expose" toggle handler; we wrap it (see _patchToggleAll).
-  _toggleAll?(ev: Event): void;
+  // HA's per-assistant "unsupported" map (keyed by assistant id); HA's render
+  // greys out the toggle and shows a notice for entries set true. We set our id
+  // when the backend reports the entity isn't supported by Google Assistant.
+  _unsupported?: Record<string, boolean>;
 }
 
 interface WSError extends Error {
@@ -943,6 +945,7 @@ function _maybeFetchEntity2fa(el: EntityVoiceSettingsElement): void {
   if (el.__gaEntityId === entityId) return; // already fetched/fetching
   el.__gaEntityId = entityId;
   el.__gaInfo = undefined;
+  _setOurUnsupported(el, false); // assume supported until told otherwise
   const hass = el.hass || getHass();
   if (!hass) return;
   hass
@@ -961,8 +964,31 @@ function _maybeFetchEntity2fa(el: EntityVoiceSettingsElement): void {
         return;
       }
       el.__gaInfo = null; // not supported / unknown — no checkbox
+      if (_isNotSupported(err)) _setOurUnsupported(el, true);
       _injectAskPin(el);
     });
+}
+
+/**
+ * Mark (or clear) our assistant in HA's `_unsupported` map so its render greys
+ * out our toggle and shows the "not supported" notice, exactly as it does for
+ * the cloud Google Assistant row. Re-renders only when the flag changes.
+ */
+function _setOurUnsupported(el: EntityVoiceSettingsElement, unsupported: boolean): void {
+  const map = el._unsupported;
+  if (!map) return;
+  if (!!map[ASSISTANT_ID] === unsupported) return;
+  if (unsupported) map[ASSISTANT_ID] = true;
+  else delete map[ASSISTANT_ID];
+  el.requestUpdate?.();
+}
+
+/** Whether a get_entity failure means Google Assistant can't handle the entity. */
+function _isNotSupported(err: unknown): boolean {
+  const wsErr = err as WSError;
+  if (wsErr && wsErr.code === "not_supported") return true;
+  const msg = ((wsErr && (wsErr.message || wsErr.error)) || "").toLowerCase();
+  return msg.includes("not supported");
 }
 
 /**
@@ -1042,40 +1068,61 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
 }
 
 /**
- * Ensure HA's master "Expose" toggle also (un)exposes our assistant.
+ * Make the master "Expose" toggle and per-assistant rows account for us.
  *
- * _toggleAll acts on ev.target.assistants, but an HA splice bug drops the last
- * entry of that list — which is our id, since we inject last — so the master
- * toggle silently skips us. Re-add our id (when enabled) so it treats us like
- * any other shown assistant; re-unexposing an unexposed assistant is a no-op.
+ * render() builds `uiAssistants` (the master switch's list, and the basis for
+ * `anyExposed` — which drives the master checked state and whether the rows
+ * show) via `uiAssistants.splice(showAssistants.indexOf(<cloud id>), 1)` run
+ * *after* that id left showAssistants, so indexOf is -1 and splice(-1, 1) drops
+ * the array's LAST entry instead — our last-injected id. The toggle and rows
+ * then ignore our exposure (an entity exposed only to us shows the master off,
+ * with no rows).
+ *
+ * For the duration of render, return our id from Object.keys(voiceAssistants)
+ * ahead of the cloud assistants. HA's tail-dropping splice then removes the
+ * cloud ids it intends to and never reaches ours, so the cloud rows behave
+ * exactly as in stock HA while our assistant is counted like any other. (We
+ * stay last among non-cloud assistants, so with no cloud enabled our row still
+ * renders last.)
  */
-function _patchToggleAll(proto: EntityVoiceSettingsElement): void {
-  const protoRec = proto as unknown as Record<string, unknown>;
-  const origToggleAll = protoRec._toggleAll as
-    | ((this: EntityVoiceSettingsElement, ev: Event) => unknown)
-    | undefined;
-  if (typeof origToggleAll !== "function") {
-    _debug("entity-voice-settings._toggleAll not found (HA may have renamed it)");
+function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
+  const origRender = proto.render;
+  if (typeof origRender !== "function") {
+    _debug("entity-voice-settings.render not found (HA may have renamed it)");
     return;
   }
-  protoRec._toggleAll = function (this: EntityVoiceSettingsElement, ev: Event) {
-    try {
-      if (_gaManualEnabled) {
-        const list = (ev.target as { assistants?: unknown }).assistants;
-        if (Array.isArray(list) && !list.includes(ASSISTANT_ID)) {
-          list.push(ASSISTANT_ID);
-        }
+  proto.render = function (this: EntityVoiceSettingsElement) {
+    const origKeys = Object.keys;
+    Object.keys = function (obj: object): string[] {
+      const keys = origKeys(obj);
+      // Match only the voiceAssistants map: { domain, name } descriptors that
+      // include our id — never the per-entity expose settings (booleans).
+      const conv = (obj as Record<string, unknown>).conversation;
+      if (
+        _gaManualEnabled &&
+        conv &&
+        typeof conv === "object" &&
+        "domain" in conv &&
+        keys.includes(ASSISTANT_ID)
+      ) {
+        return [
+          ...keys.filter((k) => !k.startsWith("cloud.")),
+          ...keys.filter((k) => k.startsWith("cloud.")),
+        ];
       }
-    } catch (e) {
-      _debug("Failed to add our assistant to _toggleAll: " + _errorMessage(e));
+      return keys;
+    };
+    try {
+      return origRender.call(this);
+    } finally {
+      Object.keys = origKeys;
     }
-    return origToggleAll.call(this, ev);
   };
 }
 
 function _patchEntityVoiceSettingsProto(proto: EntityVoiceSettingsElement): void {
   try {
-    _patchToggleAll(proto);
+    _patchVoiceSettingsRender(proto);
     const origFirstUpdated = proto.firstUpdated;
     const origUpdated = proto.updated;
     proto.firstUpdated = function (this: EntityVoiceSettingsElement, changedProps: Map<string, unknown>) {
