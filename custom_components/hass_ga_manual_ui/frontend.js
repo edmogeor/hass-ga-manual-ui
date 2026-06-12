@@ -710,9 +710,44 @@
       }
     };
   }
+  function _patchToggleRefresh(proto, method) {
+    const protoRec = proto;
+    const orig = protoRec[method];
+    if (typeof orig !== "function") {
+      _debug("entity-voice-settings." + method + " not found (HA may have renamed it)");
+      return;
+    }
+    if (orig.__gaWrapped) return;
+    const wrapped = async function(ev) {
+      try {
+        const target = ev.target;
+        const hass = this.hass || getHass();
+        const entityId = this.entityId;
+        if (hass && entityId) {
+          const expose = !!target.checked;
+          const assistants = method === "_toggleAll" ? expose ? (target.assistants || []).filter((k) => !this._unsupported?.[k]) : target.assistants || [] : target.assistant != null ? [target.assistant] : [];
+          if (assistants.length) {
+            await hass.callWS({
+              type: "homeassistant/expose_entity",
+              assistants,
+              entity_ids: [entityId],
+              should_expose: expose
+            });
+          }
+        }
+      } catch (e) {
+        _debug("Pre-await expose write failed (" + method + "): " + _errorMessage(e));
+      }
+      return orig.call(this, ev);
+    };
+    wrapped.__gaWrapped = true;
+    protoRec[method] = wrapped;
+  }
   function _patchEntityVoiceSettingsProto(proto) {
     try {
       _patchVoiceSettingsRender(proto);
+      _patchToggleRefresh(proto, "_toggleAll");
+      _patchToggleRefresh(proto, "_toggleAssistant");
       const origFirstUpdated = proto.firstUpdated;
       const origUpdated = proto.updated;
       proto.firstUpdated = function(changedProps) {

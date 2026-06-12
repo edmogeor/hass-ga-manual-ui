@@ -1120,9 +1120,71 @@ function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
   };
 }
 
+/**
+ * Settle expose writes before HA refetches the entity.
+ *
+ * HA's _toggleAll / _toggleAssistant fire the exposeEntities() WS write without
+ * awaiting it, then immediately refetch the entry to refresh the toggles — a
+ * race that leaves the toggles (and the `anyExposed` row collapse) showing a
+ * stale state until the dialog is reopened. Pre-await an identical write so the
+ * refetch sees the new state; the original re-issues the same idempotent write.
+ */
+function _patchToggleRefresh(
+  proto: EntityVoiceSettingsElement,
+  method: "_toggleAll" | "_toggleAssistant",
+): void {
+  const protoRec = proto as unknown as Record<string, unknown>;
+  const orig = protoRec[method] as
+    | ((this: EntityVoiceSettingsElement, ev: Event) => unknown)
+    | undefined;
+  if (typeof orig !== "function") {
+    _debug("entity-voice-settings." + method + " not found (HA may have renamed it)");
+    return;
+  }
+  if ((orig as { __gaWrapped?: boolean }).__gaWrapped) return; // already patched
+
+  const wrapped = async function (this: EntityVoiceSettingsElement, ev: Event) {
+    try {
+      const target = ev.target as {
+        checked?: boolean;
+        assistants?: string[];
+        assistant?: string;
+      };
+      const hass = this.hass || getHass();
+      const entityId = this.entityId;
+      if (hass && entityId) {
+        const expose = !!target.checked;
+        const assistants =
+          method === "_toggleAll"
+            ? expose
+              ? (target.assistants || []).filter((k) => !this._unsupported?.[k])
+              : target.assistants || []
+            : target.assistant != null
+              ? [target.assistant]
+              : [];
+        if (assistants.length) {
+          await hass.callWS({
+            type: "homeassistant/expose_entity",
+            assistants,
+            entity_ids: [entityId],
+            should_expose: expose,
+          });
+        }
+      }
+    } catch (e) {
+      _debug("Pre-await expose write failed (" + method + "): " + _errorMessage(e));
+    }
+    return orig.call(this, ev);
+  };
+  (wrapped as { __gaWrapped?: boolean }).__gaWrapped = true;
+  protoRec[method] = wrapped;
+}
+
 function _patchEntityVoiceSettingsProto(proto: EntityVoiceSettingsElement): void {
   try {
     _patchVoiceSettingsRender(proto);
+    _patchToggleRefresh(proto, "_toggleAll");
+    _patchToggleRefresh(proto, "_toggleAssistant");
     const origFirstUpdated = proto.firstUpdated;
     const origUpdated = proto.updated;
     proto.firstUpdated = function (this: EntityVoiceSettingsElement, changedProps: Map<string, unknown>) {

@@ -621,6 +621,14 @@ describe("Google Assistant Manual frontend", () => {
       entityId?: string;
       _unsupported: Record<string, boolean> = {};
       requestUpdate = vi.fn();
+      // HA's originals (our patch wraps them); record call order for assertions.
+      order: string[] = [];
+      _toggleAll() {
+        this.order.push("orig-all");
+      }
+      _toggleAssistant() {
+        this.order.push("orig-assistant");
+      }
       render() {
         const voiceAssistants: Record<string, { domain: string; name: string }> = {
           conversation: { domain: "assist_pipeline", name: "Assist" },
@@ -688,9 +696,6 @@ describe("Google Assistant Manual frontend", () => {
       expect(el.uiAssistants).toContain("hass_ga_manual_ui");
     });
 
-    // When the backend reports the entity isn't supported by Google Assistant,
-    // we set HA's `_unsupported` flag so its render greys out our toggle —
-    // matching the stock cloud Google Assistant row.
     it("marks our assistant unsupported when the backend says not_supported", async () => {
       evalFrontend();
       const el = make();
@@ -728,6 +733,52 @@ describe("Google Assistant Manual frontend", () => {
       await new Promise((r) => setTimeout(r, 0));
 
       expect(el._unsupported["hass_ga_manual_ui"]).toBeUndefined();
+    });
+
+    it("awaits the expose write before delegating (master toggle)", async () => {
+      evalFrontend();
+      const el = make();
+      el.entityId = "light.demo";
+      const callWS = vi.fn((msg: { type: string }) => {
+        if (msg.type === "homeassistant/expose_entity") el.order.push("expose");
+        return Promise.resolve({});
+      });
+      el.hass = { callWS };
+
+      await (
+        el as unknown as { _toggleAll: (e: unknown) => Promise<void> }
+      )._toggleAll({
+        target: { checked: true, assistants: ["conversation", "hass_ga_manual_ui"] },
+      });
+
+      expect(el.order).toEqual(["expose", "orig-all"]);
+      expect(callWS).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "homeassistant/expose_entity",
+          assistants: ["conversation", "hass_ga_manual_ui"],
+          entity_ids: ["light.demo"],
+          should_expose: true,
+        }),
+      );
+    });
+
+    it("awaits the expose write before delegating (per-assistant toggle)", async () => {
+      evalFrontend();
+      const el = make();
+      el.entityId = "light.demo";
+      const callWS = vi.fn((msg: { type: string }) => {
+        if (msg.type === "homeassistant/expose_entity") el.order.push("expose");
+        return Promise.resolve({});
+      });
+      el.hass = { callWS };
+
+      await (
+        el as unknown as { _toggleAssistant: (e: unknown) => Promise<void> }
+      )._toggleAssistant({
+        target: { checked: false, assistant: "hass_ga_manual_ui" },
+      });
+
+      expect(el.order).toEqual(["expose", "orig-assistant"]);
     });
   });
 });

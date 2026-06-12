@@ -5,6 +5,17 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- After toggling the entity dialog's master "Expose" switch (or a per-assistant
+  switch), the toggles could show a stale state — the rows not collapsing when
+  unexposed, or only some assistants showing on after re-exposing — until the
+  dialog was reopened. Home Assistant fires the expose write without awaiting it
+  and then immediately refetches the entity, so the refresh could read a
+  half-written entry; we now settle the write first.
+
 ## [0.1.9] - 2026-06-12
 
 ### Added
