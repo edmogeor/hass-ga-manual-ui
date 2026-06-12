@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The "Ask for PIN" checkbox could stay hidden for a security device if its
   initial lookup failed while the integration was momentarily disabled. Such
   transient failures are now retried instead of being cached as "no checkbox".
+- A console error from Home Assistant's brand-icon element when our assistant
+  was added to the order before its display-name map entry was ready. We now
+  wait for the map before advertising ourselves, and degrade gracefully if the
+  lookup is ever missing.
 
 ### Added
 

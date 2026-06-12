@@ -323,7 +323,9 @@
       const origForEach = Array.prototype.forEach;
       Array.prototype.forEach = function(callback, thisArg) {
         try {
-          if (this.length === SORT_TARGET.length && SORT_TARGET.every((v, i) => this[i] === v) && !this.includes(ASSISTANT_ID)) {
+          if (this.length === SORT_TARGET.length && SORT_TARGET.every((v, i) => this[i] === v) && !this.includes(ASSISTANT_ID) && // Wait for the map: HA renders a brand icon per id here and reads
+          // voiceAssistants[id].name unguarded, so adding us first would throw.
+          _voiceAssistantsMap !== null && ASSISTANT_ID in _voiceAssistantsMap) {
             this.push(ASSISTANT_ID);
             _info("Injected " + ASSISTANT_ID + " into sort-order array");
           }
@@ -502,7 +504,12 @@
       const origUpdated = proto.updated;
       proto.render = function() {
         if (this.voiceAssistantId === ASSISTANT_ID) return null;
-        return origRender.call(this);
+        try {
+          return origRender.call(this);
+        } catch (e) {
+          _debug("brand-icon render fell back to empty: " + _errorMessage(e));
+          return null;
+        }
       };
       proto.firstUpdated = function(changedProps) {
         if (this.voiceAssistantId === ASSISTANT_ID) {
