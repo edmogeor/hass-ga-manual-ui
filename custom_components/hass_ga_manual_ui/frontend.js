@@ -599,7 +599,7 @@
     hass.callWS({ type: WS_UPDATE_ENTITY, entity_id: entityId, disable_2fa: !checked }).then(() => {
       if (el.__gaInfo) el.__gaInfo.disable_2fa = !checked;
     }).catch((err) => {
-      _error("Failed to update disable_2fa: " + (err.message || err.error || String(err)));
+      _error("Failed to update disable_2fa: " + _wsErrorMessage(err));
       cb.checked = !checked;
     });
   }
@@ -1100,30 +1100,28 @@
         number: count
       }) : count + " exposed entities";
     }).catch((err) => {
-      _error(
-        "Failed to refresh expose toggle: " + (err.message || err.error || String(err))
-      );
+      _error("Failed to refresh expose toggle: " + _wsErrorMessage(err));
     });
   }
   function onExposeToggle(e) {
     const hass = getHass();
     if (!hass) return;
-    const checked = e.target.checked;
+    const target = e.target;
+    const checked = target.checked;
     hass.callWS({
       type: "homeassistant/expose_new_entities/set",
       assistant: ASSISTANT_ID,
       expose_new: checked
     }).catch((err) => {
-      _error(
-        "Failed to set expose_new_entities: " + (err.message || err.error || String(err))
-      );
-      e.target.checked = !checked;
+      _error("Failed to set expose_new_entities: " + _wsErrorMessage(err));
+      target.checked = !checked;
     });
   }
   async function onReportStateToggle(e) {
     const hass = getHass();
     if (!hass) return;
-    const checked = e.target.checked;
+    const target = e.target;
+    const checked = target.checked;
     try {
       await _withEntryRetry(
         (entryId) => hass.callWS({
@@ -1133,11 +1131,8 @@
         })
       );
     } catch (err) {
-      const wsErr = err;
-      _error(
-        "Failed to update report_state: " + (wsErr.message || wsErr.error || String(err))
-      );
-      e.target.checked = !checked;
+      _error("Failed to update report_state: " + _wsErrorMessage(err));
+      target.checked = !checked;
       _showToast(
         t(checked ? "report_state_enable_failed" : "report_state_disable_failed"),
         true

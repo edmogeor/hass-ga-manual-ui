@@ -559,10 +559,7 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.error("Cannot build core GA config: %s", exc)
         raise
 
-    if CORE_GA_DOMAIN not in hass.data:
-        hass.data[CORE_GA_DOMAIN] = {CORE_GA_DATA_CONFIG: config}
-    else:
-        hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG] = config
+    hass.data.setdefault(CORE_GA_DOMAIN, {})[CORE_GA_DATA_CONFIG] = config
 
     # Verify core GA is available (async_add below relies on it to set up the
     # registered entry). Fail with an actionable message if it is missing.

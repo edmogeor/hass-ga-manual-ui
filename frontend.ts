@@ -904,7 +904,7 @@ function _onAskPinChanged(el: EntityVoiceSettingsElement, cb: TogglableElement):
       if (el.__gaInfo) el.__gaInfo.disable_2fa = !checked;
     })
     .catch((err: WSError) => {
-      _error("Failed to update disable_2fa: " + (err.message || err.error || String(err)));
+      _error("Failed to update disable_2fa: " + _wsErrorMessage(err));
       cb.checked = !checked; // revert on failure (mirrors cloud)
     });
 }
@@ -1610,16 +1610,15 @@ function refreshExposeToggle(card: HTMLElement): void {
         : count + " exposed entities";
     })
     .catch((err: WSError) => {
-      _error(
-        "Failed to refresh expose toggle: " + (err.message || err.error || String(err)),
-      );
+      _error("Failed to refresh expose toggle: " + _wsErrorMessage(err));
     });
 }
 
 function onExposeToggle(e: Event): void {
   const hass = getHass();
   if (!hass) return;
-  const checked = (e.target as TogglableElement).checked;
+  const target = e.target as TogglableElement;
+  const checked = target.checked;
   hass
     .callWS({
       type: "homeassistant/expose_new_entities/set",
@@ -1627,17 +1626,16 @@ function onExposeToggle(e: Event): void {
       expose_new: checked,
     })
     .catch((err: WSError) => {
-      _error(
-        "Failed to set expose_new_entities: " + (err.message || err.error || String(err)),
-      );
-      (e.target as TogglableElement).checked = !checked;
+      _error("Failed to set expose_new_entities: " + _wsErrorMessage(err));
+      target.checked = !checked;
     });
 }
 
 async function onReportStateToggle(e: Event): Promise<void> {
   const hass = getHass();
   if (!hass) return;
-  const checked = (e.target as TogglableElement).checked;
+  const target = e.target as TogglableElement;
+  const checked = target.checked;
 
   try {
     await _withEntryRetry((entryId) =>
@@ -1648,12 +1646,8 @@ async function onReportStateToggle(e: Event): Promise<void> {
       }),
     );
   } catch (err: unknown) {
-    const wsErr = err as WSError;
-    _error(
-      "Failed to update report_state: " +
-        (wsErr.message || wsErr.error || String(err)),
-    );
-    (e.target as TogglableElement).checked = !checked;
+    _error("Failed to update report_state: " + _wsErrorMessage(err));
+    target.checked = !checked;
     _showToast(
       t(checked ? "report_state_enable_failed" : "report_state_disable_failed"),
       true,
