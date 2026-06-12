@@ -43,21 +43,29 @@
   function ensureTranslationsLoaded() {
     if (_translationsPromise) return _translationsPromise;
     const hass = getHass();
-    if (!hass?.callWS) return Promise.resolve();
-    const language = hass.locale?.language || hass.language || "en";
-    const prefix = `component.${ASSISTANT_ID}.frontend.`;
-    _translationsPromise = hass.callWS({
-      type: "frontend/get_translations",
-      language,
-      category: "frontend",
-      integration: ASSISTANT_ID
-    }).then(({ resources }) => {
-      const loaded = {};
-      for (const key of Object.keys(EN_STRINGS)) {
-        const val = resources?.[prefix + key];
-        if (typeof val === "string") loaded[key] = val;
+    const language = hass?.locale?.language || hass?.language || "en";
+    const candidates = [language];
+    const base = language.split("-")[0];
+    if (base && base !== language) candidates.push(base);
+    _translationsPromise = (async () => {
+      for (const lang of candidates) {
+        try {
+          const resp = await fetch(`/${ASSISTANT_ID}/locale/${lang}.json`);
+          if (!resp.ok) continue;
+          const data = await resp.json();
+          const table = data.frontend;
+          if (!table) continue;
+          const loaded = {};
+          for (const key of Object.keys(EN_STRINGS)) {
+            const val = table[key];
+            if (typeof val === "string") loaded[key] = val;
+          }
+          _loadedStrings = loaded;
+          break;
+        } catch (e) {
+          _debug("Failed to load locale '" + lang + "': " + _errorMessage(e));
+        }
       }
-      _loadedStrings = loaded;
       for (const fn of _retranslate) {
         try {
           fn();
@@ -65,9 +73,7 @@
           _debug("retranslate callback failed: " + _errorMessage(e));
         }
       }
-    }).catch((e) => {
-      _debug("Failed to load frontend translations: " + _errorMessage(e));
-    });
+    })();
     return _translationsPromise;
   }
   function _errorMessage(e) {

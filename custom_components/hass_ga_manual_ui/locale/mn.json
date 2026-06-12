@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nТаны configuration.yaml-д `google_assistant:` хэсэг байна. Энэ интеграци одоо Google Assistant-ийг удирдаж, дарж байна, тиймээс та тэр хэсгийг устгаж болно.",
+  "install_notice": "Google Assistant (Гараар) суулгагдсан. Хэрэв түүний карт Тохиргоо → Дуут туслахууд хэсэгт харагдахгүй бол хөтчийн нэг удаагийн хатуу шинэчлэлт хийгээрэй (Ctrl+Shift+R, эсвэл Mac дээр Cmd+Shift+R). Энэ нь суулгасны дараа эсвэл шинэчилсний дараа зөвхөн нэг удаа шаардлагатай.",
+  "frontend": {
+    "yaml_detected": "Таны <code>configuration.yaml</code>-д <code>google_assistant:</code> хэсэг илэрсэн бөгөөд идэвхгүй болгосон. Энэ интеграци одоо таны Google Assistant тохиргоог удирдаж байна. Та YAML тохиргооноосоо <code>google_assistant:</code> хэсгийг аюулгүйгээр устгаж болно.",
+    "enable_success": "Google Assistant амжилттай идэвхжүүлэгдлээ",
+    "enable_failed": "Google Assistant-ийг идэвхжүүлж чадсангүй.",
+    "enable_fail_hint": "Тохиргоо → Төхөөрөмж ба үйлчилгээнээс интеграцийг дахин ачаалж үзнэ үү.",
+    "disable_success": "Google Assistant амжилттай идэвхгүй болголоо",
+    "disable_failed": "Google Assistant-ийг идэвхгүй болгож чадсангүй.",
+    "disable_fail_hint": "Тохиргоо → Төхөөрөмж ба үйлчилгээнээс интеграцийг устгаж үзнэ үү.",
+    "check_logs": "Дэлгэрэнгүй мэдээллийг авахын тулд Home Assistant бүртгэлийг шалгана уу.",
+    "report_state_enable_failed": "Төлөвийн тайлагналыг идэвхжүүлж чадсангүй. Интеграцийг унтраагаад дахин асаах эсвэл Home Assistant бүртгэлийг шалгана уу.",
+    "report_state_disable_failed": "Төлөвийн тайлагналыг идэвхгүй болгож чадсангүй. Интеграцийг унтраагаад дахин асаах эсвэл Home Assistant бүртгэлийг шалгана уу.",
+    "ready_banner": "{name} бэлэн боллоо — Тохиргоо → Дуут туслахуудад удирдана уу.",
+    "update_available": "Google Assistant (Гараар)-ын шинэ хувилбар гарсан. Үүнийг ачаалахын тулд хөтчөө шинэчилнэ үү (Ctrl+Shift+R, эсвэл Mac дээр Cmd+Shift+R)."
+  }
+}

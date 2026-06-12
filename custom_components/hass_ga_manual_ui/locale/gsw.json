@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nDu hesch en `google_assistant:`-Abschnitt in dim configuration.yaml. Die Integration verwaltet jetzt Google Assistant und überschreibt en, so chasch du die Abschnitt entferne.",
+  "install_notice": "Google Assistant (Manual) isch installiert. Wänn d'Chartä nöd under Iischtellige → Schpraachassischtänte erschynt, mach än ei-moligä Hart-Neiladä vo dim Browser (Ctrl+Shift+R, odr Cmd+Shift+R uf Mac). Da isch nur ei Mol nötig, noch dä Installation odr Aktualisierig.",
+  "frontend": {
+    "yaml_detected": "De Abschnitt <code>google_assistant:</code> isch in dim <code>configuration.yaml</code> gfunde worde und isch deaktiviert worde. Die Integration verwaltet jetzt dini Google Assistant-Konfiguration. Du chasch de Abschnitt <code>google_assistant:</code> sicher us dimere YAML-Konfiguration entferne.",
+    "enable_success": "Google Assistant erfolgreich aktiviert",
+    "enable_failed": "Google Assistant aktiviere isch gscheitert.",
+    "enable_fail_hint": "Versuechi d'Integration under Istellunge → Geräte & Dienste neu z'lade.",
+    "disable_success": "Google Assistant erfolgreich deaktiviert",
+    "disable_failed": "Google Assistant deaktiviere isch gscheitert.",
+    "disable_fail_hint": "Versuechi d'Integration under Istellunge → Geräte & Dienste z'entferne.",
+    "check_logs": "Überprüef d'Home Assistant-Protokolle für Details.",
+    "report_state_enable_failed": "Statusmäldig aktiviere isch gscheitert. Versuechi d'Integration uus- und wider iizschalte, oder überprüef d'Home Assistant-Protokolle.",
+    "report_state_disable_failed": "Statusmäldig deaktiviere isch gscheitert. Versuechi d'Integration uus- und wider iizschalte, oder überprüef d'Home Assistant-Protokolle.",
+    "ready_banner": "{name} isch parat – verwalte s'under Istellunge → Sprachassistente.",
+    "update_available": "Ä nöii Version vo Google Assistant (Manual) isch verfüegbar. Lad dim Browser nöi (Ctrl+Shift+R, odr Cmd+Shift+R uf Mac) zum s'lade."
+  }
+}

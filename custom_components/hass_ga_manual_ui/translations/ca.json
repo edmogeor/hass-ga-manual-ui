@@ -29,22 +29,6 @@
       "Invalid JSON": "El text no és un JSON vàlid",
       "Missing 'client_email'": "Al JSON li falta el camp 'client_email'",
       "Missing 'private_key'": "Al JSON li falta el camp 'private_key'"
-    },
-    "yaml_notice": "\n\nTeniu una secció `google_assistant:` al configuration.yaml. Aquesta integració ara gestiona Google Assistant i la substitueix, de manera que podeu eliminar aquella secció.",
-    "install_notice": "Google Assistant (Manual) està instal·lat. Si la seva targeta no apareix a Configuració → Assistents de veu, feu una actualització forçada única del navegador (Ctrl+Maj+R, o Cmd+Maj+R al Mac). Només cal fer-ho un cop, després d'instal·lar o actualitzar."
-  },
-  "frontend": {
-    "yaml_detected": "S'ha detectat la secció <code>google_assistant:</code> al <code>configuration.yaml</code> i s'ha desactivat. Aquesta integració ara gestiona la vostra configuració de Google Assistant. Podeu eliminar de forma segura la secció <code>google_assistant:</code> de la vostra configuració YAML.",
-    "enable_success": "Google Assistant activat correctament",
-    "enable_failed": "No s'ha pogut activar Google Assistant.",
-    "enable_fail_hint": "Proveu de tornar a carregar la integració des de Configuració → Dispositius i serveis.",
-    "disable_success": "Google Assistant desactivat correctament",
-    "disable_failed": "No s'ha pogut desactivar Google Assistant.",
-    "disable_fail_hint": "Proveu d'eliminar la integració des de Configuració → Dispositius i serveis.",
-    "check_logs": "Consulteu els registres de Home Assistant per obtenir detalls.",
-    "report_state_enable_failed": "No s'ha pogut activar l'informe d'estat. Proveu de desactivar i tornar a activar la integració, o consulteu els registres de Home Assistant.",
-    "report_state_disable_failed": "No s'ha pogut desactivar l'informe d'estat. Proveu de desactivar i tornar a activar la integració, o consulteu els registres de Home Assistant.",
-    "ready_banner": "{name} està llest — gestioneu-lo a Configuració → Assistents de veu.",
-    "update_available": "Hi ha una nova versió de Google Assistant (Manual) disponible. Actualitzeu el navegador (Ctrl+Maj+R, o Cmd+Maj+R al Mac) per carregar-la."
+    }
   }
 }

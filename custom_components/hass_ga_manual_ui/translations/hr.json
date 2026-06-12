@@ -29,22 +29,6 @@
       "Invalid JSON": "Tekst nije valjani JSON",
       "Missing 'client_email'": "JSON ne sadrži polje 'client_email'",
       "Missing 'private_key'": "JSON ne sadrži polje 'private_key'"
-    },
-    "yaml_notice": "\n\nimate odjeljak `google_assistant:` u configuration.yaml. Ova integracija sada upravlja Google Assistantom i nadjačava ga, pa možete ukloniti taj odjeljak.",
-    "install_notice": "Google Assistant (Manual) je instaliran. Ako se njegova kartica ne pojavi u Postavke → Glasovni asistenti, napravite jednokratno tvrdo osvježavanje preglednika (Ctrl+Shift+R, ili Cmd+Shift+R na Macu). Ovo je potrebno samo jednom, nakon instalacije ili ažuriranja."
-  },
-  "frontend": {
-    "yaml_detected": "Odjeljak <code>google_assistant:</code> otkriven je u <code>configuration.yaml</code> i onemogućen je. Ova integracija sada upravlja konfiguracijom Google Assistanta. Možete sigurno ukloniti odjeljak <code>google_assistant:</code> iz YAML konfiguracije.",
-    "enable_success": "Google Assistant uspješno omogućen",
-    "enable_failed": "Omogućavanje Google Assistanta nije uspjelo.",
-    "enable_fail_hint": "Pokušajte ponovo učitati integraciju iz Postavke → Uređaji i usluge.",
-    "disable_success": "Google Assistant uspješno onemogućen",
-    "disable_failed": "Onemogućavanje Google Assistanta nije uspjelo.",
-    "disable_fail_hint": "Pokušajte ukloniti integraciju iz Postavke → Uređaji i usluge.",
-    "check_logs": "Za detalje provjerite dnevnike Home Assistanta.",
-    "report_state_enable_failed": "Omogućavanje izvješćivanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
-    "report_state_disable_failed": "Onemogućavanje izvješćivanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
-    "ready_banner": "{name} je spreman — upravljajte njime u Postavke → Glasovni asistenti.",
-    "update_available": "Dostupna je nova verzija Google Assistant (Manual). Osvježite preglednik (Ctrl+Shift+R, ili Cmd+Shift+R na Macu) da biste je učitali."
+    }
   }
 }

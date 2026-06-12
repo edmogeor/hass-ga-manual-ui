@@ -24,6 +24,16 @@ jobs:
         with:
           category: integration
 
+  hassfest:
+    name: Hassfest
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Hassfest validation
+        uses: home-assistant/actions/hassfest@master
+
   test:
     name: Test
     runs-on: ubuntu-latest
@@ -59,7 +69,7 @@ jobs:
 
   release:
     name: Release
-    needs: [hacs, test]
+    needs: [hacs, hassfest, test]
     runs-on: ubuntu-latest
     permissions:
       contents: write

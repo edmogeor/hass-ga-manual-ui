@@ -29,22 +29,6 @@
       "Invalid JSON": "De tekst is gjin jildige JSON",
       "Missing 'client_email'": "De JSON mist it fjild 'client_email'",
       "Missing 'private_key'": "De JSON mist it fjild 'private_key'"
-    },
-    "yaml_notice": "\n\nJo hawwe in `google_assistant:`-seksje yn jo configuration.yaml. Dizze yntegraasje beheart no Google Assistant en oerskriuwt it, sadat jo dy seksje fuortsmite kinne.",
-    "install_notice": "Google Assistant (Manual) is ynstallearre. As syn kaart net ferskynt ûnder Ynstellingen → Spraakadjutanten, doch dan in ienmalige hurde fernijing fan jo blêder (Ctrl+Shift+R, of Cmd+Shift+R op Mac). Dit is mar ien kear nedich, nei ynstallaasje of fernijing."
-  },
-  "frontend": {
-    "yaml_detected": "De seksje <code>google_assistant:</code> is fûn yn jo <code>configuration.yaml</code> en is útskeakele. Dizze yntegraasje beheard no jo Google Assistant-konfiguraasje. Jo kinne de seksje <code>google_assistant:</code> feilich fuortsmite út jo YAML-konfiguraasje.",
-    "enable_success": "Google Assistant mei súkses ynskeakele",
-    "enable_failed": "Google Assistant ynskeakelje mislearre.",
-    "enable_fail_hint": "Besykje de yntegraasje opnij te laden fanút Ynstellingen → Apparaten en tsjinsten.",
-    "disable_success": "Google Assistant mei súkses útskeakele",
-    "disable_failed": "Google Assistant útskeakelje mislearre.",
-    "disable_fail_hint": "Besykje de yntegraasje te fuortsmiten fanút Ynstellingen → Apparaten en tsjinsten.",
-    "check_logs": "Kontrolearje de Home Assistant-logboeken foar details.",
-    "report_state_enable_failed": "Statusrapportaazje ynskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
-    "report_state_disable_failed": "Statusrapportaazje útskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
-    "ready_banner": "{name} is klear — behearsje it fia Ynstellingen → Spraakadjutanten.",
-    "update_available": "In nije ferzje fan Google Assistant (Manual) is beskikber. Fernij jo blêder (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om it te laden."
+    }
   }
 }

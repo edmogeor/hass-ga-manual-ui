@@ -422,12 +422,8 @@ class TestConfigFlowServiceAccountStep:
                 AsyncMock(return_value={"google_assistant": {}}),
             ),
             patch(
-                "hass_ga_manual_ui.config_flow.async_get_translations",
-                AsyncMock(
-                    return_value={
-                        "component.hass_ga_manual_ui.config.yaml_notice": "REMOVE IT"
-                    }
-                ),
+                "hass_ga_manual_ui.config_flow.async_load_locale",
+                AsyncMock(return_value={"yaml_notice": "REMOVE IT"}),
             ),
         ):
             result = await config_flow.async_step_user()
@@ -445,13 +441,13 @@ class TestConfigFlowServiceAccountStep:
                 AsyncMock(return_value={"sensor": {}}),
             ),
             patch(
-                "hass_ga_manual_ui.config_flow.async_get_translations",
+                "hass_ga_manual_ui.config_flow.async_load_locale",
                 AsyncMock(),
-            ) as mock_translations,
+            ) as mock_locale,
         ):
             result = await config_flow.async_step_user()
         assert result["description_placeholders"]["yaml_notice"] == ""
-        mock_translations.assert_not_called()
+        mock_locale.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_yaml_notice_empty_when_yaml_unreadable(
@@ -479,12 +475,8 @@ class TestConfigFlowServiceAccountStep:
                 AsyncMock(return_value={"google_assistant 2": {}}),
             ),
             patch(
-                "hass_ga_manual_ui.config_flow.async_get_translations",
-                AsyncMock(
-                    return_value={
-                        "component.hass_ga_manual_ui.config.yaml_notice": "REMOVE IT"
-                    }
-                ),
+                "hass_ga_manual_ui.config_flow.async_load_locale",
+                AsyncMock(return_value={"yaml_notice": "REMOVE IT"}),
             ),
         ):
             result = await config_flow.async_step_user()
@@ -526,14 +518,12 @@ class TestNotifyInstalled:
         config_flow.hass.config.language = "en"
         with (
             patch(
+                "hass_ga_manual_ui.config_flow.async_load_locale",
+                AsyncMock(return_value={"install_notice": "REFRESH NOW"}),
+            ),
+            patch(
                 "hass_ga_manual_ui.config_flow.async_get_translations",
-                AsyncMock(
-                    return_value={
-                        "component.hass_ga_manual_ui.config.install_notice": (
-                            "REFRESH NOW"
-                        ),
-                    }
-                ),
+                AsyncMock(return_value={}),
             ),
             patch(
                 "homeassistant.components.persistent_notification.async_create"
@@ -556,6 +546,10 @@ class TestNotifyInstalled:
         config_flow.hass.config.language = "en"
         with (
             patch(
+                "hass_ga_manual_ui.config_flow.async_load_locale",
+                AsyncMock(return_value={}),
+            ),
+            patch(
                 "hass_ga_manual_ui.config_flow.async_get_translations",
                 AsyncMock(return_value={}),
             ),
@@ -571,13 +565,17 @@ class TestNotifyInstalled:
     async def test_translation_failure_still_notifies(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        """A failure loading translations degrades to the fallback, still posting."""
+        """A failure loading the locale degrades to the fallback, still posting."""
         config_flow.hass = MagicMock()
         config_flow.hass.config.language = "en"
         with (
             patch(
+                "hass_ga_manual_ui.config_flow.async_load_locale",
+                AsyncMock(side_effect=RuntimeError("locale down")),
+            ),
+            patch(
                 "hass_ga_manual_ui.config_flow.async_get_translations",
-                AsyncMock(side_effect=RuntimeError("translations down")),
+                AsyncMock(return_value={}),
             ),
             patch(
                 "homeassistant.components.persistent_notification.async_create"

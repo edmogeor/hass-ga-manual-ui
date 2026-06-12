@@ -29,22 +29,6 @@
       "Invalid JSON": "Testua ez da JSON baliodun bat",
       "Missing 'client_email'": "JSONean 'client_email' eremua falta da",
       "Missing 'private_key'": "JSONean 'private_key' eremua falta da"
-    },
-    "yaml_notice": "\n\nZure configuration.yaml fitxategian `google_assistant:` atala daukazu. Integrazio honek orain Google Assistant kudeatzen du eta gainidazten du, beraz atal hori ken dezakezu.",
-    "install_notice": "Google Assistant (Manual) instalatuta dago. Bere txartela Ezarpenak → Ahots-laguntzaileak atalean agertzen ez bada, egin nabigatzailearen behin-behineko freskatze gogorra (Ctrl+Shift+R, edo Mac-en Cmd+Shift+R). Behin bakarrik behar da, instalatu edo eguneratu ondoren."
-  },
-  "frontend": {
-    "yaml_detected": "<code>google_assistant:</code> atala aurkitu da zure <code>configuration.yaml</code> fitxategian eta desgaitu da. Integrazio honek orain zure Google Assistant konfigurazioa kudeatzen du. <code>google_assistant:</code> atala YAML konfigurazio fitxategitik modu seguruan ken dezakezu.",
-    "enable_success": "Google Assistant arrakastaz gaitu da",
-    "enable_failed": "Ezin izan da Google Assistant gaitu.",
-    "enable_fail_hint": "Saiatu integrazioa berriz kargatzen Ezarpenak → Gailuak eta zerbitzuak ataletik.",
-    "disable_success": "Google Assistant arrakastaz desgaitu da",
-    "disable_failed": "Ezin izan da Google Assistant desgaitu.",
-    "disable_fail_hint": "Saiatu integrazioa kentzen Ezarpenak → Gailuak eta zerbitzuak ataletik.",
-    "check_logs": "Begiratu Home Assistant erregistroak xehetasunetarako.",
-    "report_state_enable_failed": "Ezin izan da egoera-txostena gaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
-    "report_state_disable_failed": "Ezin izan da egoera-txostena desgaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
-    "ready_banner": "{name} prest dago — kudeatu Ezarpenak → Ahots-laguntzaileak atalean.",
-    "update_available": "Google Assistant (Manual)-ren bertsio berri bat dago eskuragarri. Freskatu nabigatzailea (Ctrl+Shift+R, edo Mac-en Cmd+Shift+R) kargatzeko."
+    }
   }
 }

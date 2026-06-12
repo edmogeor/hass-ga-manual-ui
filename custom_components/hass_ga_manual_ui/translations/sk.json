@@ -29,22 +29,6 @@
       "Invalid JSON": "Text nie je platný JSON",
       "Missing 'client_email'": "V JSON chýba pole 'client_email'",
       "Missing 'private_key'": "V JSON chýba pole 'private_key'"
-    },
-    "yaml_notice": "\n\nVo svojom súbore configuration.yaml máte sekciu `google_assistant:`. Táto integrácia teraz spravuje Google Assistant a prepíše ju, takže túto sekciu môžete odstrániť.",
-    "install_notice": "Google Assistant (Manual) je nainštalovaný. Ak sa jeho karta nezobrazí v Nastavenia → Hlasoví asistenti, vykonajte jednorazové tvrdé obnovenie prehliadača (Ctrl+Shift+R alebo Cmd+Shift+R na Macu). Je to potrebné len raz, po inštalácii alebo aktualizácii."
-  },
-  "frontend": {
-    "yaml_detected": "Sekcia <code>google_assistant:</code> bola nájdená vo vašom <code>configuration.yaml</code> a bola deaktivovaná. Táto integrácia teraz spravuje vašu konfiguráciu Google Assistant. Sekciu <code>google_assistant:</code> môžete bezpečne odstrániť z konfigurácie YAML.",
-    "enable_success": "Google Assistant bol úspešne aktivovaný",
-    "enable_failed": "Nepodarilo sa aktivovať Google Assistant.",
-    "enable_fail_hint": "Skúste znovu načítať integráciu v Nastavenia → Zariadenia a služby.",
-    "disable_success": "Google Assistant bol úspešne deaktivovaný",
-    "disable_failed": "Nepodarilo sa deaktivovať Google Assistant.",
-    "disable_fail_hint": "Skúste odstrániť integráciu v Nastavenia → Zariadenia a služby.",
-    "check_logs": "Podrobnosti nájdete v protokoloch Home Assistant.",
-    "report_state_enable_failed": "Nepodarilo sa aktivovať hlásenie stavu. Skúste integráciu vypnúť a znovu zapnúť alebo skontrolujte protokoly Home Assistant.",
-    "report_state_disable_failed": "Nepodarilo sa deaktivovať hlásenie stavu. Skúste integráciu vypnúť a znovu zapnúť alebo skontrolujte protokoly Home Assistant.",
-    "ready_banner": "{name} je pripravený — spravujte ho v Nastavenia → Hlasoví asistenti.",
-    "update_available": "Je k dispozícii nová verzia Google Assistant (Manual). Obnovte prehliadač (Ctrl+Shift+R alebo Cmd+Shift+R na Macu) a načítajte ju."
+    }
   }
 }

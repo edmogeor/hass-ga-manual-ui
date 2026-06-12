@@ -108,8 +108,8 @@ const BUILD_VERSION: string =
 // ---------------------------------------------------------------------------
 // Localization (see AGENTS.md "Frontend localization")
 // ---------------------------------------------------------------------------
-// Card strings live in translations/<lang>.json under "frontend" and are fetched
-// for the user's language at runtime; EN_STRINGS is the synchronous fallback.
+// Card strings live in locale/<lang>.json under "frontend" and are fetched over
+// HTTP for the user's language at runtime; EN_STRINGS is the synchronous fallback.
 
 interface LocaleTable {
   yaml_detected: string;
@@ -170,40 +170,51 @@ function t(key: StringKey, args?: Record<string, string | number>): string {
   return str;
 }
 
-// Fetch the "frontend" strings once (memoized on the first attempt with hass);
-// fails silently to EN_STRINGS.
+// Fetch the localized card strings once (memoized on the first call) from the
+// integration's static locale endpoint; fails silently to EN_STRINGS.
 function ensureTranslationsLoaded(): Promise<void> {
   if (_translationsPromise) return _translationsPromise;
-  const hass = getHass();
-  if (!hass?.callWS) return Promise.resolve();
 
-  const language = hass.locale?.language || hass.language || "en";
-  const prefix = `component.${ASSISTANT_ID}.frontend.`;
-  _translationsPromise = hass
-    .callWS<{ resources: Record<string, string> }>({
-      type: "frontend/get_translations",
-      language,
-      category: "frontend",
-      integration: ASSISTANT_ID,
-    })
-    .then(({ resources }) => {
-      const loaded: Partial<LocaleTable> = {};
-      for (const key of Object.keys(EN_STRINGS) as StringKey[]) {
-        const val = resources?.[prefix + key];
-        if (typeof val === "string") loaded[key] = val;
-      }
-      _loadedStrings = loaded;
-      for (const fn of _retranslate) {
-        try {
-          fn();
-        } catch (e) {
-          _debug("retranslate callback failed: " + _errorMessage(e));
+  const hass = getHass();
+  const language = hass?.locale?.language || hass?.language || "en";
+
+  // Try the exact language tag, then the base language; EN_STRINGS is the
+  // synchronous fallback baked into the bundle if neither resolves.
+  const candidates = [language];
+  const base = language.split("-")[0];
+  if (base && base !== language) candidates.push(base);
+
+  _translationsPromise = (async () => {
+    for (const lang of candidates) {
+      try {
+        const resp = await fetch(`/${ASSISTANT_ID}/locale/${lang}.json`);
+        if (!resp.ok) continue;
+        const data = (await resp.json()) as {
+          frontend?: Record<string, string>;
+        };
+        const table = data.frontend;
+        if (!table) continue;
+        const loaded: Partial<LocaleTable> = {};
+        for (const key of Object.keys(EN_STRINGS) as StringKey[]) {
+          const val = table[key];
+          if (typeof val === "string") loaded[key] = val;
         }
+        _loadedStrings = loaded;
+        break;
+      } catch (e) {
+        _debug("Failed to load locale '" + lang + "': " + _errorMessage(e));
       }
-    })
-    .catch((e: unknown) => {
-      _debug("Failed to load frontend translations: " + _errorMessage(e));
-    });
+    }
+    // Re-apply any build-time text now that runtime strings (or the fallback)
+    // are settled.
+    for (const fn of _retranslate) {
+      try {
+        fn();
+      } catch (e) {
+        _debug("retranslate callback failed: " + _errorMessage(e));
+      }
+    }
+  })();
   return _translationsPromise;
 }
 

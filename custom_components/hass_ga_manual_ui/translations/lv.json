@@ -29,22 +29,6 @@
       "Invalid JSON": "Teksts nav derīgs JSON",
       "Missing 'client_email'": "JSON trūkst lauka 'client_email'",
       "Missing 'private_key'": "JSON trūkst lauka 'private_key'"
-    },
-    "yaml_notice": "\n\nJūsu configuration.yaml failā ir sadaļa `google_assistant:`. Šī integrācija tagad pārvalda Google Assistant un to ignorē, tāpēc varat noņemt šo sadaļu.",
-    "install_notice": "Google Assistant (Manual) ir instalēts. Ja tā kartīte neparādās sadaļā Iestatījumi → Balss asistenti, veiciet vienreizēju pārlūka piespiedu atsvaidzināšanu (Ctrl+Shift+R vai Cmd+Shift+R Mac datorā). Tas nepieciešams tikai vienreiz, pēc instalēšanas vai atjaunināšanas."
-  },
-  "frontend": {
-    "yaml_detected": "Sadaļa <code>google_assistant:</code> tika atrasta jūsu <code>configuration.yaml</code> failā un ir atspējota. Šī integrācija tagad pārvalda jūsu Google Assistant konfigurāciju. Varat droši noņemt sadaļu <code>google_assistant:</code> no YAML konfigurācijas.",
-    "enable_success": "Google Assistant veiksmīgi iespējots",
-    "enable_failed": "Neizdevās iespējot Google Assistant.",
-    "enable_fail_hint": "Mēģiniet atkārtoti ielādēt integrāciju sadaļā Iestatījumi → Ierīces un pakalpojumi.",
-    "disable_success": "Google Assistant veiksmīgi atspējots",
-    "disable_failed": "Neizdevās atspējot Google Assistant.",
-    "disable_fail_hint": "Mēģiniet noņemt integrāciju sadaļā Iestatījumi → Ierīces un pakalpojumi.",
-    "check_logs": "Papildinformācijai skatiet Home Assistant žurnālus.",
-    "report_state_enable_failed": "Neizdevās iespējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
-    "report_state_disable_failed": "Neizdevās atspējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
-    "ready_banner": "{name} ir gatavs — pārvaldiet to sadaļā Iestatījumi → Balss asistenti.",
-    "update_available": "Ir pieejama jauna Google Assistant (Manual) versija. Atsvaidziniet pārlūku (Ctrl+Shift+R vai Cmd+Shift+R Mac datorā), lai to ielādētu."
+    }
   }
 }

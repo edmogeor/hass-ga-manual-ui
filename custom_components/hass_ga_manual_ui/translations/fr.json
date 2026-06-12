@@ -29,22 +29,6 @@
       "Invalid JSON": "Le texte n'est pas un JSON valide",
       "Missing 'client_email'": "Le JSON ne contient pas le champ 'client_email'",
       "Missing 'private_key'": "Le JSON ne contient pas le champ 'private_key'"
-    },
-    "yaml_notice": "\n\nVous avez une section `google_assistant:` dans votre configuration.yaml. Cette intégration gère maintenant Google Assistant et la remplace, vous pouvez donc supprimer cette section.",
-    "install_notice": "Google Assistant (Manuel) est installé. Si sa carte n'apparaît pas dans Paramètres → Assistants vocaux, effectuez un rafraîchissement forcé unique de votre navigateur (Ctrl+Maj+R, ou Cmd+Maj+R sur Mac). Cela n'est nécessaire qu'une fois, après l'installation ou la mise à jour."
-  },
-  "frontend": {
-    "yaml_detected": "La section <code>google_assistant:</code> a été détectée dans votre <code>configuration.yaml</code> et désactivée. Cette intégration gère maintenant votre configuration Google Assistant. Vous pouvez supprimer en toute sécurité la section <code>google_assistant:</code> de votre configuration YAML.",
-    "enable_success": "Google Assistant activé avec succès",
-    "enable_failed": "Impossible d'activer Google Assistant.",
-    "enable_fail_hint": "Essayez de recharger l'intégration depuis Paramètres → Appareils et services.",
-    "disable_success": "Google Assistant désactivé avec succès",
-    "disable_failed": "Impossible de désactiver Google Assistant.",
-    "disable_fail_hint": "Essayez de supprimer l'intégration depuis Paramètres → Appareils et services.",
-    "check_logs": "Consultez les journaux de Home Assistant pour plus de détails.",
-    "report_state_enable_failed": "Impossible d'activer les rapports d'état. Essayez de désactiver puis réactiver l'intégration, ou consultez les journaux de Home Assistant.",
-    "report_state_disable_failed": "Impossible de désactiver les rapports d'état. Essayez de désactiver puis réactiver l'intégration, ou consultez les journaux de Home Assistant.",
-    "ready_banner": "{name} est prêt – gérez-le dans Paramètres → Assistants vocaux.",
-    "update_available": "Une nouvelle version de Google Assistant (Manuel) est disponible. Rafraîchissez votre navigateur (Ctrl+Maj+R, ou Cmd+Maj+R sur Mac) pour la charger."
+    }
   }
 }

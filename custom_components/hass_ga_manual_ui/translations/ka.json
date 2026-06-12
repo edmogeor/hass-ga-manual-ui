@@ -29,22 +29,6 @@
       "Invalid JSON": "ტექსტი არ არის სწორი JSON",
       "Missing 'client_email'": "JSON-ში არ არის 'client_email' ველი",
       "Missing 'private_key'": "JSON-ში არ არის 'private_key' ველი"
-    },
-    "yaml_notice": "\n\nთქვენს configuration.yaml-ში გვაქვს `google_assistant:` სექცია. ეს ინტეგრაცია ახლა მართავს Google Assistant-ს და ანაცვლებს მას, ამიტომ შეგიძლიათ წაშალოთ ეს სექცია.",
-    "install_notice": "Google Assistant (ხელით) დაინსტალირებულია. თუ მისი ბარათი არ ჩანს პარამეტრები → ხმოვანი ასისტენტები განყოფილებაში, გააკეთეთ ბრაუზერის ერთჯერადი მძიმე განახლება (Ctrl+Shift+R, ან Mac-ზე Cmd+Shift+R). ეს საჭიროა მხოლოდ ერთხელ, ინსტალაციის ან განახლების შემდეგ."
-  },
-  "frontend": {
-    "yaml_detected": "<code>google_assistant:</code> სექცია აღმოჩენილ იქნა თქვენს <code>configuration.yaml</code>-ში და გათიშულია. ეს ინტეგრაცია ახლა მართავს თქვენი Google Assistant-ის კონფიგურაციას. შეგიძლიათ უსაფრთხოდ წაშალოთ <code>google_assistant:</code> სექცია YAML კონფიგურაციიდან.",
-    "enable_success": "Google Assistant წარმატებით გააქტიურდა",
-    "enable_failed": "Google Assistant-ის გააქტიურება ვერ მოხერხდა.",
-    "enable_fail_hint": "სცადეთ ინტეგრაციის ხელახლა ჩატვირთვა პარამეტრები → მოწყობილობები & სერვისები-დან.",
-    "disable_success": "Google Assistant წარმატებით გათიშულია",
-    "disable_failed": "Google Assistant-ის გათიშვა ვერ მოხერხდა.",
-    "disable_fail_hint": "სცადეთ ინტეგრაციის წაშლა პარამეტრები → მოწყობილობები & სერვისები-დან.",
-    "check_logs": "დეტალებისთვის შეამოწმეთ Home Assistant-ის ჟურნალები.",
-    "report_state_enable_failed": "სტატუსის მოხსენების გააქტიურება ვერ მოხერხდა. სცადეთ ინტეგრაციის გამორთვა და ხელახლა ჩართვა, ან შეამოწმეთ Home Assistant-ის ჟურნალები.",
-    "report_state_disable_failed": "სტატუსის მოხსენების გათიშვა ვერ მოხერხდა. სცადეთ ინტეგრაციის გამორთვა და ხელახლა ჩართვა, ან შეამოწმეთ Home Assistant-ის ჟურნალები.",
-    "ready_banner": "{name} მზადაა — მართეთ იგი პარამეტრები → ხმოვანი ასისტენტები-ში.",
-    "update_available": "Google Assistant (ხელით)-ის ახალი ვერსია ხელმისაწვდომია. განაახლეთ თქვენი ბრაუზერი (Ctrl+Shift+R, ან Mac-ზე Cmd+Shift+R) მის ჩასატვირთად."
+    }
   }
 }

@@ -29,22 +29,6 @@
       "Invalid JSON": "Текст не является допустимым JSON",
       "Missing 'client_email'": "В JSON отсутствует поле 'client_email'",
       "Missing 'private_key'": "В JSON отсутствует поле 'private_key'"
-    },
-    "yaml_notice": "\n\nВ вашем файле configuration.yaml есть раздел `google_assistant:`. Эта интеграция теперь управляет Google Assistant и переопределяет его, поэтому вы можете удалить этот раздел.",
-    "install_notice": "Google Assistant (Вручную) установлен. Если его карточка не отображается в Настройки → Голосовые помощники, выполните однократную жесткую перезагрузку браузера (Ctrl+Shift+R или Cmd+Shift+R на Mac). Это нужно сделать только один раз, после установки или обновления."
-  },
-  "frontend": {
-    "yaml_detected": "Раздел <code>google_assistant:</code> обнаружен в вашем файле <code>configuration.yaml</code> и был отключён. Эта интеграция теперь управляет конфигурацией Google Assistant. Вы можете безопасно удалить раздел <code>google_assistant:</code> из конфигурации YAML.",
-    "enable_success": "Google Assistant успешно включён",
-    "enable_failed": "Не удалось включить Google Assistant.",
-    "enable_fail_hint": "Попробуйте перезагрузить интеграцию в Настройки → Устройства и службы.",
-    "disable_success": "Google Assistant успешно отключён",
-    "disable_failed": "Не удалось отключить Google Assistant.",
-    "disable_fail_hint": "Попробуйте удалить интеграцию в Настройки → Устройства и службы.",
-    "check_logs": "Проверьте журналы Home Assistant для получения подробной информации.",
-    "report_state_enable_failed": "Не удалось включить отчёты о состоянии. Попробуйте выключить и снова включить интеграцию или проверьте журналы Home Assistant.",
-    "report_state_disable_failed": "Не удалось отключить отчёты о состоянии. Попробуйте выключить и снова включить интеграцию или проверьте журналы Home Assistant.",
-    "ready_banner": "{name} готов — управляйте им в Настройки → Голосовые помощники.",
-    "update_available": "Доступна новая версия Google Assistant (Вручную). Обновите браузер (Ctrl+Shift+R или Cmd+Shift+R на Mac), чтобы загрузить её."
+    }
   }
 }

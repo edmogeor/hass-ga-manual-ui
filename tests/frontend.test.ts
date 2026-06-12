@@ -104,10 +104,19 @@ async function flushMicrotasks(): Promise<void> {
 describe("Google Assistant Manual frontend", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
+    // Card strings are fetched from the static locale endpoint; default to a
+    // miss so tests fall back to the bundled EN_STRINGS unless they opt in.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve({ ok: false, json: () => Promise.resolve({}) }),
+      ),
+    );
   });
 
   afterEach(() => {
     document.body.innerHTML = "";
+    vi.unstubAllGlobals();
   });
 
   describe("card injection", () => {
@@ -309,18 +318,11 @@ describe("Google Assistant Manual frontend", () => {
   });
 
   describe("localization", () => {
-    it("fetches frontend translations and applies them to the YAML alert", async () => {
+    it("fetches the locale file and applies it to the YAML alert", async () => {
       const hass = createMockHass();
       const TRANSLATED =
         "Custom translated YAML notice <code>google_assistant:</code>";
       hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "frontend/get_translations") {
-          return Promise.resolve({
-            resources: {
-              "component.hass_ga_manual_ui.frontend.yaml_detected": TRANSLATED,
-            },
-          });
-        }
         if (msg.type === "hass_ga_manual_ui/get_entry_id") {
           return Promise.resolve({ entry_id: "mock-entry" });
         }
@@ -335,19 +337,24 @@ describe("Google Assistant Manual frontend", () => {
         return Promise.resolve({});
       });
 
+      const fetchMock = vi.fn(() =>
+        Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({ frontend: { yaml_detected: TRANSLATED } }),
+        }),
+      );
+      vi.stubGlobal("fetch", fetchMock);
+
       setupDom(hass);
       evalFrontend();
       await flushMicrotasks();
       await flushMicrotasks();
       await flushMicrotasks();
 
-      // The "frontend" category was requested for our integration.
-      expect(hass.callWS).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "frontend/get_translations",
-          category: "frontend",
-          integration: "hass_ga_manual_ui",
-        }),
+      // The locale file for the active language was requested over HTTP.
+      expect(fetchMock).toHaveBeenCalledWith(
+        "/hass_ga_manual_ui/locale/en.json",
       );
 
       // The build-time YAML alert text was re-applied from the fetched strings.

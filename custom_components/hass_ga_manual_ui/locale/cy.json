@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nMae gennych adran `google_assistant:` yn eich configuration.yaml. Mae'r integreiddiad hwn bellach yn rheoli Google Assistant ac yn ei ddiystyru, felly gallwch dynnu'r adran honno.",
+  "install_notice": "Mae Google Assistant (Manual) wedi'i osod. Os nad yw ei gerdyn yn ymddangos o dan Gosodiadau → Cynorthwywyr Llais, gwnewch adnewyddiad caled unwaith yn unig i'ch porwr (Ctrl+Shift+R, neu Cmd+Shift+R ar Mac). Dim ond unwaith y mae angen hyn, ar ôl gosod neu ddiweddaru.",
+  "frontend": {
+    "yaml_detected": "Canfuwyd yr adran <code>google_assistant:</code> yn eich <code>configuration.yaml</code> ac mae wedi'i analluogi. Mae'r integreiddiad hwn bellach yn rheoli eich ffurfweddiad Google Assistant. Gallwch dynnu'r adran <code>google_assistant:</code> yn ddiogel o'ch ffurfweddiad YAML.",
+    "enable_success": "Google Assistant wedi'i alluogi'n llwyddiannus",
+    "enable_failed": "Methodd alluogi Google Assistant.",
+    "enable_fail_hint": "Ceisiwch ail-lwytho'r integreiddiad o Gosodiadau → Dyfeisiau a Gwasanaethau.",
+    "disable_success": "Google Assistant wedi'i analluogi'n llwyddiannus",
+    "disable_failed": "Methodd analluogi Google Assistant.",
+    "disable_fail_hint": "Ceisiwch dynnu'r integreiddiad o Gosodiadau → Dyfeisiau a Gwasanaethau.",
+    "check_logs": "Gwiriwch logiau Home Assistant am fanylion.",
+    "report_state_enable_failed": "Methodd alluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
+    "report_state_disable_failed": "Methodd analluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
+    "ready_banner": "Mae {name} yn barod — rheolwch ef o dan Gosodiadau → Cynorthwywyr Llais.",
+    "update_available": "Mae fersiwn newydd o Google Assistant (Manual) ar gael. Adnewyddwch eich porwr (Ctrl+Shift+R, neu Cmd+Shift+R ar Mac) i'w lwytho."
+  }
+}

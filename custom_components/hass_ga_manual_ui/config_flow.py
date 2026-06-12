@@ -20,6 +20,7 @@ from .const import (
     CORE_GA_DOMAIN,
     DOMAIN,
 )
+from .locale import async_load_locale
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -130,10 +131,8 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         if not present:
             return ""
 
-        translations = await async_get_translations(
-            self.hass, self.hass.config.language, "config", {DOMAIN}
-        )
-        return translations.get(f"component.{DOMAIN}.config.yaml_notice", "")
+        strings = await async_load_locale(self.hass, self.hass.config.language)
+        return strings.get("yaml_notice", "")
 
     async def _notify_installed(self) -> None:
         """Post a one-time 'refresh your browser' notification on install.
@@ -146,21 +145,26 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         if hass is None:
             return
 
-        translations: dict[str, str]
+        strings: dict[str, Any]
+        try:
+            strings = await async_load_locale(hass, hass.config.language)
+        except Exception as exc:
+            _LOGGER.debug("Could not load install-notice locale: %s", exc)
+            strings = {}
+        message = strings.get("install_notice", _INSTALL_NOTICE_FALLBACK)
+
+        # Title stays in the standard config translations (a valid hassfest key).
         try:
             translations = await async_get_translations(
                 hass, hass.config.language, "config", {DOMAIN}
             )
+            title = translations.get(
+                f"component.{DOMAIN}.config.step.user.title",
+                "Google Assistant (Manual)",
+            )
         except Exception as exc:
-            _LOGGER.debug("Could not load install-notice translations: %s", exc)
-            translations = {}
-
-        message = translations.get(
-            f"component.{DOMAIN}.config.install_notice", _INSTALL_NOTICE_FALLBACK
-        )
-        title = translations.get(
-            f"component.{DOMAIN}.config.step.user.title", "Google Assistant (Manual)"
-        )
+            _LOGGER.debug("Could not load install-notice title: %s", exc)
+            title = "Google Assistant (Manual)"
 
         try:
             from homeassistant.components import persistent_notification

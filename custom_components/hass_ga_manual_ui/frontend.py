@@ -12,6 +12,7 @@ from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .locale import LOCALE_DIR, LOCALE_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,9 +57,13 @@ async def async_setup_frontend(hass: HomeAssistant) -> None:
                     str(FRONTEND_JS_PATH),
                     cache_headers=digest is not None,
                 ),
+                # Serve the custom localized strings (config notices + card
+                # text). Uncached so updated translations take effect on the
+                # next page load without a hashed URL.
+                StaticPathConfig(LOCALE_URL, str(LOCALE_DIR), cache_headers=False),
             ]
         )
-        _LOGGER.debug("Registered static path: %s", FRONTEND_URL)
+        _LOGGER.debug("Registered static paths: %s, %s", FRONTEND_URL, LOCALE_URL)
     except Exception as exc:
         _LOGGER.exception(
             "Failed to register static paths. "

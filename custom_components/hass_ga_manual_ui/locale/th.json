@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nคุณมีส่วน `google_assistant:` ใน configuration.yaml การรวมระบบนี้จัดการ Google Assistant แล้วและแทนที่มัน คุณสามารถลบส่วนนั้นได้",
+  "install_notice": "ติดตั้ง Google Assistant (กำหนดเอง) แล้ว หากการ์ดไม่ปรากฏใน การตั้งค่า → ผู้ช่วยเสียง ให้รีเฟรชเบราว์เซอร์แบบฮาร์ดหนึ่งครั้ง (Ctrl+Shift+R หรือ Cmd+Shift+R บน Mac) ซึ่งจำเป็นเพียงครั้งเดียว หลังติดตั้งหรืออัปเดต",
+  "frontend": {
+    "yaml_detected": "ตรวจพบส่วน <code>google_assistant:</code> ใน <code>configuration.yaml</code> ของคุณและถูกปิดใช้งานแล้ว การรวมระบบนี้จัดการการกำหนดค่า Google Assistant ของคุณแล้ว คุณสามารถลบส่วน <code>google_assistant:</code> ออกจากการกำหนดค่า YAML ได้อย่างปลอดภัย",
+    "enable_success": "เปิดใช้งาน Google Assistant สำเร็จ",
+    "enable_failed": "ไม่สามารถเปิดใช้งาน Google Assistant",
+    "enable_fail_hint": "ลองโหลดการรวมระบบใหม่จาก การตั้งค่า → อุปกรณ์และบริการ",
+    "disable_success": "ปิดใช้งาน Google Assistant สำเร็จ",
+    "disable_failed": "ไม่สามารถปิดใช้งาน Google Assistant",
+    "disable_fail_hint": "ลองลบการรวมระบบจาก การตั้งค่า → อุปกรณ์และบริการ",
+    "check_logs": "ตรวจสอบบันทึก Home Assistant สำหรับรายละเอียด",
+    "report_state_enable_failed": "ไม่สามารถเปิดใช้งานการรายงานสถานะ ลองปิดและเปิดการรวมระบบใหม่ หรือตรวจสอบบันทึก Home Assistant",
+    "report_state_disable_failed": "ไม่สามารถปิดใช้งานการรายงานสถานะ ลองปิดและเปิดการรวมระบบใหม่ หรือตรวจสอบบันทึก Home Assistant",
+    "ready_banner": "{name} พร้อมแล้ว — จัดการได้ที่ การตั้งค่า → ผู้ช่วยเสียง",
+    "update_available": "มี Google Assistant (กำหนดเอง) เวอร์ชันใหม่พร้อมใช้งาน รีเฟรชเบราว์เซอร์ของคุณ (Ctrl+Shift+R หรือ Cmd+Shift+R บน Mac) เพื่อโหลด"
+  }
+}

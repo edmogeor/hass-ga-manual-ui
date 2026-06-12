@@ -182,7 +182,7 @@ All settings rows hidden by default. State fetched via `get_config` WS on mount.
 
 `frontend.py` serves `frontend.js` at a content-hashed URL (`?v=<sha256[:12]>`), so the file itself is cache-busted. But the `<script>` tag is injected into HA's app document, and HA's frontend service worker can keep serving a previously-cached app shell — so a **brand-new install or an update needs a one-time hard browser refresh** before the new/updated module loads. Two mechanisms surface this to the user (a scripted `location.reload()` can't help: it's a soft reload that won't bypass the service worker, and would risk a reload loop):
 
-- **First install** — `config_flow._notify_installed()` posts a one-time `persistent_notification` (`notification_id="hass_ga_manual_ui_install"`) telling the user to hard-refresh. Server-side, so it reaches the user even though our JS hasn't loaded yet. Localized via `config.install_notice` with an English fallback.
+- **First install** — `config_flow._notify_installed()` posts a one-time `persistent_notification` (`notification_id="hass_ga_manual_ui_install"`) telling the user to hard-refresh. Server-side, so it reaches the user even though our JS hasn't loaded yet. Localized via `install_notice` in `locale/<lang>.json` with an English fallback.
 - **Update** — the bundle bakes in its version at build time (esbuild `--define:__BUILD_VERSION__` from `manifest.json`, exposed as `BUILD_VERSION`). `ws_get_config` returns the installed `version`; `_maybePromptReload()` compares them and, on a mismatch (stale cached bundle), fires HA's sticky `hass-notification` toast with a one-click Reload action, once per session. Localized via `frontend.update_available`. `_VERSION` is read at Python import time, so the server only reports the new version after the HACS-prompted HA restart — the prompt can't fire prematurely.
 
 ## Relationships
@@ -346,29 +346,39 @@ Integration files live in `custom_components/hass_ga_manual_ui/` (standard HACS 
 
 ### Frontend localization
 
-UI strings come from three places, all backed by the translation JSON:
+UI strings come from three places:
 
-1. **Config flow (Python)** — keys in `strings.json` / `translations/en.json`,
-   rendered by HA's backend. Conditional text (e.g. the YAML notice) is injected
-   via `description_placeholders`, with the text itself kept in the JSON.
+1. **Config flow (Python)** — HA's translation keys in `strings.json` /
+   `translations/en.json`, rendered by HA's backend. Standard form fields,
+   errors, titles, etc.
 2. **Frontend strings that exist in HA core** — localized at the call site with
    `hass.localize("ui.panel...")` and an English fallback. Free translations in
    70+ languages; reuse a core key wherever one fits.
-3. **Frontend strings unique to this integration** — under the top-level
-   `frontend` key in `translations/<lang>.json`, fetched at runtime.
+3. **Strings unique to this integration** — the YAML/install notices and the
+   card text. These live in `locale/<lang>.json` (NOT the HA translation files,
+   which only accept HA's fixed schema — hassfest rejects custom keys). Shape:
+   `{ "yaml_notice": "...", "install_notice": "...", "frontend": { …card… } }`.
 
-For (3): `ensureTranslationsLoaded()` calls the `frontend/get_translations` WS
-command (`category: "frontend"`, our domain) once and maps
-`component.<domain>.frontend.<key>` into `_loadedStrings`. `t("key", { … })`
-returns the loaded string, falling back to `EN_STRINGS`, with `{placeholders}`
-substituted. `EN_STRINGS` (typed by `LocaleTable`) is the synchronous fallback
-and the canonical key list — keep it in sync with the `frontend` JSON block.
-Because the fetch is async, text rendered at card-build time registers a
-`_retranslate` callback so it refreshes once strings arrive.
+For (3), the same `locale/<lang>.json` files are read two ways:
 
-To add a language, add `config`/`options`/`frontend` blocks to
-`translations/<lang>.json` — no code changes. Keep `strings.json` and
-`translations/en.json` identical for English.
+- **Python** (`locale.async_load_locale`) reads `yaml_notice` (injected into the
+  config-flow step via `description_placeholders`) and `install_notice` (the
+  post-install notification), with English fallback. The notification *title*
+  still comes from the standard `config.step.user.title` key.
+- **Frontend** — `frontend.py` serves `locale/` at `/<domain>/locale/`;
+  `ensureTranslationsLoaded()` `fetch()`es `/<domain>/locale/<lang>.json` once
+  (exact tag, then base language) and maps its `frontend` block into
+  `_loadedStrings`. `t("key", { … })` returns the loaded string, falling back to
+  `EN_STRINGS`, with `{placeholders}` substituted. `EN_STRINGS` (typed by
+  `LocaleTable`) is the synchronous fallback and canonical key list — keep it in
+  sync with the `frontend` block. Because the fetch is async, text rendered at
+  card-build time registers a `_retranslate` callback so it refreshes once
+  strings arrive.
+
+To add a language: add `config`/`options` blocks to `translations/<lang>.json`
+(HA schema) **and** a `locale/<lang>.json` for the custom strings — no code
+changes. Keep `strings.json` and `translations/en.json` identical for English.
+`scripts/extract_locale.py` documents how the `locale/` files were split out.
 
 ## Development Setup
 

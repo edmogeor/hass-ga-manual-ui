@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nיש לך קטע `google_assistant:` בקובץ configuration.yaml שלך. האינטגרציה הזו מנהלת כעת את Google Assistant ומחליפה אותו, כך שתוכל להסיר את אותו קטע.",
+  "install_notice": "Google Assistant (ידני) מותקן. אם הכרטיס שלו לא מופיע תחת הגדרות ← עוזרים קוליים, בצע רענון קשיח חד-פעמי של הדפדפן (Ctrl+Shift+R, או Cmd+Shift+R ב-Mac). זה נדרש פעם אחת בלבד, לאחר התקנה או עדכון.",
+  "frontend": {
+    "yaml_detected": "הקטע <code>google_assistant:</code> זוהה בקובץ <code>configuration.yaml</code> שלך והושבת. האינטגרציה הזו מנהלת כעת את תצורת Google Assistant שלך. ניתן להסיר בבטחה את הקטע <code>google_assistant:</code> מתצורת ה-YAML שלך.",
+    "enable_success": "Google Assistant הופעל בהצלחה",
+    "enable_failed": "הפעלת Google Assistant נכשלה.",
+    "enable_fail_hint": "נסה לטעון מחדש את האינטגרציה מהגדרות ← מכשירים ושירותים.",
+    "disable_success": "Google Assistant הושבת בהצלחה",
+    "disable_failed": "השבתת Google Assistant נכשלה.",
+    "disable_fail_hint": "נסה להסיר את האינטגרציה מהגדרות ← מכשירים ושירותים.",
+    "check_logs": "בדוק את יומני Home Assistant לפרטים.",
+    "report_state_enable_failed": "הפעלת דיווח הסטטוס נכשלה. נסה לכבות ולהפעיל מחדש את האינטגרציה, או בדוק את יומני Home Assistant.",
+    "report_state_disable_failed": "השבתת דיווח הסטטוס נכשלה. נסה לכבות ולהפעיל מחדש את האינטגרציה, או בדוק את יומני Home Assistant.",
+    "ready_banner": "{name} מוכן — נהל אותו בהגדרות ← עוזרים קוליים.",
+    "update_available": "גרסה חדשה של Google Assistant (ידני) זמינה. רענן את הדפדפן (Ctrl+Shift+R, או Cmd+Shift+R ב-Mac) כדי לטעון אותה."
+  }
+}

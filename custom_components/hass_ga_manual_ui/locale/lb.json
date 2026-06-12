@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nDu hues eng `google_assistant:`-Sektioun an dengem configuration.yaml. Dës Integratioun verwaltet elo Google Assistant an iwwerschreift en, sou datt du déi Sektioun ewechhuele kanns.",
+  "install_notice": "Google Assistant (Manual) ass installéiert. Wann seng Kaart net ënner Astellungen → Sproochassisteenten erschéngt, maacht en eemolegen haarden Reload vun Ärem Browser (Ctrl+Shift+R, oder Cmd+Shift+R um Mac). Dëst ass nëmmen eemol néideg, no der Installatioun oder dem Update.",
+  "frontend": {
+    "yaml_detected": "D'Sektioun <code>google_assistant:</code> gouf a mengem <code>configuration.yaml</code> fonnt a gouf deaktivéiert. Dës Integratioun verwaltet elo deng Google Assistant-Konfiguratioun. Du kanns d'Sektioun <code>google_assistant:</code> sécher aus denger YAML-Konfiguratioun ewechhuelen.",
+    "enable_success": "Google Assistant erfollegräich aktivéiert",
+    "enable_failed": "Google Assistant aktivéieren ass gescheitert.",
+    "enable_fail_hint": "Probéier d'Integratioun vun Astellungen → Geräter & Servicer nei ze lueden.",
+    "disable_success": "Google Assistant erfollegräich deaktivéiert",
+    "disable_failed": "Google Assistant deaktivéieren ass gescheitert.",
+    "disable_fail_hint": "Probéier d'Integratioun vun Astellungen → Geräter & Servicer ze läschen.",
+    "check_logs": "Kontrolléier d'Home Assistant-Logbicher fir Details.",
+    "report_state_enable_failed": "Statusberichterstattung aktivéieren ass gescheitert. Probéier d'Integratioun aus- an erëm anzeschalten, oder kontrolléier d'Home Assistant-Logbicher.",
+    "report_state_disable_failed": "Statusberichterstattung deaktivéieren ass gescheitert. Probéier d'Integratioun aus- an erëm anzeschalten, oder kontrolléier d'Home Assistant-Logbicher.",
+    "ready_banner": "{name} ass prett — verwalte et ënner Astellungen → Sproochassisteenten.",
+    "update_available": "Eng nei Versioun vu Google Assistant (Manual) ass verfügbar. Luet Äre Browser nei (Ctrl+Shift+R, oder Cmd+Shift+R um Mac) fir se ze lueden."
+  }
+}

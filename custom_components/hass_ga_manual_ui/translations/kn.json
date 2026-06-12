@@ -29,22 +29,6 @@
       "Invalid JSON": "ಪಠ್ಯವು ಮಾನ್ಯ JSON ಅಲ್ಲ",
       "Missing 'client_email'": "JSON ನಲ್ಲಿ 'client_email' ಕ್ಷೇತ್ರ ಇಲ್ಲ",
       "Missing 'private_key'": "JSON ನಲ್ಲಿ 'private_key' ಕ್ಷೇತ್ರ ಇಲ್ಲ"
-    },
-    "yaml_notice": "\n\nನಿಮ್ಮ configuration.yaml ನಲ್ಲಿ `google_assistant:` ವಿಭಾಗ ಇದೆ. ಈ ಸಂಯೋಜನೆ ಈಗ Google Assistant ಅನ್ನು ನಿರ್ವಹಿಸುತ್ತದೆ ಮತ್ತು ಅದನ್ನು ಅತಿಕ್ರಮಿಸುತ್ತದೆ, ಆದ್ದರಿಂದ ನೀವು ಆ ವಿಭಾಗವನ್ನು ತೆಗೆದುಹಾಕಬಹುದು.",
-    "install_notice": "Google Assistant (ಹಸ್ತಚಾಲಿತ) ಸ್ಥಾಪಿಸಲಾಗಿದೆ. ಅದರ ಕಾರ್ಡ್ ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಧ್ವನಿ ಸಹಾಯಕರು ಅಡಿಯಲ್ಲಿ ಕಾಣಿಸದಿದ್ದರೆ, ನಿಮ್ಮ ಬ್ರೌಸರ್‌ನ ಒಂದು-ಬಾರಿ ಹಾರ್ಡ್ ರಿಫ್ರೆಶ್ ಮಾಡಿ (Ctrl+Shift+R, ಅಥವಾ Mac ನಲ್ಲಿ Cmd+Shift+R). ಇದು ಸ್ಥಾಪನೆ ಅಥವಾ ನವೀಕರಣದ ನಂತರ ಕೇವಲ ಒಂದು ಬಾರಿ ಅಗತ್ಯವಿದೆ."
-  },
-  "frontend": {
-    "yaml_detected": "ನಿಮ್ಮ <code>configuration.yaml</code> ನಲ್ಲಿ <code>google_assistant:</code> ವಿಭಾಗ ಪತ್ತೆಯಾಗಿದೆ ಮತ್ತು ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ. ಈ ಸಂಯೋಜನೆ ಈಗ ನಿಮ್ಮ Google Assistant ಸಂರಚನೆಯನ್ನು ನಿರ್ವಹಿಸುತ್ತದೆ. ನಿಮ್ಮ YAML ಸಂರಚನೆಯಿಂದ <code>google_assistant:</code> ವಿಭಾಗವನ್ನು ಸುರಕ್ಷಿತವಾಗಿ ತೆಗೆದುಹಾಕಬಹುದು.",
-    "enable_success": "Google Assistant ಯಶಸ್ವಿಯಾಗಿ ಸಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ",
-    "enable_failed": "Google Assistant ಸಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
-    "enable_fail_hint": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಸಾಧನಗಳು & ಸೇವೆಗಳಿಂದ ಸಂಯೋಜನೆಯನ್ನು ಮರುಲೋಡ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ.",
-    "disable_success": "Google Assistant ಯಶಸ್ವಿಯಾಗಿ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲಾಗಿದೆ",
-    "disable_failed": "Google Assistant ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ.",
-    "disable_fail_hint": "ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಸಾಧನಗಳು & ಸೇವೆಗಳಿಂದ ಸಂಯೋಜನೆಯನ್ನು ತೆಗೆದುಹಾಕಲು ಪ್ರಯತ್ನಿಸಿ.",
-    "check_logs": "ವಿವರಗಳಿಗಾಗಿ Home Assistant ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
-    "report_state_enable_failed": "ಸ್ಥಿತಿ ವರದಿ ಸಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ. ಸಂಯೋಜನೆ ಆಫ್ ಮಾಡಿ ಮತ್ತೆ ಆನ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ Home Assistant ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
-    "report_state_disable_failed": "ಸ್ಥಿತಿ ವರದಿ ನಿಷ್ಕ್ರಿಯಗೊಳಿಸಲು ವಿಫಲವಾಗಿದೆ. ಸಂಯೋಜನೆ ಆಫ್ ಮಾಡಿ ಮತ್ತೆ ಆನ್ ಮಾಡಲು ಪ್ರಯತ್ನಿಸಿ, ಅಥವಾ Home Assistant ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ.",
-    "ready_banner": "{name} ಸಿದ್ಧವಾಗಿದೆ — ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಧ್ವನಿ ಸಹಾಯಕರಲ್ಲಿ ನಿರ್ವಹಿಸಿ.",
-    "update_available": "Google Assistant (ಹಸ್ತಚಾಲಿತ) ದ ಹೊಸ ಆವೃತ್ತಿ ಲಭ್ಯವಿದೆ. ಅದನ್ನು ಲೋಡ್ ಮಾಡಲು ನಿಮ್ಮ ಬ್ರೌಸರ್ ಅನ್ನು ರಿಫ್ರೆಶ್ ಮಾಡಿ (Ctrl+Shift+R, ಅಥವಾ Mac ನಲ್ಲಿ Cmd+Shift+R)."
+    }
   }
 }

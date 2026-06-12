@@ -29,22 +29,6 @@
       "Invalid JSON": "El texto no es un JSON válido",
       "Missing 'client_email'": "Al JSON le falta el campo 'client_email'",
       "Missing 'private_key'": "Al JSON le falta el campo 'private_key'"
-    },
-    "yaml_notice": "\n\nTiene una sección `google_assistant:` en su configuration.yaml. Esta integración ahora gestiona Google Assistant y la reemplaza, por lo que puede eliminar esa sección.",
-    "install_notice": "Google Assistant (Manual) está instalado. Si su tarjeta no aparece en Configuración → Asistentes de voz, realice un refresco forzado único del navegador (Ctrl+Mayús+R, o Cmd+Mayús+R en Mac). Esto solo es necesario una vez, tras instalar o actualizar."
-  },
-  "frontend": {
-    "yaml_detected": "Se detectó la sección <code>google_assistant:</code> en su <code>configuration.yaml</code> y se ha desactivado. Esta integración ahora gestiona su configuración de Google Assistant. Puede eliminar de forma segura la sección <code>google_assistant:</code> de su configuración YAML.",
-    "enable_success": "Google Assistant activado correctamente",
-    "enable_failed": "Error al activar Google Assistant.",
-    "enable_fail_hint": "Intente recargar la integración desde Configuración → Dispositivos y servicios.",
-    "disable_success": "Google Assistant desactivado correctamente",
-    "disable_failed": "Error al desactivar Google Assistant.",
-    "disable_fail_hint": "Intente eliminar la integración desde Configuración → Dispositivos y servicios.",
-    "check_logs": "Consulte los registros de Home Assistant para más detalles.",
-    "report_state_enable_failed": "Error al activar el reporte de estado. Intente desactivar y reactivar la integración, o consulte los registros de Home Assistant.",
-    "report_state_disable_failed": "Error al desactivar el reporte de estado. Intente desactivar y reactivar la integración, o consulte los registros de Home Assistant.",
-    "ready_banner": "{name} está listo — gestiónelo en Configuración → Asistentes de voz.",
-    "update_available": "Hay una nueva versión de Google Assistant (Manual) disponible. Actualice su navegador (Ctrl+Mayús+R, o Cmd+Mayús+R en Mac) para cargarla."
+    }
   }
 }

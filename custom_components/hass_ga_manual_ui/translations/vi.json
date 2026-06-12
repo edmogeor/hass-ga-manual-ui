@@ -29,22 +29,6 @@
       "Invalid JSON": "Văn bản không phải là JSON hợp lệ",
       "Missing 'client_email'": "JSON thiếu trường 'client_email'",
       "Missing 'private_key'": "JSON thiếu trường 'private_key'"
-    },
-    "yaml_notice": "\n\nBạn có mục `google_assistant:` trong configuration.yaml. Tích hợp này hiện quản lý Google Assistant và ghi đè nó, vì vậy bạn có thể xóa mục đó.",
-    "install_notice": "Google Assistant (Thủ công) đã được cài đặt. Nếu thẻ của nó không xuất hiện trong Cài đặt → Trợ lý giọng nói, hãy làm mới cứng trình duyệt một lần (Ctrl+Shift+R, hoặc Cmd+Shift+R trên Mac). Điều này chỉ cần một lần, sau khi cài đặt hoặc cập nhật."
-  },
-  "frontend": {
-    "yaml_detected": "Mục <code>google_assistant:</code> đã được phát hiện trong <code>configuration.yaml</code> của bạn và đã bị vô hiệu hóa. Tích hợp này hiện quản lý cấu hình Google Assistant của bạn. Bạn có thể xóa mục <code>google_assistant:</code> khỏi cấu hình YAML một cách an toàn.",
-    "enable_success": "Google Assistant đã được bật thành công",
-    "enable_failed": "Không thể bật Google Assistant.",
-    "enable_fail_hint": "Thử tải lại tích hợp từ Cài đặt → Thiết bị & Dịch vụ.",
-    "disable_success": "Google Assistant đã được tắt thành công",
-    "disable_failed": "Không thể tắt Google Assistant.",
-    "disable_fail_hint": "Thử xóa tích hợp từ Cài đặt → Thiết bị & Dịch vụ.",
-    "check_logs": "Kiểm tra nhật ký Home Assistant để biết chi tiết.",
-    "report_state_enable_failed": "Không thể bật báo cáo trạng thái. Thử tắt và bật lại tích hợp, hoặc kiểm tra nhật ký Home Assistant.",
-    "report_state_disable_failed": "Không thể tắt báo cáo trạng thái. Thử tắt và bật lại tích hợp, hoặc kiểm tra nhật ký Home Assistant.",
-    "ready_banner": "{name} đã sẵn sàng — quản lý trong Cài đặt → Trợ lý giọng nói.",
-    "update_available": "Đã có phiên bản mới của Google Assistant (Thủ công). Hãy làm mới trình duyệt của bạn (Ctrl+Shift+R, hoặc Cmd+Shift+R trên Mac) để tải phiên bản mới."
+    }
   }
 }

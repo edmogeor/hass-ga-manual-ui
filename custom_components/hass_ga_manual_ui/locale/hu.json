@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nA configuration.yaml fájlban szerepel egy `google_assistant:` szakasz. Ez az integráció mostantól kezeli a Google Assistantt és felülírja azt, így eltávolíthatja azt a szakaszt.",
+  "install_notice": "A Google Assistant (Manual) telepítve van. Ha a kártyája nem jelenik meg a Beállítások → Hangalapú asszisztensek alatt, végezzen egyszeri kemény frissítést a böngészőben (Ctrl+Shift+R, vagy Macen Cmd+Shift+R). Erre csak egyszer van szükség, a telepítés vagy frissítés után.",
+  "frontend": {
+    "yaml_detected": "A <code>google_assistant:</code> szakasz észlelve lett a <code>configuration.yaml</code> fájlban, és le lett tiltva. Ez az integráció mostantól kezeli a Google Assistant konfigurációját. Biztonságosan eltávolíthatja a <code>google_assistant:</code> szakaszt a YAML-konfigurációból.",
+    "enable_success": "A Google Assistant sikeresen engedélyezve",
+    "enable_failed": "A Google Assistant engedélyezése sikertelen.",
+    "enable_fail_hint": "Próbálja meg újratölteni az integrációt a Beállítások → Eszközök és szolgáltatások menüből.",
+    "disable_success": "A Google Assistant sikeresen letiltva",
+    "disable_failed": "A Google Assistant letiltása sikertelen.",
+    "disable_fail_hint": "Próbálja meg eltávolítani az integrációt a Beállítások → Eszközök és szolgáltatások menüből.",
+    "check_logs": "Részletekért tekintse meg a Home Assistant naplóit.",
+    "report_state_enable_failed": "Az állapotjelentés engedélyezése sikertelen. Próbálja ki- és bekapcsolni az integrációt, vagy tekintse meg a Home Assistant naplóit.",
+    "report_state_disable_failed": "Az állapotjelentés letiltása sikertelen. Próbálja ki- és bekapcsolni az integrációt, vagy tekintse meg a Home Assistant naplóit.",
+    "ready_banner": "{name} készen áll — kezelje a Beállítások → Hangalapú asszisztensek menüben.",
+    "update_available": "A Google Assistant (Manual) új verziója érhető el. Frissítse a böngészőjét (Ctrl+Shift+R, vagy Macen Cmd+Shift+R) a betöltéséhez."
+  }
+}

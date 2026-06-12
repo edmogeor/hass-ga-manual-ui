@@ -29,22 +29,6 @@
       "Invalid JSON": "Տեքստը վավեր JSON չէ",
       "Missing 'client_email'": "JSON-ում բացակայում է 'client_email' դաշտը",
       "Missing 'private_key'": "JSON-ում բացակայում է 'private_key' դաշտը"
-    },
-    "yaml_notice": "\n\nՁեր configuration.yaml-ում կա `google_assistant:` բաժին։ Այս ինտեգրումն այժm կառավարում է Google Assistant-ը և վերագրում է այն, ուստի կարող եք հեռացնել այդ բաժինը։",
-    "install_notice": "Google Assistant (Ձեռքով) տեղադրված է։ Եթե նրա քարտը չի երևում Կարգավորումներ → Ձայնային օգնականներ բաժնում, կատարեք դիտարկչի մեկանգամյա կոշտ թարմացում (Ctrl+Shift+R, կամ Mac-ում Cmd+Shift+R)։ Սա անհրաժեշտ է միայն մեկ անգամ՝ տեղադրումից կամ թարմացումից հետո։"
-  },
-  "frontend": {
-    "yaml_detected": "<code>google_assistant:</code> բաժինը հայտնաբերվեց ձեր <code>configuration.yaml</code>-ում և անջատված է։ Այս ինտեգրումն այժm կառավարում է ձեր Google Assistant կազմաձևումը։ Կարող եք ապահով կերպով հեռացնել <code>google_assistant:</code> բաժինը ձեր YAML կազմաձևումից։",
-    "enable_success": "Google Assistant-ը հաջողությամբ միացվեց",
-    "enable_failed": "Google Assistant-ի միացումը ձախողվեց։",
-    "enable_fail_hint": "Փորձեք վերբեռնել ինտեգրումը Կարգավորումներ → Սարքեր & ծառայություններ-ից։",
-    "disable_success": "Google Assistant-ը հաջողությամբ անջատվեց",
-    "disable_failed": "Google Assistant-ի անջատումը ձախողվեց։",
-    "disable_fail_hint": "Փորձեք հեռացնել ինտեգրումը Կարգավորումներ → Սարքեր & ծառայություններ-ից։",
-    "check_logs": "Մանրամասների համար ստուգեք Home Assistant-ի գրանցամատյանները։",
-    "report_state_enable_failed": "Կարգավիճակի հաղորդման միացումը ձախողվեց։ Փորձեք անջատել և վերամիացնել ինտեգրումը, կամ ստուգեք Home Assistant-ի գրանցամատյանները։",
-    "report_state_disable_failed": "Կարգավիճակի հաղորդման անջատումը ձախողվեց։ Փորձեք անջատել և վերամիացնել ինտեգրումը, կամ ստուգեք Home Assistant-ի գրանցամատյանները։",
-    "ready_banner": "{name}-ը պատրաստ է — կառավարեք այն Կարգավորումներ → Ձայնային օգնականներ-ի ներքո։",
-    "update_available": "Google Assistant (Ձեռքով)-ի նոր տարբերակը հասանելի է։ Թարմացրեք ձեր դիտարկիչը (Ctrl+Shift+R, կամ Mac-ում Cmd+Shift+R)՝ այն բեռնելու համար։"
+    }
   }
 }

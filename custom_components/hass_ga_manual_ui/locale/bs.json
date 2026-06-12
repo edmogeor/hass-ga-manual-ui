@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nImate odjeljak `google_assistant:` u configuration.yaml. Ova integracija sada upravlja Google Assistantom i nadjačava ga, pa možete ukloniti taj odjeljak.",
+  "install_notice": "Google Assistant (Manual) je instaliran. Ako se njegova kartica ne pojavi u Postavke → Glasovni asistenti, uradite jednokratno tvrdo osvježavanje preglednika (Ctrl+Shift+R, ili Cmd+Shift+R na Mac-u). Ovo je potrebno samo jednom, nakon instalacije ili ažuriranja.",
+  "frontend": {
+    "yaml_detected": "Odjeljak <code>google_assistant:</code> otkriven je u <code>configuration.yaml</code> i onemogućen je. Ova integracija sada upravlja konfiguracijom Google Assistanta. Možete sigurno ukloniti odjeljak <code>google_assistant:</code> iz YAML konfiguracije.",
+    "enable_success": "Google Assistant uspješno omogućen",
+    "enable_failed": "Omogućavanje Google Assistanta nije uspjelo.",
+    "enable_fail_hint": "Pokušajte ponovo učitati integraciju iz Postavke → Uređaji i servisi.",
+    "disable_success": "Google Assistant uspješno onemogućen",
+    "disable_failed": "Onemogućavanje Google Assistanta nije uspjelo.",
+    "disable_fail_hint": "Pokušajte ukloniti integraciju iz Postavke → Uređaji i servisi.",
+    "check_logs": "Za detalje provjerite dnevnike Home Assistanta.",
+    "report_state_enable_failed": "Omogućavanje izvještavanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
+    "report_state_disable_failed": "Onemogućavanje izvještavanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
+    "ready_banner": "{name} je spreman — upravljajte njime u Postavke → Glasovni asistenti.",
+    "update_available": "Dostupna je nova verzija Google Assistant (Manual). Osvježite preglednik (Ctrl+Shift+R, ili Cmd+Shift+R na Mac-u) da biste je učitali."
+  }
+}

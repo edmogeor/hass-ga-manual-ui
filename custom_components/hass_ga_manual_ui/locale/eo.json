@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nVi havas `google_assistant:`-sekcion en via configuration.yaml. Ĉi tiu integriĝo nun administras Google Assistant kaj anstataŭas ĝin, do vi povas forigi tiun sekcion.",
+  "install_notice": "Google Assistant (Manual) estas instalita. Se ĝia karto ne aperas sub Agordoj → Voĉasistantoj, faru unufojan devigan reŝargon de via retumilo (Ctrl+Shift+R, aŭ Cmd+Shift+R ĉe Mac). Tio necesas nur unufoje, post instalado aŭ ĝisdatigo.",
+  "frontend": {
+    "yaml_detected": "La sekcio <code>google_assistant:</code> estis trovita en via <code>configuration.yaml</code> kaj estis malaktivigita. Ĉi tiu integriĝo nun administras vian Google Assistant agordon. Vi povas sekure forigi la sekcion <code>google_assistant:</code> el via YAML-agordaro.",
+    "enable_success": "Google Assistant sukcese aktivigita",
+    "enable_failed": "Malsukcesis aktivigi Google Assistant.",
+    "enable_fail_hint": "Provu reŝargi la integriĝon de Agordoj → Aparatoj kaj servoj.",
+    "disable_success": "Google Assistant sukcese malaktivigita",
+    "disable_failed": "Malsukcesis malaktivigi Google Assistant.",
+    "disable_fail_hint": "Provu forigi la integriĝon de Agordoj → Aparatoj kaj servoj.",
+    "check_logs": "Kontrolu la protokolojn de Home Assistant por detaloj.",
+    "report_state_enable_failed": "Malsukcesis aktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
+    "report_state_disable_failed": "Malsukcesis malaktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
+    "ready_banner": "{name} estas preta — administru ĝin sub Agordoj → Voĉasistantoj.",
+    "update_available": "Nova versio de Google Assistant (Manual) disponeblas. Reŝargu vian retumilon (Ctrl+Shift+R, aŭ Cmd+Shift+R ĉe Mac) por ŝargi ĝin."
+  }
+}

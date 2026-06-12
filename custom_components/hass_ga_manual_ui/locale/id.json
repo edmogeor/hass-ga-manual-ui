@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nAnda memiliki bagian `google_assistant:` di configuration.yaml. Integrasi ini sekarang mengelola Google Assistant dan menggantikannya, sehingga Anda dapat menghapus bagian tersebut.",
+  "install_notice": "Google Assistant (Manual) telah terpasang. Jika kartunya tidak muncul di Pengaturan → Asisten suara, lakukan penyegaran paksa satu kali pada browser Anda (Ctrl+Shift+R, atau Cmd+Shift+R di Mac). Ini hanya diperlukan sekali, setelah pemasangan atau pembaruan.",
+  "frontend": {
+    "yaml_detected": "Bagian <code>google_assistant:</code> terdeteksi di <code>configuration.yaml</code> Anda dan telah dinonaktifkan. Integrasi ini sekarang mengelola konfigurasi Google Assistant Anda. Anda dapat menghapus bagian <code>google_assistant:</code> dari konfigurasi YAML dengan aman.",
+    "enable_success": "Google Assistant berhasil diaktifkan",
+    "enable_failed": "Gagal mengaktifkan Google Assistant.",
+    "enable_fail_hint": "Coba muat ulang integrasi dari Pengaturan → Perangkat & Layanan.",
+    "disable_success": "Google Assistant berhasil dinonaktifkan",
+    "disable_failed": "Gagal menonaktifkan Google Assistant.",
+    "disable_fail_hint": "Coba hapus integrasi dari Pengaturan → Perangkat & Layanan.",
+    "check_logs": "Periksa log Home Assistant untuk detail.",
+    "report_state_enable_failed": "Gagal mengaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
+    "report_state_disable_failed": "Gagal menonaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
+    "ready_banner": "{name} siap — kelola di Pengaturan → Asisten suara.",
+    "update_available": "Versi baru Google Assistant (Manual) tersedia. Segarkan browser Anda (Ctrl+Shift+R, atau Cmd+Shift+R di Mac) untuk memuatnya."
+  }
+}

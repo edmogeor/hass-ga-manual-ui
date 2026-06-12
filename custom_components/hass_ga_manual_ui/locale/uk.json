@@ -1,0 +1,18 @@
+{
+  "yaml_notice": "\n\nУ вашому файлі configuration.yaml є розділ `google_assistant:`. Ця інтеграція тепер керує Google Assistant і замінює його, тому ви можете видалити цей розділ.",
+  "install_notice": "Google Assistant (Вручну) встановлено. Якщо його картка не відображається в Налаштування → Голосові помічники, виконайте одноразове жорстке перезавантаження браузера (Ctrl+Shift+R або Cmd+Shift+R на Mac). Це потрібно лише один раз, після встановлення або оновлення.",
+  "frontend": {
+    "yaml_detected": "Розділ <code>google_assistant:</code> виявлено у вашому файлі <code>configuration.yaml</code> і було вимкнено. Ця інтеграція тепер керує конфігурацією Google Assistant. Ви можете безпечно видалити розділ <code>google_assistant:</code> із конфігурації YAML.",
+    "enable_success": "Google Assistant успішно ввімкнено",
+    "enable_failed": "Не вдалося ввімкнути Google Assistant.",
+    "enable_fail_hint": "Спробуйте перезавантажити інтеграцію в Налаштування → Пристрої та служби.",
+    "disable_success": "Google Assistant успішно вимкнено",
+    "disable_failed": "Не вдалося вимкнути Google Assistant.",
+    "disable_fail_hint": "Спробуйте видалити інтеграцію в Налаштування → Пристрої та служби.",
+    "check_logs": "Перевірте журнали Home Assistant для отримання деталей.",
+    "report_state_enable_failed": "Не вдалося ввімкнути звітування про стан. Спробуйте вимкнути та знову ввімкнути інтеграцію або перевірте журнали Home Assistant.",
+    "report_state_disable_failed": "Не вдалося вимкнути звітування про стан. Спробуйте вимкнути та знову ввімкнути інтеграцію або перевірте журнали Home Assistant.",
+    "ready_banner": "{name} готовий — керуйте ним у Налаштування → Голосові помічники.",
+    "update_available": "Доступна нова версія Google Assistant (Вручну). Оновіть браузер (Ctrl+Shift+R або Cmd+Shift+R на Mac), щоб завантажити її."
+  }
+}

@@ -29,22 +29,6 @@
       "Invalid JSON": "টেক্সটটি বৈধ JSON নয়",
       "Missing 'client_email'": "JSON-এ 'client_email' ফিল্ড অনুপস্থিত",
       "Missing 'private_key'": "JSON-এ 'private_key' ফিল্ড অনুপস্থিত"
-    },
-    "yaml_notice": "\n\nআপনার configuration.yaml-এ `google_assistant:` বিভাগ আছে। এই ইন্টিগ্রেশন এখন Google Assistant পরিচালনা করে এবং সেটি ওভাররাইড করে, তাই আপনি সেই বিভাগটি সরাতে পারেন।",
-    "install_notice": "Google Assistant (Manual) ইনস্টল করা হয়েছে। সেটিংস → ভয়েস অ্যাসিস্ট্যান্ট-এর অধীনে এর কার্ড না দেখা গেলে, ব্রাউজারের এককালীন হার্ড রিফ্রেশ করুন (Ctrl+Shift+R, অথবা Mac-এ Cmd+Shift+R)। এটি ইনস্টল বা আপডেটের পরে শুধুমাত্র একবার প্রয়োজন।"
-  },
-  "frontend": {
-    "yaml_detected": "আপনার <code>configuration.yaml</code>-এ <code>google_assistant:</code> বিভাগ পাওয়া গেছে এবং নিষ্ক্রিয় করা হয়েছে। এই ইন্টিগ্রেশন এখন আপনার Google Assistant কনফিগারেশন পরিচালনা করে। আপনি নিরাপদে আপনার YAML কনফিগারেশন থেকে <code>google_assistant:</code> বিভাগটি সরাতে পারেন।",
-    "enable_success": "Google Assistant সফলভাবে সক্রিয় করা হয়েছে",
-    "enable_failed": "Google Assistant সক্রিয় করতে ব্যর্থ হয়েছে।",
-    "enable_fail_hint": "সেটিংস → ডিভাইস ও পরিষেবা থেকে ইন্টিগ্রেশন পুনরায় লোড করার চেষ্টা করুন।",
-    "disable_success": "Google Assistant সফলভাবে নিষ্ক্রিয় করা হয়েছে",
-    "disable_failed": "Google Assistant নিষ্ক্রিয় করতে ব্যর্থ হয়েছে।",
-    "disable_fail_hint": "সেটিংস → ডিভাইস ও পরিষেবা থেকে ইন্টিগ্রেশন সরানোর চেষ্টা করুন।",
-    "check_logs": "বিস্তারিত জানতে Home Assistant লগ চেক করুন।",
-    "report_state_enable_failed": "স্টেটাস রিপোর্টিং সক্রিয় করতে ব্যর্থ হয়েছে। ইন্টিগ্রেশন বন্ধ করে আবার চালু করুন, বা Home Assistant লগ চেক করুন।",
-    "report_state_disable_failed": "স্টেটাস রিপোর্টিং নিষ্ক্রিয় করতে ব্যর্থ হয়েছে। ইন্টিগ্রেশন বন্ধ করে আবার চালু করুন, বা Home Assistant লগ চেক করুন।",
-    "ready_banner": "{name} প্রস্তুত — সেটিংস → ভয়েস অ্যাসিস্ট্যান্ট-এ পরিচালনা করুন।",
-    "update_available": "Google Assistant (Manual)-এর একটি নতুন সংস্করণ উপলব্ধ। এটি লোড করতে আপনার ব্রাউজার রিফ্রেশ করুন (Ctrl+Shift+R, অথবা Mac-এ Cmd+Shift+R)।"
+    }
   }
 }
