@@ -505,21 +505,24 @@
       proto.render = function() {
         if (this.voiceAssistantId === ASSISTANT_ID) return null;
         try {
-          return origRender.call(this);
+          const result = origRender.call(this);
+          this.__gaRenderFailed = false;
+          return result;
         } catch (e) {
-          _debug("brand-icon render fell back to empty: " + _errorMessage(e));
+          this.__gaRenderFailed = true;
+          _debug("brand-icon render fell back to local icon: " + _errorMessage(e));
           return null;
         }
       };
       proto.firstUpdated = function(changedProps) {
-        if (this.voiceAssistantId === ASSISTANT_ID) {
+        if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
           _renderManualBrandIcon.call(this);
         } else {
           origFirstUpdated.call(this, changedProps);
         }
       };
       proto.updated = function(changedProps) {
-        if (this.voiceAssistantId === ASSISTANT_ID) {
+        if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
           _renderManualBrandIcon.call(this);
         } else {
           origUpdated.call(this, changedProps);

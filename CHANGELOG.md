@@ -14,8 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   transient failures are now retried instead of being cached as "no checkbox".
 - A console error from Home Assistant's brand-icon element when our assistant
   was added to the order before its display-name map entry was ready. We now
-  wait for the map before advertising ourselves, and degrade gracefully if the
-  lookup is ever missing.
+  wait for the map before advertising ourselves, and fall back to our own icon
+  if the lookup is ever missing.
 
 ### Added
 

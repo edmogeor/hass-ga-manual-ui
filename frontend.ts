@@ -38,6 +38,9 @@ interface AssistantsPageElement extends HTMLElement, LitLifecycle {
 interface VoiceAssistantBrandIcon extends HTMLElement, LitLifecycle {
   voiceAssistantId: string;
   hass?: HomeAssistant;
+  // Set when HA's own render threw (id missing from the voiceAssistants map):
+  // updated() then paints our local icon as a fallback instead of empty.
+  __gaRenderFailed?: boolean;
 }
 
 interface ExposeAssistantIcon extends HTMLElement, LitLifecycle {
@@ -804,23 +807,26 @@ function _patchBrandIconProto(proto: VoiceAssistantBrandIcon): void {
     proto.render = function (this: VoiceAssistantBrandIcon) {
       if (this.voiceAssistantId === ASSISTANT_ID) return null;
       try {
-        return origRender!.call(this);
+        const result = origRender!.call(this);
+        this.__gaRenderFailed = false;
+        return result;
       } catch (e) {
-        // HA's render reads voiceAssistants[id].name unguarded; render nothing
-        // rather than let an uncaught error blank the component.
-        _debug("brand-icon render fell back to empty: " + _errorMessage(e));
+        // HA's render reads voiceAssistants[id].name unguarded. Fall back to our
+        // local icon (painted post-commit in updated) instead of empty.
+        this.__gaRenderFailed = true;
+        _debug("brand-icon render fell back to local icon: " + _errorMessage(e));
         return null;
       }
     };
     proto.firstUpdated = function (this: VoiceAssistantBrandIcon, changedProps: Map<string, unknown>) {
-      if (this.voiceAssistantId === ASSISTANT_ID) {
+      if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
         _renderManualBrandIcon.call(this);
       } else {
         origFirstUpdated!.call(this, changedProps);
       }
     };
     proto.updated = function (this: VoiceAssistantBrandIcon, changedProps: Map<string, unknown>) {
-      if (this.voiceAssistantId === ASSISTANT_ID) {
+      if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
         _renderManualBrandIcon.call(this);
       } else {
         origUpdated!.call(this, changedProps);
