@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON saknar fältet 'client_email'",
       "Missing 'private_key'": "JSON saknar fältet 'private_key'"
     },
-    "yaml_notice": "\n\nDu har ett `google_assistant:`-avsnitt i din configuration.yaml. Den här integrationen hanterar nu Google Assistant och åsidosätter det, så du kan ta bort det avsnittet."
+    "yaml_notice": "\n\nDu har ett `google_assistant:`-avsnitt i din configuration.yaml. Den här integrationen hanterar nu Google Assistant och åsidosätter det, så du kan ta bort det avsnittet.",
+    "install_notice": "Google Assistant (Manual) är installerat. Om dess kort inte visas under Inställningar → Röstassistenter, gör en engångs-hård-uppdatering av din webbläsare (Ctrl+Shift+R, eller Cmd+Shift+R på Mac). Detta behövs bara en gång, efter installation eller uppdatering."
   },
   "frontend": {
     "yaml_detected": "Avsnittet <code>google_assistant:</code> hittades i din <code>configuration.yaml</code> och har inaktiverats. Den här integrationen hanterar nu din Google Assistant-konfiguration. Du kan ta bort avsnittet <code>google_assistant:</code> från din YAML-konfiguration.",
@@ -43,6 +44,7 @@
     "check_logs": "Kontrollera Home Assistants loggar för mer information.",
     "report_state_enable_failed": "Det gick inte att aktivera statusrapportering. Försök att stänga av och slå på integrationen igen, eller kontrollera Home Assistants loggar.",
     "report_state_disable_failed": "Det gick inte att inaktivera statusrapportering. Försök att stänga av och slå på integrationen igen, eller kontrollera Home Assistants loggar.",
-    "ready_banner": "{name} är redo — hantera det under Inställningar → Röstassistenter."
+    "ready_banner": "{name} är redo — hantera det under Inställningar → Röstassistenter.",
+    "update_available": "En ny version av Google Assistant (Manual) är tillgänglig. Uppdatera din webbläsare (Ctrl+Shift+R, eller Cmd+Shift+R på Mac) för att ladda den."
   }
 }

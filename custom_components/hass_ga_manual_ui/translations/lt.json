@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON trūksta lauko 'client_email'",
       "Missing 'private_key'": "JSON trūksta lauko 'private_key'"
     },
-    "yaml_notice": "\n\nJūsų configuration.yaml faile yra `google_assistant:` skyrius. Ši integracija dabar valdo Google Assistant ir jį pakeičia, todėl galite pašalinti tą skyrių."
+    "yaml_notice": "\n\nJūsų configuration.yaml faile yra `google_assistant:` skyrius. Ši integracija dabar valdo Google Assistant ir jį pakeičia, todėl galite pašalinti tą skyrių.",
+    "install_notice": "Google Assistant (Manual) įdiegtas. Jei jo kortelė nerodoma skiltyje Nustatymai → Balso asistentai, atlikite vienkartinį griežtą naršyklės atnaujinimą (Ctrl+Shift+R, arba Cmd+Shift+R „Mac“). To reikia tik vieną kartą, po įdiegimo arba atnaujinimo."
   },
   "frontend": {
     "yaml_detected": "Skyrius <code>google_assistant:</code> buvo rastas jūsų <code>configuration.yaml</code> faile ir buvo išjungtas. Ši integracija dabar valdo jūsų Google Assistant konfigūraciją. Galite saugiai pašalinti skyrių <code>google_assistant:</code> iš YAML konfigūracijos.",
@@ -43,6 +44,7 @@
     "check_logs": "Norėdami gauti daugiau informacijos, peržiūrėkite Home Assistant žurnalus.",
     "report_state_enable_failed": "Nepavyko įjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
     "report_state_disable_failed": "Nepavyko išjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
-    "ready_banner": "{name} yra paruoštas — tvarkykite jį Nustatymai → Balso asistentai."
+    "ready_banner": "{name} yra paruoštas — tvarkykite jį Nustatymai → Balso asistentai.",
+    "update_available": "Yra nauja Google Assistant (Manual) versija. Atnaujinkite naršyklę (Ctrl+Shift+R, arba Cmd+Shift+R „Mac“), kad ją įkeltumėte."
   }
 }

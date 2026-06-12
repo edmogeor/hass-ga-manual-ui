@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON-ului îi lipsește câmpul 'client_email'",
       "Missing 'private_key'": "JSON-ului îi lipsește câmpul 'private_key'"
     },
-    "yaml_notice": "\n\nAveți o secțiune `google_assistant:` în configuration.yaml. Această integrare gestionează acum Google Assistant și o suprascrie, deci puteți elimina acea secțiune."
+    "yaml_notice": "\n\nAveți o secțiune `google_assistant:` în configuration.yaml. Această integrare gestionează acum Google Assistant și o suprascrie, deci puteți elimina acea secțiune.",
+    "install_notice": "Google Assistant (Manual) este instalat. Dacă cardul său nu apare sub Setări → Asistenți vocali, efectuați o reîmprospătare forțată o singură dată a browserului (Ctrl+Shift+R sau Cmd+Shift+R pe Mac). Acest lucru este necesar o singură dată, după instalare sau actualizare."
   },
   "frontend": {
     "yaml_detected": "Secțiunea <code>google_assistant:</code> a fost detectată în <code>configuration.yaml</code> și a fost dezactivată. Această integrare gestionează acum configurația Google Assistant. Puteți elimina în siguranță secțiunea <code>google_assistant:</code> din configurația YAML.",
@@ -43,6 +44,7 @@
     "check_logs": "Verificați jurnalele Home Assistant pentru detalii.",
     "report_state_enable_failed": "Activarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
     "report_state_disable_failed": "Dezactivarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
-    "ready_banner": "{name} este pregătit — gestionați-l în Setări → Asistenți vocali."
+    "ready_banner": "{name} este pregătit — gestionați-l în Setări → Asistenți vocali.",
+    "update_available": "Este disponibilă o nouă versiune de Google Assistant (Manual). Reîmprospătați browserul (Ctrl+Shift+R sau Cmd+Shift+R pe Mac) pentru a o încărca."
   }
 }

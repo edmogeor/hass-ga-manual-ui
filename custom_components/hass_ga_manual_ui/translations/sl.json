@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON ne vsebuje polja 'client_email'",
       "Missing 'private_key'": "JSON ne vsebuje polja 'private_key'"
     },
-    "yaml_notice": "\n\nV vašem configuration.yaml imate razdelek `google_assistant:`. Ta integracija zdaj upravlja Google Assistant in ga nadomešča, zato lahko ta razdelek odstranite."
+    "yaml_notice": "\n\nV vašem configuration.yaml imate razdelek `google_assistant:`. Ta integracija zdaj upravlja Google Assistant in ga nadomešča, zato lahko ta razdelek odstranite.",
+    "install_notice": "Google Assistant (Ročno) je nameščen. Če se njegova kartica ne prikaže v Nastavitve → Glasovni asistenti, izvedite enkratno trdo osvežitev brskalnika (Ctrl+Shift+R ali Cmd+Shift+R na Macu). To je potrebno le enkrat, po namestitvi ali posodobitvi."
   },
   "frontend": {
     "yaml_detected": "Razdelek <code>google_assistant:</code> je bil zaznan v <code>configuration.yaml</code> in je bil onemogočen. Ta integracija zdaj upravlja konfiguracijo Google Assistant. Razdelek <code>google_assistant:</code> lahko varno odstranite iz konfiguracije YAML.",
@@ -43,6 +44,7 @@
     "check_logs": "Za podrobnosti preverite dnevnike Home Assistant.",
     "report_state_enable_failed": "Omogočanje poročanja o stanju ni uspelo. Poskusite izklopiti in vklopiti integracijo ali preverite dnevnike Home Assistant.",
     "report_state_disable_failed": "Onemogočanje poročanja o stanju ni uspelo. Poskusite izklopiti in vklopiti integracijo ali preverite dnevnike Home Assistant.",
-    "ready_banner": "{name} je pripravljen — upravljajte ga v Nastavitve → Glasovni asistenti."
+    "ready_banner": "{name} je pripravljen — upravljajte ga v Nastavitve → Glasovni asistenti.",
+    "update_available": "Na voljo je nova različica Google Assistant (Ročno). Osvežite brskalnik (Ctrl+Shift+R ali Cmd+Shift+R na Macu), da jo naložite."
   }
 }

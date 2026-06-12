@@ -30,7 +30,8 @@
       "Missing 'client_email'": "Al JSON manca il campo 'client_email'",
       "Missing 'private_key'": "Al JSON manca il campo 'private_key'"
     },
-    "yaml_notice": "\n\nHai una sezione `google_assistant:` nel tuo configuration.yaml. Questa integrazione ora gestisce Google Assistant e la sovrascrive, quindi puoi rimuovere quella sezione."
+    "yaml_notice": "\n\nHai una sezione `google_assistant:` nel tuo configuration.yaml. Questa integrazione ora gestisce Google Assistant e la sovrascrive, quindi puoi rimuovere quella sezione.",
+    "install_notice": "Google Assistant (Manuale) è installato. Se la sua scheda non appare in Impostazioni → Assistenti vocali, esegui un aggiornamento forzato una tantum del browser (Ctrl+Maiusc+R, o Cmd+Maiusc+R su Mac). È necessario solo una volta, dopo l'installazione o l'aggiornamento."
   },
   "frontend": {
     "yaml_detected": "La sezione <code>google_assistant:</code> è stata rilevata nel tuo <code>configuration.yaml</code> ed è stata disabilitata. Questa integrazione ora gestisce la tua configurazione di Google Assistant. Puoi rimuovere in modo sicuro la sezione <code>google_assistant:</code> dalla tua configurazione YAML.",
@@ -43,6 +44,7 @@
     "check_logs": "Controlla i log di Home Assistant per i dettagli.",
     "report_state_enable_failed": "Impossibile abilitare la segnalazione dello stato. Prova a disabilitare e riabilitare l'integrazione, o controlla i log di Home Assistant.",
     "report_state_disable_failed": "Impossibile disabilitare la segnalazione dello stato. Prova a disabilitare e riabilitare l'integrazione, o controlla i log di Home Assistant.",
-    "ready_banner": "{name} è pronto — gestiscilo in Impostazioni → Assistenti vocali."
+    "ready_banner": "{name} è pronto — gestiscilo in Impostazioni → Assistenti vocali.",
+    "update_available": "È disponibile una nuova versione di Google Assistant (Manuale). Aggiorna il browser (Ctrl+Maiusc+R, o Cmd+Maiusc+R su Mac) per caricarla."
   }
 }

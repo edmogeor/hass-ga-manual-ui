@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON:sta puuttuu kenttä 'client_email'",
       "Missing 'private_key'": "JSON:sta puuttuu kenttä 'private_key'"
     },
-    "yaml_notice": "\n\nConfiguration.yaml-tiedostossasi on `google_assistant:`-osio. Tämä integraatio hallitsee nyt Google Assistantia ja ohittaa sen, joten voit poistaa kyseisen osion."
+    "yaml_notice": "\n\nConfiguration.yaml-tiedostossasi on `google_assistant:`-osio. Tämä integraatio hallitsee nyt Google Assistantia ja ohittaa sen, joten voit poistaa kyseisen osion.",
+    "install_notice": "Google Assistant (Manual) on asennettu. Jos sen kortti ei näy kohdassa Asetukset → Ääniavustajat, tee kertaluonteinen selaimen kova päivitys (Ctrl+Shift+R, tai Macissa Cmd+Shift+R). Tämä tarvitaan vain kerran, asennuksen tai päivityksen jälkeen."
   },
   "frontend": {
     "yaml_detected": "<code>google_assistant:</code>-osio havaittiin <code>configuration.yaml</code>-tiedostossasi ja se on poistettu käytöstä. Tämä integraatio hallitsee nyt Google Assistant -määritystäsi. Voit turvallisesti poistaa <code>google_assistant:</code>-osion YAML-määrityksestäsi.",
@@ -43,6 +44,7 @@
     "check_logs": "Tarkista Home Assistantin lokit yksityiskohtia varten.",
     "report_state_enable_failed": "Tilaraportoinnin käyttöönotto epäonnistui. Yritä kytkeä integraatio pois päältä ja takaisin päälle tai tarkista Home Assistantin lokit.",
     "report_state_disable_failed": "Tilaraportoinnin poistaminen käytöstä epäonnistui. Yritä kytkeä integraatio pois päältä ja takaisin päälle tai tarkista Home Assistantin lokit.",
-    "ready_banner": "{name} on valmis — hallinnoi sitä kohdassa Asetukset → Ääniavustajat."
+    "ready_banner": "{name} on valmis — hallinnoi sitä kohdassa Asetukset → Ääniavustajat.",
+    "update_available": "Google Assistant (Manual) -sovelluksesta on saatavilla uusi versio. Päivitä selaimesi (Ctrl+Shift+R, tai Macissa Cmd+Shift+R) ladataksesi sen."
   }
 }

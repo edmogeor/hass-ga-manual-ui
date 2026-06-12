@@ -30,7 +30,8 @@
       "Missing 'client_email'": "Im JSON fehlt das Feld 'client_email'",
       "Missing 'private_key'": "Im JSON fehlt das Feld 'private_key'"
     },
-    "yaml_notice": "\n\nSie haben einen `google_assistant:`-Abschnitt in Ihrer configuration.yaml. Diese Integration verwaltet jetzt Google Assistant und überschreibt ihn, sodass Sie diesen Abschnitt entfernen können."
+    "yaml_notice": "\n\nSie haben einen `google_assistant:`-Abschnitt in Ihrer configuration.yaml. Diese Integration verwaltet jetzt Google Assistant und überschreibt ihn, sodass Sie diesen Abschnitt entfernen können.",
+    "install_notice": "Google Assistant (Manuell) ist installiert. Wenn die Karte nicht unter Einstellungen → Sprachassistenten erscheint, führen Sie ein einmaliges Hard-Refresh Ihres Browsers durch (Strg+Umschalt+R, oder Cmd+Umschalt+R auf Mac). Dies ist nur einmal nach der Installation oder Aktualisierung nötig."
   },
   "frontend": {
     "yaml_detected": "Der Abschnitt <code>google_assistant:</code> wurde in Ihrer <code>configuration.yaml</code> gefunden und deaktiviert. Diese Integration verwaltet jetzt Ihre Google Assistant-Konfiguration. Sie können den Abschnitt <code>google_assistant:</code> sicher aus Ihrer YAML-Konfiguration entfernen.",
@@ -43,6 +44,7 @@
     "check_logs": "Überprüfen Sie die Home Assistant-Protokolle für Details.",
     "report_state_enable_failed": "Statusmeldung konnte nicht aktiviert werden. Versuchen Sie, die Integration aus- und wieder einzuschalten, oder prüfen Sie die Home Assistant-Protokolle.",
     "report_state_disable_failed": "Statusmeldung konnte nicht deaktiviert werden. Versuchen Sie, die Integration aus- und wieder einzuschalten, oder prüfen Sie die Home Assistant-Protokolle.",
-    "ready_banner": "{name} ist bereit – verwalten Sie es unter Einstellungen → Sprachassistenten."
+    "ready_banner": "{name} ist bereit – verwalten Sie es unter Einstellungen → Sprachassistenten.",
+    "update_available": "Eine neue Version von Google Assistant (Manuell) ist verfügbar. Aktualisieren Sie Ihren Browser (Strg+Umschalt+R, oder Cmd+Umschalt+R auf Mac), um sie zu laden."
   }
 }

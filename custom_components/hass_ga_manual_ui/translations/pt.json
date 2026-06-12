@@ -30,7 +30,8 @@
       "Missing 'client_email'": "O JSON não contém o campo 'client_email'",
       "Missing 'private_key'": "O JSON não contém o campo 'private_key'"
     },
-    "yaml_notice": "\n\nTem uma secção `google_assistant:` no seu configuration.yaml. Esta integração gere agora o Google Assistant e sobrepõe-se a ela, pelo que pode remover essa secção."
+    "yaml_notice": "\n\nTem uma secção `google_assistant:` no seu configuration.yaml. Esta integração gere agora o Google Assistant e sobrepõe-se a ela, pelo que pode remover essa secção.",
+    "install_notice": "O Google Assistant (Manual) está instalado. Se o cartão não aparecer em Definições → Assistentes de voz, faça uma atualização forçada única do navegador (Ctrl+Shift+R ou Cmd+Shift+R no Mac). Isto só é necessário uma vez, após instalar ou atualizar."
   },
   "frontend": {
     "yaml_detected": "A secção <code>google_assistant:</code> foi detetada no seu <code>configuration.yaml</code> e foi desativada. Esta integração gere agora a sua configuração do Google Assistant. Pode remover com segurança a secção <code>google_assistant:</code> da sua configuração YAML.",
@@ -43,6 +44,7 @@
     "check_logs": "Consulte os registos do Home Assistant para obter detalhes.",
     "report_state_enable_failed": "Falha ao ativar o reporte de estado. Tente desligar e ligar a integração, ou consulte os registos do Home Assistant.",
     "report_state_disable_failed": "Falha ao desativar o reporte de estado. Tente desligar e ligar a integração, ou consulte os registos do Home Assistant.",
-    "ready_banner": "{name} está pronto — gira-o em Definições → Assistentes de voz."
+    "ready_banner": "{name} está pronto — gira-o em Definições → Assistentes de voz.",
+    "update_available": "Está disponível uma nova versão do Google Assistant (Manual). Atualize o navegador (Ctrl+Shift+R ou Cmd+Shift+R no Mac) para a carregar."
   }
 }

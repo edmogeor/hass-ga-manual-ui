@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON에 'client_email' 필드가 없습니다",
       "Missing 'private_key'": "JSON에 'private_key' 필드가 없습니다"
     },
-    "yaml_notice": "\n\nconfiguration.yaml에 `google_assistant:` 섹션이 있습니다. 이 통합이 이제 Google Assistant를 관리하고 해당 섹션을 덮어쓰므로 해당 섹션을 제거할 수 있습니다."
+    "yaml_notice": "\n\nconfiguration.yaml에 `google_assistant:` 섹션이 있습니다. 이 통합이 이제 Google Assistant를 관리하고 해당 섹션을 덮어쓰므로 해당 섹션을 제거할 수 있습니다.",
+    "install_notice": "Google Assistant(수동)이 설치되었습니다. 설정 → 음성 도우미에 카드가 표시되지 않으면 브라우저를 한 번 강제 새로고침하세요(Ctrl+Shift+R, Mac에서는 Cmd+Shift+R). 설�� 또는 업데이트 후 한 번만 필요합니다."
   },
   "frontend": {
     "yaml_detected": "<code>configuration.yaml</code>에서 <code>google_assistant:</code> 섹션이 감지되어 비활성화되었습니다. 이 통합이 이제 Google Assistant 구성을 관리합니다. YAML 구성에서 <code>google_assistant:</code> 섹션을 안전하게 제거할 수 있습니다.",
@@ -43,6 +44,7 @@
     "check_logs": "자세한 내용은 Home Assistant 로그를 확인하세요.",
     "report_state_enable_failed": "상태 보고 활성화에 실패했습니다. 통합을 끄고 다시 켜거나 Home Assistant 로그를 확인해 보세요.",
     "report_state_disable_failed": "상태 보고 비활성화에 실패했습니다. 통합을 끄고 다시 켜거나 Home Assistant 로그를 확인해 보세요.",
-    "ready_banner": "{name}이(가) 준비되었습니다 — 설정 → 음성 도우미에서 관리하세요."
+    "ready_banner": "{name}이(가) 준비되었습니다 — 설정 → 음성 도우미에서 관리하세요.",
+    "update_available": "Google Assistant(수동)의 새 버전이 있습니다. 브라우저를 새로고침하여(Ctrl+Shift+R, Mac에서는 Cmd+Shift+R) 불러오세요."
   }
 }

@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON में 'client_email' फ़ील्ड अनुपस्थित है",
       "Missing 'private_key'": "JSON में 'private_key' फ़ील्ड अनुपस्थित है"
     },
-    "yaml_notice": "\n\nआपके configuration.yaml में `google_assistant:` अनुभाग है। यह इंटीग्रेशन अब Google Assistant का प्रबंधन करता है और उसे ओवरराइड करता है, इसलिए आप उस अनुभाग को हटा सकते हैं।"
+    "yaml_notice": "\n\nआपके configuration.yaml में `google_assistant:` अनुभाग है। यह इंटीग्रेशन अब Google Assistant का प्रबंधन करता है और उसे ओवरराइड करता है, इसलिए आप उस अनुभाग को हटा सकते हैं।",
+    "install_notice": "Google Assistant (Manual) इंस्टॉल हो गया है। यदि इसका कार्ड सेटिंग्स → वॉयस असिस्टेंट के अंतर्गत नहीं दिखता है, तो अपने ब्राउज़र का एक बार हार्ड रिफ्रेश करें (Ctrl+Shift+R, या Mac पर Cmd+Shift+R)। यह केवल एक बार आवश्यक है, इंस्टॉल या अपडेट के बाद।"
   },
   "frontend": {
     "yaml_detected": "आपके <code>configuration.yaml</code> में <code>google_assistant:</code> अनुभाग पाया गया और अक्षम कर दिया गया है। यह इंटीग्रेशन अब आपकी Google Assistant कॉन्फ़िगरेशन का प्रबंधन करता है। आप अपनी YAML कॉन्फ़िगरेशन से <code>google_assistant:</code> अनुभाग सुरक्षित रूप से हटा सकते हैं।",
@@ -43,6 +44,7 @@
     "check_logs": "विवरण के लिए Home Assistant लॉग देखें।",
     "report_state_enable_failed": "स्थिति रिपोर्टिंग सक्षम करने में विफल। इंटीग्रेशन को बंद और चालू करने का प्रयास करें, या Home Assistant लॉग देखें।",
     "report_state_disable_failed": "स्थिति रिपोर्टिंग अक्षम करने में विफल। इंटीग्रेशन को बंद और चालू करने का प्रयास करें, या Home Assistant लॉग देखें।",
-    "ready_banner": "{name} तैयार है — इसे सेटिंग → वॉयस असिस्टेंट में प्रबंधित करें।"
+    "ready_banner": "{name} तैयार है — इसे सेटिंग → वॉयस असिस्टेंट में प्रबंधित करें।",
+    "update_available": "Google Assistant (Manual) का एक नया संस्करण उपलब्ध है। इसे लोड करने के लिए अपना ब्राउज़र रिफ्रेश करें (Ctrl+Shift+R, या Mac पर Cmd+Shift+R)।"
   }
 }

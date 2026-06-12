@@ -30,7 +30,8 @@
       "Missing 'client_email'": "V JSON chybí pole 'client_email'",
       "Missing 'private_key'": "V JSON chybí pole 'private_key'"
     },
-    "yaml_notice": "\n\nVe svém souboru configuration.yaml máte sekci `google_assistant:`. Tato integrace nyní spravuje Google Assistant a přepisuje ji, takže tuto sekci můžete odstranit."
+    "yaml_notice": "\n\nVe svém souboru configuration.yaml máte sekci `google_assistant:`. Tato integrace nyní spravuje Google Assistant a přepisuje ji, takže tuto sekci můžete odstranit.",
+    "install_notice": "Google Assistant (Manual) je nainstalován. Pokud se jeho karta nezobrazí v Nastavení → Hlasoví asistenti, proveďte jednorázové tvrdé obnovení prohlížeče (Ctrl+Shift+R, nebo Cmd+Shift+R na Macu). To je potřeba pouze jednou, po instalaci nebo aktualizaci."
   },
   "frontend": {
     "yaml_detected": "Sekce <code>google_assistant:</code> byla nalezena ve vašem <code>configuration.yaml</code> a byla deaktivována. Tato integrace nyní spravuje vaši konfiguraci Google Assistant. Sekci <code>google_assistant:</code> lze bezpečně odstranit z konfigurace YAML.",
@@ -43,6 +44,7 @@
     "check_logs": "Podrobnosti najdete v protokolech Home Assistant.",
     "report_state_enable_failed": "Nepodařilo se aktivovat hlášení stavu. Zkuste integraci vypnout a znovu zapnout nebo zkontrolujte protokoly Home Assistant.",
     "report_state_disable_failed": "Nepodařilo se deaktivovat hlášení stavu. Zkuste integraci vypnout a znovu zapnout nebo zkontrolujte protokoly Home Assistant.",
-    "ready_banner": "{name} je připraven — spravujte jej v Nastavení → Hlasoví asistenti."
+    "ready_banner": "{name} je připraven — spravujte jej v Nastavení → Hlasoví asistenti.",
+    "update_available": "Je k dispozici nová verze Google Assistant (Manual). Obnovte prohlížeč (Ctrl+Shift+R, nebo Cmd+Shift+R na Macu) a načtěte ji."
   }
 }

@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON vantar reitinn 'client_email'",
       "Missing 'private_key'": "JSON vantar reitinn 'private_key'"
     },
-    "yaml_notice": "\n\nÞú ert með `google_assistant:` hluta í configuration.yaml. Þessi samþætting sér nú um Google Assistant og hnekkir honum, svo þú getur fjarlægt þann hluta."
+    "yaml_notice": "\n\nÞú ert með `google_assistant:` hluta í configuration.yaml. Þessi samþætting sér nú um Google Assistant og hnekkir honum, svo þú getur fjarlægt þann hluta.",
+    "install_notice": "Google Assistant (Manual) er uppsett. Ef spjaldið birtist ekki undir Stillingar → Raddaðstoðarmenn, gerðu einu sinni harða endurhleðslu á vafranum (Ctrl+Shift+R, eða Cmd+Shift+R á Mac). Þetta er aðeins þörf einu sinni, eftir uppsetningu eða uppfærslu."
   },
   "frontend": {
     "yaml_detected": "Hlutinn <code>google_assistant:</code> fannst í <code>configuration.yaml</code> og hefur verið gerður óvirkur. Þessi samþætting sér nú um Google Assistant stillingar þínar. Þú getur fjarlægt <code>google_assistant:</code> hlutann örugglega úr YAML-stillingum þínum.",
@@ -43,6 +44,7 @@
     "check_logs": "Athugaðu Home Assistant kladdana fyrir upplýsingar.",
     "report_state_enable_failed": "Tókst ekki að virkja stöðuskýrslugjöf. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
     "report_state_disable_failed": "Tókst ekki að gera stöðuskýrslugjöf óvirka. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
-    "ready_banner": "{name} er tilbúið — sjáðu um það undir Stillingar → Raddaðstoðarmenn."
+    "ready_banner": "{name} er tilbúið — sjáðu um það undir Stillingar → Raddaðstoðarmenn.",
+    "update_available": "Ný útgáfa af Google Assistant (Manual) er tiltæk. Endurhladdu vafranum (Ctrl+Shift+R, eða Cmd+Shift+R á Mac) til að hlaða henni."
   }
 }

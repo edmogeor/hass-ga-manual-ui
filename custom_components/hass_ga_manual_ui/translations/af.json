@@ -30,7 +30,8 @@
       "Missing 'client_email'": "Die JSON ontbreek die 'client_email'-veld",
       "Missing 'private_key'": "Die JSON ontbreek die 'private_key'-veld"
     },
-    "yaml_notice": "\n\nJy het 'n `google_assistant:`-afdeling in jou configuration.yaml. Hierdie integrasie bestuur nou Google Assistant en oorheers dit, so jy kan daardie afdeling verwyder."
+    "yaml_notice": "\n\nJy het 'n `google_assistant:`-afdeling in jou configuration.yaml. Hierdie integrasie bestuur nou Google Assistant en oorheers dit, so jy kan daardie afdeling verwyder.",
+    "install_notice": "Google Assistant (Manual) is geïnstalleer. As sy kaart nie onder Instellings → Stemassistente verskyn nie, doen 'n eenmalige harde herlaai van jou blaaier (Ctrl+Shift+R, of Cmd+Shift+R op Mac). Dit is slegs een keer nodig, na installasie of opdatering."
   },
   "frontend": {
     "yaml_detected": "Die <code>google_assistant:</code>-afdeling is in jou <code>configuration.yaml</code> opgespoor en is gedeaktiveer. Hierdie integrasie bestuur nou jou Google Assistant-konfigurasie. Jy kan die <code>google_assistant:</code>-afdeling veilig uit jou YAML-konfigurasie verwyder.",
@@ -43,6 +44,7 @@
     "check_logs": "Kyk Home Assistant-logboeke vir besonderhede.",
     "report_state_enable_failed": "Kon nie toestandrapportering aktiveer nie. Probeer die integrasie af- en aanskakel, of kyk Home Assistant-logboeke.",
     "report_state_disable_failed": "Kon nie toestandrapportering deaktiveer nie. Probeer die integrasie af- en aanskakel, of kyk Home Assistant-logboeke.",
-    "ready_banner": "{name} is gereed — bestuur dit onder Instellings → Stemassistente."
+    "ready_banner": "{name} is gereed — bestuur dit onder Instellings → Stemassistente.",
+    "update_available": "'n Nuwe weergawe van Google Assistant (Manual) is beskikbaar. Herlaai jou blaaier (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om dit te laai."
   }
 }

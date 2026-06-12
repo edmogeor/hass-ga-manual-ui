@@ -30,7 +30,8 @@
       "Missing 'client_email'": "JSON に 'client_email' フィールドがありません",
       "Missing 'private_key'": "JSON に 'private_key' フィールドがありません"
     },
-    "yaml_notice": "\n\nconfiguration.yaml に `google_assistant:` セクションがあります。このインテグレーションが Google Assistant を管理し、そのセクションを上書きするため、削除してかまいません。"
+    "yaml_notice": "\n\nconfiguration.yaml に `google_assistant:` セクションがあります。このインテグレーションが Google Assistant を管理し、そのセクションを上書きするため、削除してかまいません。",
+    "install_notice": "Google Assistant（手動）がインストールされました。設定 → 音声アシスタントにカードが表示されない場合は、ブラウザのハード更新を1回だけ実行してください（Ctrl+Shift+R、MacではCmd+Shift+R）。これはインストールまたは更新後に1回だけ必要です。"
   },
   "frontend": {
     "yaml_detected": "<code>configuration.yaml</code> に <code>google_assistant:</code> セクションが見つかったため、無効化されました。このインテグレーションが Google Assistant の設定を管理するようになりました。YAML 設定から <code>google_assistant:</code> セクションを安全に削除できます。",
@@ -43,6 +44,7 @@
     "check_logs": "詳細については Home Assistant のログを確認してください。",
     "report_state_enable_failed": "状態レポートの有効化に失敗しました。インテグレーションをオフにしてからオンに切り替えるか、Home Assistant のログを確認してください。",
     "report_state_disable_failed": "状態レポートの無効化に失敗しました。インテグレーションをオフにしてからオンに切り替えるか、Home Assistant のログを確認してください。",
-    "ready_banner": "{name} の準備ができました — 設定 → 音声アシスタントで管理してください。"
+    "ready_banner": "{name} の準備ができました — 設定 → 音声アシスタントで管理してください。",
+    "update_available": "Google Assistant（手動）の新しいバージョンが利用可能です。ブラウザを更新して（Ctrl+Shift+R、MacではCmd+Shift+R）読み込んでください。"
   }
 }

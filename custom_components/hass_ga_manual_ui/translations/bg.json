@@ -30,7 +30,8 @@
       "Missing 'client_email'": "В JSON липсва полето 'client_email'",
       "Missing 'private_key'": "В JSON липсва полето 'private_key'"
     },
-    "yaml_notice": "\n\nИмате секция `google_assistant:` във вашия configuration.yaml. Тази интеграция вече управлява Google Assistant и я заменя, така че можете да премахнете тази секция."
+    "yaml_notice": "\n\nИмате секция `google_assistant:` във вашия configuration.yaml. Тази интеграция вече управлява Google Assistant и я заменя, така че можете да премахнете тази секция.",
+    "install_notice": "Google Assistant (Manual) е инсталиран. Ако картата му не се показва в Настройки → Гласови асистенти, направете еднократно твърдо опресняване на браузъра (Ctrl+Shift+R, или Cmd+Shift+R на Mac). Това е необходимо само веднъж, след инсталиране или актуализиране."
   },
   "frontend": {
     "yaml_detected": "Секцията <code>google_assistant:</code> беше открита в <code>configuration.yaml</code> и е деактивирана. Тази интеграция вече управлява вашата конфигурация на Google Assistant. Можете безопасно да премахнете секцията <code>google_assistant:</code> от вашата YAML конфигурация.",
@@ -43,6 +44,7 @@
     "check_logs": "Проверете регистрите на Home Assistant за подробности.",
     "report_state_enable_failed": "Неуспешно активиране на отчитането на статус. Опитайте да изключите и включите отново интеграцията или проверете регистрите на Home Assistant.",
     "report_state_disable_failed": "Неуспешно деактивиране на отчитането на статус. Опитайте да изключите и включите отново интеграцията или проверете регистрите на Home Assistant.",
-    "ready_banner": "{name} е готов — управлявайте го в Настройки → Гласови асистенти."
+    "ready_banner": "{name} е готов — управлявайте го в Настройки → Гласови асистенти.",
+    "update_available": "Налична е нова версия на Google Assistant (Manual). Опреснете браузъра си (Ctrl+Shift+R, или Cmd+Shift+R на Mac), за да я заредите."
   }
 }
