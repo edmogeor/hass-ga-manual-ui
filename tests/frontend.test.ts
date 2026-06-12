@@ -492,10 +492,8 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
-  // The brand / expose icons are patched at the render() level: our assistant
-  // returns our self-hosted icon as a DOM node, never HA's brands-CDN <img>.
-  // These guard against the recycling regression where Lit reuses an element
-  // for a different assistant id (virtualized tables, unkeyed .map() rows).
+  // Icons are patched at render() level: our assistant returns a stable node
+  // (self-hosted, never the CDN) that survives Lit reusing the element.
   describe("custom element icon patches", () => {
     // Custom elements can only be defined once per realm; reuse across tests.
     class FakeBrandIcon extends HTMLElement {
@@ -606,10 +604,8 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
-  // HA's master "Expose" toggle (_toggleAll) unexposes everything in
-  // ev.target.assistants, but an HA splice bug drops the last entry of that
-  // list — which is our injected id. We wrap _toggleAll to re-add our id so the
-  // master toggle (un)exposes our assistant like any other shown one.
+  // We wrap _toggleAll so the master Expose toggle re-adds our id, which HA's
+  // splice bug drops from its assistant list.
   describe("entity dialog master expose toggle", () => {
     class FakeEntityVoiceSettings extends HTMLElement {
       captured: string[] | null = null;

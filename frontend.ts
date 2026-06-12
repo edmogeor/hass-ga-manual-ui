@@ -38,10 +38,8 @@ interface AssistantsPageElement extends HTMLElement, LitLifecycle {
 interface VoiceAssistantBrandIcon extends HTMLElement, LitLifecycle {
   voiceAssistantId: string;
   hass?: HomeAssistant;
-  // Cached icon node returned from render() for our assistant (and as the
-  // fallback when HA's own render throws on a missing map entry). Returning a
-  // stable Node keeps the icon inside Lit's render lifecycle, so element reuse
-  // (virtualized tables, unkeyed .map() rows) swaps it correctly.
+  // Cached icon node returned from render(); a stable Node keeps the icon in
+  // Lit's lifecycle so it survives element reuse (virtualized tables, .map()).
   __gaIconNode?: HTMLImageElement;
 }
 
@@ -50,8 +48,7 @@ interface ExposeAssistantIcon extends HTMLElement, LitLifecycle {
   hass?: HomeAssistant;
   unsupported?: boolean;
   manual?: boolean;
-  // Cached content node + the prop signature it was built for, returned from
-  // render() for our assistant (see __gaIconNode above for the rationale).
+  // Cached content node + the prop signature it was built for (see __gaIconNode).
   __gaExposeNode?: HTMLElement;
   __gaExposeSig?: string;
 }
@@ -74,8 +71,7 @@ interface EntityVoiceSettingsElement extends HTMLElement, LitLifecycle {
   entityId?: string;
   __gaEntityId?: string;
   __gaInfo?: GaEntityInfo | null;
-  // HA's master "Expose" toggle handler; reads ev.target.assistants. We wrap it
-  // so the toggle also (un)exposes our assistant — see _patchEntityVoiceSettingsProto.
+  // HA's master "Expose" toggle handler; we wrap it (see _patchToggleAll).
   _toggleAll?(ev: Event): void;
 }
 
@@ -824,9 +820,7 @@ function _patchAssistantsPageProto(proto: AssistantsPageElement): void {
   }
 }
 
-// Build/cache our self-hosted brand icon node for an element, refreshing its
-// themed src on reuse. Returned straight from render() so Lit owns it — never
-// HA's brands-CDN <img> for our assistant.
+// Cache our brand icon node per element, refreshing its themed src on reuse.
 function _manualBrandIconNode(el: VoiceAssistantBrandIcon): HTMLImageElement {
   let img = el.__gaIconNode;
   if (!img) {
@@ -849,9 +843,8 @@ function _patchBrandIconProto(proto: VoiceAssistantBrandIcon): void {
       try {
         return origRender!.call(this);
       } catch (e) {
-        // HA's render reads voiceAssistants[id].name unguarded and throws when
-        // the id is missing from the map. Fall back to our local icon node
-        // instead of an empty cell.
+        // HA's render reads voiceAssistants[id].name unguarded; on a missing
+        // map entry it throws — fall back to our icon instead of an empty cell.
         _debug("brand-icon render fell back to local icon: " + _errorMessage(e));
         return _manualBrandIconNode(this);
       }
@@ -861,10 +854,8 @@ function _patchBrandIconProto(proto: VoiceAssistantBrandIcon): void {
   }
 }
 
-// Build/cache our expose-tab icon node (icon + tooltip) for an element. Rebuilt
-// only when the props it depends on change (manual/unsupported/language), so a
-// stable Node is returned across the frequent hass re-renders. Returned from
-// render() so Lit swaps it correctly when the data-table recycles the element.
+// Cache our expose-tab icon node (icon + tooltip) per element, rebuilding only
+// when the props it depends on change (manual/unsupported/language).
 function _manualExposeIconNode(el: ExposeAssistantIcon): HTMLElement {
   const localize = el.hass?.localize;
   const lang = el.hass?.locale?.language || el.hass?.language || "";
@@ -1053,15 +1044,10 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
 /**
  * Ensure HA's master "Expose" toggle also (un)exposes our assistant.
  *
- * HA's _toggleAll exposes/unexposes everything in ev.target.assistants (the
- * master switch's assistant list, built as `uiAssistants`). That list is
- * mangled by a long-standing HA splice bug: `uiAssistants.splice(
- * showAssistants.indexOf(x), 1)` runs *after* x was removed from showAssistants,
- * so indexOf is -1 and splice(-1, 1) drops the LAST entry. We inject our
- * assistant last, so our id is the one dropped — and the master Expose toggle
- * silently skips us, leaving the entity exposed to us after "unexpose all".
- * Re-add our id (when enabled) so the master toggle treats us like any other
- * shown assistant. Unexposing an already-unexposed assistant is a safe no-op.
+ * _toggleAll acts on ev.target.assistants, but an HA splice bug drops the last
+ * entry of that list — which is our id, since we inject last — so the master
+ * toggle silently skips us. Re-add our id (when enabled) so it treats us like
+ * any other shown assistant; re-unexposing an unexposed assistant is a no-op.
  */
 function _patchToggleAll(proto: EntityVoiceSettingsElement): void {
   const protoRec = proto as unknown as Record<string, unknown>;
