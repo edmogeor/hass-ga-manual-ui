@@ -1121,6 +1121,8 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 CONF_SECURE_DEVICES_PIN: current_entry.options.get(
                     CONF_SECURE_DEVICES_PIN, ""
                 ),
+                # Lets the frontend detect a stale cached bundle and prompt a refresh.
+                "version": _get_version(),
             }
 
             _LOGGER.debug(

@@ -13,6 +13,7 @@
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
   var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
+  var BUILD_VERSION = true ? "0.1.3" : "";
   var EN_STRINGS = {
     yaml_detected: "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
     enable_success: "Google Assistant enabled successfully",
@@ -24,7 +25,8 @@
     check_logs: "Check Home Assistant logs for details.",
     report_state_enable_failed: "Failed to enable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
     report_state_disable_failed: "Failed to disable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
-    ready_banner: "{name} is ready \u2014 manage it under Settings \u2192 Voice assistants."
+    ready_banner: "{name} is ready \u2014 manage it under Settings \u2192 Voice assistants.",
+    update_available: "A new version of Google Assistant (Manual) is available. Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it."
   };
   var _loadedStrings = {};
   var _translationsPromise = null;
@@ -147,6 +149,37 @@
     } catch (e) {
       _error("Failed to show toast: " + _errorMessage(e));
     }
+  }
+  var _updatePromptShown = false;
+  function _maybePromptReload(serverVersion) {
+    if (_updatePromptShown) return;
+    if (!serverVersion || !BUILD_VERSION || serverVersion === BUILD_VERSION) return;
+    _updatePromptShown = true;
+    _info(
+      "Frontend bundle is stale (running " + BUILD_VERSION + ", server has " + serverVersion + "); prompting reload"
+    );
+    const message = t("update_available");
+    try {
+      const ha = document.querySelector("home-assistant");
+      if (ha) {
+        const reloadLabel = getHass()?.localize?.("ui.common.refresh") || "Reload";
+        ha.dispatchEvent(
+          new CustomEvent("hass-notification", {
+            bubbles: true,
+            composed: true,
+            detail: {
+              message,
+              duration: 0,
+              action: { text: reloadLabel, action: () => location.reload() }
+            }
+          })
+        );
+        return;
+      }
+    } catch (e) {
+      _debug("hass-notification toast failed, falling back: " + _errorMessage(e));
+    }
+    _showToast(message, false);
   }
   function _isDarkMode() {
     try {
@@ -930,6 +963,7 @@
       _debug(
         "refreshCardState received config: enabled=" + config.enabled + " report_state=" + config.report_state
       );
+      _maybePromptReload(config.version);
       _gaManualEnabled = config.enabled;
       _refreshExposePage();
       globalSwitch.checked = config.enabled;

@@ -25,6 +25,14 @@ _LOGGER = logging.getLogger(__name__)
 
 _GUIDE_URL = "https://www.home-assistant.io/integrations/google_assistant/#manual-setup"
 
+# English fallback for the install notification (see _notify_installed).
+_INSTALL_NOTICE_FALLBACK = (
+    "Google Assistant (Manual) is installed. If its card doesn't appear under "
+    "Settings → Voice assistants, do a one-time hard refresh of your browser "
+    "(Ctrl+Shift+R, or Cmd+Shift+R on Mac). This is only needed once, after "
+    "installing or updating."
+)
+
 
 def _parse_service_account_json(raw: str) -> dict[str, str]:
     """Parse a service account JSON string and return {client_email, private_key}.
@@ -127,6 +135,46 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         return translations.get(f"component.{DOMAIN}.config.yaml_notice", "")
 
+    async def _notify_installed(self) -> None:
+        """Post a one-time 'refresh your browser' notification on install.
+
+        A fresh install needs a hard browser refresh before the injected card
+        appears; this server-side notification reaches the user even though our
+        frontend JS hasn't loaded yet. Best-effort — never blocks the entry.
+        """
+        hass = getattr(self, "hass", None)
+        if hass is None:
+            return
+
+        translations: dict[str, str]
+        try:
+            translations = await async_get_translations(
+                hass, hass.config.language, "config", {DOMAIN}
+            )
+        except Exception as exc:
+            _LOGGER.debug("Could not load install-notice translations: %s", exc)
+            translations = {}
+
+        message = translations.get(
+            f"component.{DOMAIN}.config.install_notice", _INSTALL_NOTICE_FALLBACK
+        )
+        title = translations.get(
+            f"component.{DOMAIN}.config.step.user.title", "Google Assistant (Manual)"
+        )
+
+        try:
+            from homeassistant.components import persistent_notification
+
+            persistent_notification.async_create(
+                hass,
+                message,
+                title=title,
+                notification_id="hass_ga_manual_ui_install",
+            )
+            _LOGGER.debug("Posted post-install refresh notification")
+        except Exception as exc:
+            _LOGGER.debug("Could not create install notification: %s", exc)
+
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -207,6 +255,8 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                         project_id,
                         account[CONF_CLIENT_EMAIL],
                     )
+
+                    await self._notify_installed()
 
                     return self.async_create_entry(
                         title=project_id,

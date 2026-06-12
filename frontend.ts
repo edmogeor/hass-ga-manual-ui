@@ -96,6 +96,12 @@ const WS_DISABLE = `${ASSISTANT_ID}/disable`;
 const WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
 const WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
 
+// Injected at build time via esbuild --define (see package.json). Compared to
+// the server-reported version to detect a stale (cached) bundle; "" disables it.
+declare const __BUILD_VERSION__: string;
+const BUILD_VERSION: string =
+  typeof __BUILD_VERSION__ !== "undefined" ? __BUILD_VERSION__ : "";
+
 // ---------------------------------------------------------------------------
 // Localization (see AGENTS.md "Frontend localization")
 // ---------------------------------------------------------------------------
@@ -114,6 +120,7 @@ interface LocaleTable {
   report_state_enable_failed: string;
   report_state_disable_failed: string;
   ready_banner: string;
+  update_available: string;
 }
 
 const EN_STRINGS: LocaleTable = {
@@ -137,6 +144,9 @@ const EN_STRINGS: LocaleTable = {
     "Failed to disable state reporting. " +
     "Try toggling the integration off and on, or check Home Assistant logs.",
   ready_banner: "{name} is ready — manage it under Settings → Voice assistants.",
+  update_available:
+    "A new version of Google Assistant (Manual) is available. " +
+    "Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it.",
 };
 
 type StringKey = keyof LocaleTable;
@@ -310,6 +320,50 @@ function _showToast(message: string, isError: boolean): void {
   } catch (e) {
     _error("Failed to show toast: " + _errorMessage(e));
   }
+}
+
+let _updatePromptShown = false;
+
+/**
+ * After a HACS update + HA restart, the browser can keep serving the old cached
+ * frontend.js (HA's service worker holds the prior app shell), so the running
+ * bundle is older than what's installed. Compare versions and, on a mismatch,
+ * prompt a refresh once.
+ */
+function _maybePromptReload(serverVersion?: string): void {
+  if (_updatePromptShown) return;
+  // Can't compare without both versions (older backend, or no --define).
+  if (!serverVersion || !BUILD_VERSION || serverVersion === BUILD_VERSION) return;
+  _updatePromptShown = true;
+  _info(
+    "Frontend bundle is stale (running " + BUILD_VERSION + ", server has " +
+      serverVersion + "); prompting reload",
+  );
+
+  const message = t("update_available");
+  try {
+    const ha = document.querySelector("home-assistant");
+    if (ha) {
+      const reloadLabel =
+        getHass()?.localize?.("ui.common.refresh") || "Reload";
+      // HA's own sticky toast with a one-click Reload, scoped to this client.
+      ha.dispatchEvent(
+        new CustomEvent("hass-notification", {
+          bubbles: true,
+          composed: true,
+          detail: {
+            message,
+            duration: 0,
+            action: { text: reloadLabel, action: () => location.reload() },
+          },
+        }),
+      );
+      return;
+    }
+  } catch (e) {
+    _debug("hass-notification toast failed, falling back: " + _errorMessage(e));
+  }
+  _showToast(message, false);
 }
 
 // ---------------------------------------------------------------------------
@@ -1369,6 +1423,7 @@ async function refreshCardState(
         yaml_suppressed: boolean;
         report_state: boolean;
         secure_devices_pin: string;
+        version?: string;
       }>({
         type: WS_GET_CONFIG,
         entry_id: entryId,
@@ -1381,6 +1436,8 @@ async function refreshCardState(
         " report_state=" +
         config.report_state,
     );
+
+    _maybePromptReload(config.version);
 
     _gaManualEnabled = config.enabled;
     _refreshExposePage();

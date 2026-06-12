@@ -512,3 +512,87 @@ class TestConfigFlowServiceAccountStep:
         padded = f"  {VALID_SERVICE_ACCOUNT_JSON}  "
         await config_flow.async_step_service_account({CONF_SERVICE_ACCOUNT: padded})
         config_flow.async_create_entry.assert_called_once()
+
+
+class TestNotifyInstalled:
+    """Tests for the post-install 'refresh your browser' notification."""
+
+    @pytest.mark.asyncio
+    async def test_posts_localized_notification(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """A localized install_notice is posted as a persistent notification."""
+        config_flow.hass = MagicMock()
+        config_flow.hass.config.language = "en"
+        with (
+            patch(
+                "hass_ga_manual_ui.config_flow.async_get_translations",
+                AsyncMock(
+                    return_value={
+                        "component.hass_ga_manual_ui.config.install_notice": (
+                            "REFRESH NOW"
+                        ),
+                    }
+                ),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_create"
+            ) as mock_create,
+        ):
+            await config_flow._notify_installed()
+        mock_create.assert_called_once()
+        assert mock_create.call_args.args[1] == "REFRESH NOW"
+        assert (
+            mock_create.call_args.kwargs["notification_id"]
+            == "hass_ga_manual_ui_install"
+        )
+
+    @pytest.mark.asyncio
+    async def test_falls_back_to_english_when_untranslated(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """With no translation, the English fallback text is used."""
+        config_flow.hass = MagicMock()
+        config_flow.hass.config.language = "en"
+        with (
+            patch(
+                "hass_ga_manual_ui.config_flow.async_get_translations",
+                AsyncMock(return_value={}),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_create"
+            ) as mock_create,
+        ):
+            await config_flow._notify_installed()
+        mock_create.assert_called_once()
+        assert "hard refresh" in mock_create.call_args.args[1]
+
+    @pytest.mark.asyncio
+    async def test_translation_failure_still_notifies(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """A failure loading translations degrades to the fallback, still posting."""
+        config_flow.hass = MagicMock()
+        config_flow.hass.config.language = "en"
+        with (
+            patch(
+                "hass_ga_manual_ui.config_flow.async_get_translations",
+                AsyncMock(side_effect=RuntimeError("translations down")),
+            ),
+            patch(
+                "homeassistant.components.persistent_notification.async_create"
+            ) as mock_create,
+        ):
+            await config_flow._notify_installed()
+        mock_create.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_noop_without_hass(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """Without hass (e.g. a bare flow), it silently does nothing."""
+        with patch(
+            "homeassistant.components.persistent_notification.async_create"
+        ) as mock_create:
+            await config_flow._notify_installed()
+        mock_create.assert_not_called()

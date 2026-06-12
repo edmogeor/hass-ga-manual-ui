@@ -25,6 +25,14 @@ const FRONTEND_JS_PATH = resolve(
 );
 const FRONTEND_JS_CODE = readFileSync(FRONTEND_JS_PATH, "utf8");
 
+// BUILD_VERSION is baked from manifest.json at build time — read it from there.
+const MANIFEST_VERSION = JSON.parse(
+  readFileSync(
+    resolve(__dirname, "../custom_components/hass_ga_manual_ui/manifest.json"),
+    "utf8",
+  ),
+).version as string;
+
 function evalFrontend(): void {
   new Function(FRONTEND_JS_CODE)();
 }
@@ -348,6 +356,73 @@ describe("Google Assistant Manual frontend", () => {
         ?.querySelector('ha-alert[alert-type="info"]');
       expect(alert).not.toBeNull();
       expect(alert!.innerHTML).toBe(TRANSLATED);
+    });
+  });
+
+  describe("stale-version reload prompt", () => {
+    function mockHassWithVersion(version: string): MockHass {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "mock-entry" });
+        }
+        if (msg.type === "hass_ga_manual_ui/get_config") {
+          return Promise.resolve({
+            enabled: true,
+            report_state: false,
+            secure_devices_pin: "",
+            yaml_suppressed: false,
+            version,
+          });
+        }
+        if (msg.type === "homeassistant/expose_new_entities/get") {
+          return Promise.resolve({ expose_new: false });
+        }
+        if (msg.type === "homeassistant/expose_entity/list") {
+          return Promise.resolve({ exposed_entities: {} });
+        }
+        return Promise.resolve({});
+      });
+      return hass;
+    }
+
+    it("prompts a reload when the served version differs from the bundle", async () => {
+      const hass = mockHassWithVersion("99.0.0-stale");
+      setupDom(hass);
+
+      let detail: { message?: string } | null = null;
+      document
+        .querySelector("home-assistant")!
+        .addEventListener("hass-notification", (e: Event) => {
+          detail = (e as CustomEvent).detail;
+        });
+
+      evalFrontend();
+      await flushMicrotasks();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      expect(detail).not.toBeNull();
+      expect(detail!.message).toContain("new version");
+    });
+
+    it("does not prompt when the served version matches the bundle", async () => {
+      const hass = mockHassWithVersion(MANIFEST_VERSION);
+      setupDom(hass);
+
+      let fired = false;
+      document
+        .querySelector("home-assistant")!
+        .addEventListener("hass-notification", () => {
+          fired = true;
+        });
+
+      evalFrontend();
+      await flushMicrotasks();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      expect(fired).toBe(false);
     });
   });
 

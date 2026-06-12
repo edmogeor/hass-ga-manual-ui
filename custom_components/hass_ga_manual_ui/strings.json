@@ -30,7 +30,8 @@
       "Missing 'client_email'": "The JSON is missing the 'client_email' field",
       "Missing 'private_key'": "The JSON is missing the 'private_key' field"
     },
-    "yaml_notice": "\n\nYou have a `google_assistant:` section in your configuration.yaml. This integration now manages Google Assistant and overrides it, so you can remove that section."
+    "yaml_notice": "\n\nYou have a `google_assistant:` section in your configuration.yaml. This integration now manages Google Assistant and overrides it, so you can remove that section.",
+    "install_notice": "Google Assistant (Manual) is installed. If its card doesn't appear under Settings → Voice assistants, do a one-time hard refresh of your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac). This is only needed once, after installing or updating."
   },
   "frontend": {
     "yaml_detected": "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
@@ -43,6 +44,7 @@
     "check_logs": "Check Home Assistant logs for details.",
     "report_state_enable_failed": "Failed to enable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
     "report_state_disable_failed": "Failed to disable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
-    "ready_banner": "{name} is ready — manage it under Settings → Voice assistants."
+    "ready_banner": "{name} is ready — manage it under Settings → Voice assistants.",
+    "update_available": "A new version of Google Assistant (Manual) is available. Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it."
   }
 }
