@@ -621,13 +621,17 @@ describe("Google Assistant Manual frontend", () => {
       entityId?: string;
       _unsupported: Record<string, boolean> = {};
       requestUpdate = vi.fn();
-      // HA's originals (our patch wraps them); record call order for assertions.
+      // HA's originals (our patch wraps them); record call order + the event
+      // target they receive, for assertions.
       order: string[] = [];
-      _toggleAll() {
+      lastTarget: unknown = null;
+      _toggleAll(ev: { target: unknown }) {
         this.order.push("orig-all");
+        this.lastTarget = ev?.target ?? null;
       }
-      _toggleAssistant() {
+      _toggleAssistant(ev: { target: unknown }) {
         this.order.push("orig-assistant");
+        this.lastTarget = ev?.target ?? null;
       }
       render() {
         const voiceAssistants: Record<string, { domain: string; name: string }> = {
@@ -779,6 +783,34 @@ describe("Google Assistant Manual frontend", () => {
       });
 
       expect(el.order).toEqual(["expose", "orig-assistant"]);
+    });
+
+    // The switch's reactive props are reset after our await (intervening
+    // re-render). HA's handler must receive a synchronous snapshot, not the
+    // reset target, or it sends a malformed expose_entity call.
+    it("passes HA's handler a snapshot, not the reset switch target", async () => {
+      evalFrontend();
+      const el = make();
+      el.entityId = "light.demo";
+      el.hass = { callWS: vi.fn(() => Promise.resolve({})) };
+
+      const target = {
+        checked: true,
+        assistants: ["conversation", "hass_ga_manual_ui"],
+      };
+      const p = (
+        el as unknown as { _toggleAll: (e: unknown) => Promise<void> }
+      )._toggleAll({ target });
+      // Simulate the browser/Lit resetting the switch after dispatch.
+      target.checked = undefined as unknown as boolean;
+      target.assistants = undefined as unknown as string[];
+      await p;
+
+      expect(el.lastTarget).toEqual({
+        checked: true,
+        assistants: ["conversation", "hass_ga_manual_ui"],
+        assistant: undefined,
+      });
     });
   });
 });

@@ -763,6 +763,12 @@ async function patchExposePage(): Promise<void> {
         _debug("requestUpdate failed: " + (_errorMessage(e)));
       }
     }
+
+    try {
+      _refreshOurIconElements(document.body || document.documentElement);
+    } catch (e) {
+      _debug("_refreshOurIconElements after expose patch failed: " + (_errorMessage(e)));
+    }
   } catch (e) {
     _error("Failed to apply patch 3/4 (expose page): " + (_errorMessage(e)));
   }
@@ -927,6 +933,47 @@ function _patchExposeAssistantIconProto(proto: ExposeAssistantIcon): void {
     };
   } catch (e) {
     _error("Failed to patch expose assistant icon proto: " + (_errorMessage(e)));
+  }
+}
+
+// Force re-render on stale icon elements whose instance rendered before
+// our prototype patch was installed.
+function _refreshOurIconElements(root: Node): void {
+  if (root.nodeType !== 1 && root.nodeType !== 11) return;
+
+  const el = root as HTMLElement;
+
+  try {
+    if (el.nodeName === "VOICE-ASSISTANT-BRAND-ICON") {
+      const icon = el as unknown as VoiceAssistantBrandIcon;
+      if (icon.voiceAssistantId === ASSISTANT_ID) {
+        icon.requestUpdate?.();
+      }
+    } else if (el.nodeName === "VOICE-ASSISTANTS-EXPOSE-ASSISTANT-ICON") {
+      const icon = el as unknown as ExposeAssistantIcon;
+      if (icon.assistant === ASSISTANT_ID) {
+        icon.requestUpdate?.();
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
+
+  if (el.shadowRoot) {
+    try {
+      _refreshOurIconElements(el.shadowRoot);
+    } catch {
+      /* skip broken shadow roots */
+    }
+  }
+
+  const children = el.children || el.childNodes || [];
+  for (let i = 0; i < children.length; i++) {
+    try {
+      _refreshOurIconElements(children[i]);
+    } catch {
+      /* skip problem children */
+    }
   }
 }
 
@@ -1128,6 +1175,11 @@ function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
  * race that leaves the toggles (and the `anyExposed` row collapse) showing a
  * stale state until the dialog is reopened. Pre-await an identical write so the
  * refetch sees the new state; the original re-issues the same idempotent write.
+ *
+ * The original reads ev.target (the switch) again when it runs. After our await
+ * the real switch's reactive props are reset by the intervening re-render, so we
+ * snapshot them synchronously and hand the original a synthetic event carrying
+ * the snapshot — otherwise it would send a malformed expose_entity call.
  */
 function _patchToggleRefresh(
   proto: EntityVoiceSettingsElement,
@@ -1144,23 +1196,28 @@ function _patchToggleRefresh(
   if ((orig as { __gaWrapped?: boolean }).__gaWrapped) return; // already patched
 
   const wrapped = async function (this: EntityVoiceSettingsElement, ev: Event) {
+    const t = ev.target as {
+      checked?: boolean;
+      assistants?: string[];
+      assistant?: string;
+    } | null;
+    const snapshot = {
+      checked: t?.checked,
+      assistants: t?.assistants ? [...t.assistants] : t?.assistants,
+      assistant: t?.assistant,
+    };
     try {
-      const target = ev.target as {
-        checked?: boolean;
-        assistants?: string[];
-        assistant?: string;
-      };
       const hass = this.hass || getHass();
       const entityId = this.entityId;
       if (hass && entityId) {
-        const expose = !!target.checked;
+        const expose = !!snapshot.checked;
         const assistants =
           method === "_toggleAll"
             ? expose
-              ? (target.assistants || []).filter((k) => !this._unsupported?.[k])
-              : target.assistants || []
-            : target.assistant != null
-              ? [target.assistant]
+              ? (snapshot.assistants || []).filter((k) => !this._unsupported?.[k])
+              : snapshot.assistants || []
+            : snapshot.assistant != null
+              ? [snapshot.assistant]
               : [];
         if (assistants.length) {
           await hass.callWS({
@@ -1174,7 +1231,7 @@ function _patchToggleRefresh(
     } catch (e) {
       _debug("Pre-await expose write failed (" + method + "): " + _errorMessage(e));
     }
-    return orig.call(this, ev);
+    return orig.call(this, { target: snapshot } as unknown as Event);
   };
   (wrapped as { __gaWrapped?: boolean }).__gaWrapped = true;
   protoRec[method] = wrapped;
@@ -1977,6 +2034,7 @@ function _scanAfterNavigation(): void {
     try {
       injectIntoAllAssistantsElements();
       _primeVoiceAssistantsMap();
+      _refreshOurIconElements(document.body || document.documentElement);
     } catch (e) {
       _debug("post-navigation scan failed: " + (_errorMessage(e)));
     }
@@ -2012,6 +2070,12 @@ function init(): void {
     patchCustomElements();
   } catch (e) {
     _error("patchCustomElements threw: " + (_errorMessage(e)));
+  }
+
+  try {
+    _refreshOurIconElements(document.body || document.documentElement);
+  } catch (e) {
+    _error("_refreshOurIconElements threw: " + (_errorMessage(e)));
   }
 
   try {

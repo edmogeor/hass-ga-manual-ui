@@ -452,6 +452,11 @@
           _debug("requestUpdate failed: " + _errorMessage(e));
         }
       }
+      try {
+        _refreshOurIconElements(document.body || document.documentElement);
+      } catch (e) {
+        _debug("_refreshOurIconElements after expose patch failed: " + _errorMessage(e));
+      }
     } catch (e) {
       _error("Failed to apply patch 3/4 (expose page): " + _errorMessage(e));
     }
@@ -589,6 +594,37 @@
       _error("Failed to patch expose assistant icon proto: " + _errorMessage(e));
     }
   }
+  function _refreshOurIconElements(root) {
+    if (root.nodeType !== 1 && root.nodeType !== 11) return;
+    const el = root;
+    try {
+      if (el.nodeName === "VOICE-ASSISTANT-BRAND-ICON") {
+        const icon = el;
+        if (icon.voiceAssistantId === ASSISTANT_ID) {
+          icon.requestUpdate?.();
+        }
+      } else if (el.nodeName === "VOICE-ASSISTANTS-EXPOSE-ASSISTANT-ICON") {
+        const icon = el;
+        if (icon.assistant === ASSISTANT_ID) {
+          icon.requestUpdate?.();
+        }
+      }
+    } catch {
+    }
+    if (el.shadowRoot) {
+      try {
+        _refreshOurIconElements(el.shadowRoot);
+      } catch {
+      }
+    }
+    const children = el.children || el.childNodes || [];
+    for (let i = 0; i < children.length; i++) {
+      try {
+        _refreshOurIconElements(children[i]);
+      } catch {
+      }
+    }
+  }
   function _maybeFetchEntity2fa(el) {
     const entityId = el.entityId;
     if (!entityId) return;
@@ -719,13 +755,18 @@
     }
     if (orig.__gaWrapped) return;
     const wrapped = async function(ev) {
+      const t2 = ev.target;
+      const snapshot = {
+        checked: t2?.checked,
+        assistants: t2?.assistants ? [...t2.assistants] : t2?.assistants,
+        assistant: t2?.assistant
+      };
       try {
-        const target = ev.target;
         const hass = this.hass || getHass();
         const entityId = this.entityId;
         if (hass && entityId) {
-          const expose = !!target.checked;
-          const assistants = method === "_toggleAll" ? expose ? (target.assistants || []).filter((k) => !this._unsupported?.[k]) : target.assistants || [] : target.assistant != null ? [target.assistant] : [];
+          const expose = !!snapshot.checked;
+          const assistants = method === "_toggleAll" ? expose ? (snapshot.assistants || []).filter((k) => !this._unsupported?.[k]) : snapshot.assistants || [] : snapshot.assistant != null ? [snapshot.assistant] : [];
           if (assistants.length) {
             await hass.callWS({
               type: "homeassistant/expose_entity",
@@ -738,7 +779,7 @@
       } catch (e) {
         _debug("Pre-await expose write failed (" + method + "): " + _errorMessage(e));
       }
-      return orig.call(this, ev);
+      return orig.call(this, { target: snapshot });
     };
     wrapped.__gaWrapped = true;
     protoRec[method] = wrapped;
@@ -1319,6 +1360,7 @@
       try {
         injectIntoAllAssistantsElements();
         _primeVoiceAssistantsMap();
+        _refreshOurIconElements(document.body || document.documentElement);
       } catch (e) {
         _debug("post-navigation scan failed: " + _errorMessage(e));
       }
@@ -1345,6 +1387,11 @@
       patchCustomElements();
     } catch (e) {
       _error("patchCustomElements threw: " + _errorMessage(e));
+    }
+    try {
+      _refreshOurIconElements(document.body || document.documentElement);
+    } catch (e) {
+      _error("_refreshOurIconElements threw: " + _errorMessage(e));
     }
     try {
       injectIntoAllAssistantsElements();

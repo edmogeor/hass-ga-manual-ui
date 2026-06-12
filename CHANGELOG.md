@@ -14,7 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unexposed, or only some assistants showing on after re-exposing — until the
   dialog was reopened. Home Assistant fires the expose write without awaiting it
   and then immediately refetches the entity, so the refresh could read a
-  half-written entry; we now settle the write first.
+  half-written entry. We now settle the write first, snapshotting the switch
+  state synchronously so Home Assistant's handler still receives valid values
+  (otherwise it sent a malformed `expose_entity` call).
+
+- The CDN Google Assistant brand icon would sometimes appear instead of our
+  self-hosted icon in the expose tab and entity settings. Lit only re-calls
+  `render()` when reactive properties change, so icon elements that rendered
+  before our prototype patch was installed stayed stale. After patching we now
+  walk the DOM and force `requestUpdate()` on any matching stale icon elements.
 
 ## [0.1.9] - 2026-06-12
 
