@@ -5,6 +5,17 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-06-12
+
+### Changed
+
+- Internal: the integration's own UI strings (the setup notices and the
+  voice-assistant card text) now load from a dedicated `locale/` store served by
+  the integration, rather than as custom keys inside Home Assistant's translation
+  files. This lets the integration pass Home Assistant's `hassfest` validation —
+  a requirement for the HACS default store — while keeping full translations for
+  all 63 supported languages. No user-facing change.
+
 ## [0.1.4] - 2026-06-12
 
 ### Fixed

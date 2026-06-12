@@ -13,7 +13,7 @@
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
   var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
-  var BUILD_VERSION = true ? "0.1.4" : "";
+  var BUILD_VERSION = true ? "0.1.5" : "";
   var EN_STRINGS = {
     yaml_detected: "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
     enable_success: "Google Assistant enabled successfully",
