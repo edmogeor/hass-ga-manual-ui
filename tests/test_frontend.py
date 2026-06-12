@@ -8,6 +8,7 @@ import hass_ga_manual_ui.frontend as frontend_module
 import pytest
 from hass_ga_manual_ui.const import DOMAIN
 from hass_ga_manual_ui.frontend import (
+    BRAND_URL,
     FRONTEND_JS_PATH,
     FRONTEND_URL,
     LOCALE_URL,
@@ -56,10 +57,11 @@ class TestAsyncSetupFrontend:
 
         hass.http.async_register_static_paths.assert_called_once()
         call_args = hass.http.async_register_static_paths.call_args[0][0]
-        # Two static paths: the JS bundle and the locale directory.
-        assert len(call_args) == 2
+        # Three static paths: the JS bundle, the locale dir, and the brand dir.
+        assert len(call_args) == 3
         assert any(c.url_path == FRONTEND_URL for c in call_args)
         assert any(c.url_path == LOCALE_URL for c in call_args)
+        assert any(c.url_path == BRAND_URL for c in call_args)
         # The advertised URL is cache-busted with a content hash; the static
         # path itself stays at the unversioned URL.
         mock_add_js.assert_called_once()

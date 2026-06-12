@@ -150,7 +150,7 @@ Four patching mechanisms applied at `init()`:
 ```
 <ha-card outlined data-ga-manual-card="1">
   <h1.card-header>
-    <voice-assistant-brand-icon> (Google Assistant brand icon)
+    <img data-ga-manual> (our bundled brand icon, served at /<domain>/brand/)
     "Google Assistant (Manual)"
     <div> (header actions)
       <ha-icon-button> (help link to integration docs)

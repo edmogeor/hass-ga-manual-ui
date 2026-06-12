@@ -151,14 +151,16 @@ describe("Google Assistant Manual frontend", () => {
       expect(header!.textContent).toContain("Google Assistant (Manual)");
     });
 
-    it("card header has a brand icon element", () => {
+    it("card header has our bundled brand icon", () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
 
       const card = document.querySelector("[data-ga-manual-card]");
-      const icon = card!.querySelector("voice-assistant-brand-icon");
+      const icon = card!.querySelector<HTMLImageElement>("img[data-ga-manual]");
       expect(icon).not.toBeNull();
+      // Served locally, not from the brands CDN.
+      expect(icon!.getAttribute("src")).toBe("/hass_ga_manual_ui/brand/icon.png");
     });
 
     it("card body contains settings rows", () => {

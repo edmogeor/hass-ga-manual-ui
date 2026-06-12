@@ -19,6 +19,9 @@ _LOGGER = logging.getLogger(__name__)
 FRONTEND_JS_PATH = Path(__file__).parent / "frontend.js"
 FRONTEND_URL = f"/{DOMAIN}/frontend.js"
 
+BRAND_DIR = Path(__file__).parent / "brand"
+BRAND_URL = f"/{DOMAIN}/brand"
+
 
 def _compute_js_hash() -> str:
     """Return a short content hash of the frontend bundle for cache-busting."""
@@ -61,9 +64,17 @@ async def async_setup_frontend(hass: HomeAssistant) -> None:
                 # text). Uncached so updated translations take effect on the
                 # next page load without a hashed URL.
                 StaticPathConfig(LOCALE_URL, str(LOCALE_DIR), cache_headers=False),
+                # Serve our bundled brand icons so the frontend never depends on
+                # the brands CDN (which 404s/errors for this manual integration).
+                StaticPathConfig(BRAND_URL, str(BRAND_DIR), cache_headers=True),
             ]
         )
-        _LOGGER.debug("Registered static paths: %s, %s", FRONTEND_URL, LOCALE_URL)
+        _LOGGER.debug(
+            "Registered static paths: %s, %s, %s",
+            FRONTEND_URL,
+            LOCALE_URL,
+            BRAND_URL,
+        )
     except Exception as exc:
         _LOGGER.exception(
             "Failed to register static paths. "

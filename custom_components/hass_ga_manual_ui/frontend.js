@@ -4,8 +4,7 @@
   var ASSISTANT_ID = "hass_ga_manual_ui";
   var ASSISTANT_NAME = "Google Assistant (Manual)";
   var SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
-  var BRANDS_CDN = "https://brands.home-assistant.io";
-  var BRAND_DOMAIN = "google_assistant";
+  var BRAND_URL = `/${ASSISTANT_ID}/brand`;
   var WS_GET_ENTRY_ID = `${ASSISTANT_ID}/get_entry_id`;
   var WS_GET_CONFIG = `${ASSISTANT_ID}/get_config`;
   var WS_UPDATE_CONFIG = `${ASSISTANT_ID}/update_config`;
@@ -13,7 +12,7 @@
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
   var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
-  var BUILD_VERSION = true ? "0.1.6" : "";
+  var BUILD_VERSION = true ? "0.1.7" : "";
   var EN_STRINGS = {
     yaml_detected: "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
     enable_success: "Google Assistant enabled successfully",
@@ -212,7 +211,17 @@
   }
   function getBrandIconUrl() {
     const variant = _isDarkMode() ? "dark_icon" : "icon";
-    return `${BRANDS_CDN}/${BRAND_DOMAIN}/${variant}.png`;
+    return `${BRAND_URL}/${variant}.png`;
+  }
+  function _buildManualIconImg() {
+    const img = document.createElement("img");
+    img.dataset.gaManual = "1";
+    img.alt = ASSISTANT_NAME;
+    img.src = getBrandIconUrl();
+    img.style.height = "24px";
+    img.style.verticalAlign = "middle";
+    img.onerror = () => _warn("Brand icon failed to load from " + getBrandIconUrl());
+    return img;
   }
   function getHass() {
     const homeAssistant = document.querySelector("home-assistant");
@@ -499,17 +508,7 @@
       const root = this.shadowRoot || this;
       if (root.querySelector("img[data-ga-manual]")) return;
       root.innerHTML = "";
-      const img = document.createElement("img");
-      img.dataset.gaManual = "1";
-      img.className = "logo";
-      img.alt = ASSISTANT_NAME;
-      img.src = getBrandIconUrl();
-      img.crossOrigin = "anonymous";
-      img.referrerPolicy = "no-referrer";
-      img.onerror = () => {
-        _warn("Brand icon failed to load from " + getBrandIconUrl());
-      };
-      root.appendChild(img);
+      root.appendChild(_buildManualIconImg());
     } catch (e) {
       _error("Error rendering manual brand icon: " + _errorMessage(e));
     }
@@ -559,9 +558,7 @@
       container.className = "container";
       container.id = containerId;
       container.dataset.gaManual = "1";
-      const icon = document.createElement("voice-assistant-brand-icon");
-      icon.voiceAssistantId = ASSISTANT_ID;
-      icon.hass = this.hass;
+      const icon = _buildManualIconImg();
       if (this.manual) icon.style.filter = "grayscale(100%)";
       container.appendChild(icon);
       if (this.unsupported) {
@@ -819,10 +816,11 @@
       var addSetting = addSetting2;
       const hass = getHass();
       ensureTranslationsLoaded();
-      const brandIcon = document.createElement("voice-assistant-brand-icon");
-      brandIcon.voiceAssistantId = ASSISTANT_ID;
-      brandIcon.hass = hass;
-      brandIcon.style.cssText = "height:28px;margin-right:16px;margin-inline-end:16px;margin-inline-start:initial";
+      const brandIcon = _buildManualIconImg();
+      brandIcon.style.height = "28px";
+      brandIcon.style.marginRight = "16px";
+      brandIcon.style.marginInlineEnd = "16px";
+      brandIcon.style.marginInlineStart = "initial";
       const card = document.createElement("ha-card");
       card.setAttribute("outlined", "");
       card.setAttribute("data-ga-manual-card", "1");

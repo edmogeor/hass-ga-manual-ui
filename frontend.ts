@@ -83,13 +83,10 @@ const ASSISTANT_ID = "hass_ga_manual_ui";
 const ASSISTANT_NAME = "Google Assistant (Manual)";
 const SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
 
-// Use Core's official Google Assistant brand icon from the HA brands CDN so our
-// card matches the rest of HA (and tracks any future logo refresh). We hit the
-// public CDN directly — the same URL HA's own brandsUrl() builds — rather than
-// the instance's tokenized /api/brands/...?token= proxy URL, whose signed token
-// is short-lived and can't be hardcoded.
-const BRANDS_CDN = "https://brands.home-assistant.io";
-const BRAND_DOMAIN = "google_assistant";
+// Our brand icon is bundled with the integration and served at /<domain>/brand/
+// (see frontend.py). Self-hosting avoids the brands CDN, which errors for this
+// manual integration since it isn't a registered HA brand.
+const BRAND_URL = `/${ASSISTANT_ID}/brand`;
 
 const WS_GET_ENTRY_ID = `${ASSISTANT_ID}/get_entry_id`;
 const WS_GET_CONFIG = `${ASSISTANT_ID}/get_config`;
@@ -419,10 +416,22 @@ function _isDarkMode(): boolean {
   }
 }
 
-/** Core's Google Assistant brand icon from the HA brands CDN (theme-aware). */
+/** Our bundled brand icon, served locally (theme-aware). */
 function getBrandIconUrl(): string {
   const variant = _isDarkMode() ? "dark_icon" : "icon";
-  return `${BRANDS_CDN}/${BRAND_DOMAIN}/${variant}.png`;
+  return `${BRAND_URL}/${variant}.png`;
+}
+
+/** Build our brand icon as a plain <img>, matching HA's .logo sizing (24px). */
+function _buildManualIconImg(): HTMLImageElement {
+  const img = document.createElement("img");
+  img.dataset.gaManual = "1";
+  img.alt = ASSISTANT_NAME;
+  img.src = getBrandIconUrl();
+  img.style.height = "24px";
+  img.style.verticalAlign = "middle";
+  img.onerror = () => _warn("Brand icon failed to load from " + getBrandIconUrl());
+  return img;
 }
 
 function getHass(): HomeAssistant | undefined {
@@ -811,17 +820,7 @@ function _renderManualBrandIcon(this: VoiceAssistantBrandIcon): void {
     const root = this.shadowRoot || (this as unknown as HTMLElement);
     if (root.querySelector("img[data-ga-manual]")) return;
     root.innerHTML = "";
-    const img = document.createElement("img");
-    img.dataset.gaManual = "1";
-    img.className = "logo";
-    img.alt = ASSISTANT_NAME;
-    img.src = getBrandIconUrl();
-    img.crossOrigin = "anonymous";
-    img.referrerPolicy = "no-referrer";
-    img.onerror = () => {
-      _warn("Brand icon failed to load from " + getBrandIconUrl());
-    };
-    root.appendChild(img);
+    root.appendChild(_buildManualIconImg());
   } catch (e) {
     _error("Error rendering manual brand icon: " + (_errorMessage(e)));
   }
@@ -877,9 +876,7 @@ function _renderManualExposeIcon(this: ExposeAssistantIcon): void {
     container.id = containerId;
     container.dataset.gaManual = "1";
 
-    const icon = document.createElement("voice-assistant-brand-icon") as VoiceAssistantBrandIcon;
-    icon.voiceAssistantId = ASSISTANT_ID;
-    icon.hass = this.hass;
+    const icon = _buildManualIconImg();
     if (this.manual) icon.style.filter = "grayscale(100%)";
     container.appendChild(icon);
 
@@ -1229,11 +1226,11 @@ function buildCard(): HTMLElement | null {
 
     ensureTranslationsLoaded(); // hass is reliably available here
 
-    const brandIcon = document.createElement("voice-assistant-brand-icon") as VoiceAssistantBrandIcon;
-    brandIcon.voiceAssistantId = ASSISTANT_ID;
-    brandIcon.hass = hass;
-    brandIcon.style.cssText =
-      "height:28px;margin-right:16px;margin-inline-end:16px;margin-inline-start:initial";
+    const brandIcon = _buildManualIconImg();
+    brandIcon.style.height = "28px";
+    brandIcon.style.marginRight = "16px";
+    brandIcon.style.marginInlineEnd = "16px";
+    brandIcon.style.marginInlineStart = "initial";
 
     const card = document.createElement("ha-card");
     card.setAttribute("outlined", "");
