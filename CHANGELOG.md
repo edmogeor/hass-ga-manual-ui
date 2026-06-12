@@ -5,6 +5,24 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-06-12
+
+### Added
+
+- Browser-refresh prompts so the new UI reliably appears after installing or
+  updating. The companion script is injected into Home Assistant's app shell,
+  which the browser can serve from cache, so a one-time hard refresh is needed
+  to pick it up. A fresh install now posts a notification with that guidance,
+  and after an update the card shows a reload prompt when it detects the browser
+  is running a stale cached bundle — instead of leaving you to guess. Translated
+  for all 63 supported languages.
+
+### Changed
+
+- Internal cleanup: route WebSocket error logging through the existing
+  `_wsErrorMessage` helper, hoist a repeated cast, and use `setdefault` for the
+  core Google Assistant config seed. No behavior change.
+
 ## [0.1.3] - 2026-06-11
 
 ### Fixed

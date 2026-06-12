@@ -76,9 +76,6 @@ jobs:
       - name: Install JS dependencies
         run: npm ci
 
-      - name: Build frontend bundle
-        run: npm run build
-
       - name: Sync manifest version to release tag
         shell: bash
         run: |
@@ -88,6 +85,12 @@ jobs:
           jq --arg v "$version" '.version = $v' "$COMPONENT_DIR/manifest.json" > "$tmp"
           mv "$tmp" "$COMPONENT_DIR/manifest.json"
           echo "manifest version set to $version"
+
+      # After the manifest sync, so esbuild bakes the release version into
+      # __BUILD_VERSION__ (the bundle and manifest must report the same version,
+      # else a freshly-loaded bundle would look "stale" and prompt a reload).
+      - name: Build frontend bundle
+        run: npm run build
 
       - name: Create release ZIP
         shell: bash
