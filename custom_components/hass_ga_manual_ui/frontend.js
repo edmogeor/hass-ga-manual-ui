@@ -13,7 +13,7 @@
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
   var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
-  var BUILD_VERSION = true ? "0.1.5" : "";
+  var BUILD_VERSION = true ? "0.1.6" : "";
   var EN_STRINGS = {
     yaml_detected: "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
     enable_success: "Google Assistant enabled successfully",
@@ -43,7 +43,8 @@
   function ensureTranslationsLoaded() {
     if (_translationsPromise) return _translationsPromise;
     const hass = getHass();
-    const language = hass?.locale?.language || hass?.language || "en";
+    if (!hass) return Promise.resolve();
+    const language = hass.locale?.language || hass.language || "en";
     const candidates = [language];
     const base = language.split("-")[0];
     if (base && base !== language) candidates.push(base);
@@ -164,28 +165,38 @@
     _info(
       "Frontend bundle is stale (running " + BUILD_VERSION + ", server has " + serverVersion + "); prompting reload"
     );
-    const message = t("update_available");
     try {
-      const ha = document.querySelector("home-assistant");
-      if (ha) {
-        const reloadLabel = getHass()?.localize?.("ui.common.refresh") || "Reload";
-        ha.dispatchEvent(
-          new CustomEvent("hass-notification", {
-            bubbles: true,
-            composed: true,
-            detail: {
-              message,
-              duration: 0,
-              action: { text: reloadLabel, action: () => location.reload() }
-            }
-          })
-        );
+      const hass = getHass();
+      if (!hass?.callService) return;
+      hass.callService("persistent_notification", "create", {
+        title: ASSISTANT_NAME,
+        message: t("update_available"),
+        notification_id: "hass_ga_manual_ui_update"
+      });
+    } catch (e) {
+      _error("Failed to post update notification: " + _errorMessage(e));
+    }
+  }
+  async function _checkVersionForReloadPrompt() {
+    if (!BUILD_VERSION) return;
+    for (let i = 0; i < 60 && !_updatePromptShown; i++) {
+      const hass = getHass();
+      if (hass?.callWS) {
+        try {
+          const config = await _withEntryRetry(
+            (entryId) => hass.callWS({
+              type: WS_GET_CONFIG,
+              entry_id: entryId
+            })
+          );
+          _maybePromptReload(config.version);
+        } catch (e) {
+          _debug("version check failed: " + _errorMessage(e));
+        }
         return;
       }
-    } catch (e) {
-      _debug("hass-notification toast failed, falling back: " + _errorMessage(e));
+      await new Promise((r) => setTimeout(r, 1e3));
     }
-    _showToast(message, false);
   }
   function _isDarkMode() {
     try {
@@ -1016,7 +1027,18 @@
       const root = el.shadowRoot || el;
       const content = root.querySelector(".content");
       if (!content) {
-        _debug("injectCardInto: no .content in shadowRoot of " + el.nodeName);
+        if (!_observerActive.has(el)) {
+          _observerActive.add(el);
+          _debug("injectCardInto: no .content yet, waiting for render of " + el.nodeName);
+          const obs = new MutationObserver(() => {
+            if (root.querySelector(".content")) {
+              obs.disconnect();
+              _observerActive.delete(el);
+              injectCardInto(el);
+            }
+          });
+          obs.observe(root, { childList: true, subtree: true });
+        }
         return;
       }
       if (content.querySelector("[data-ga-manual-card]")) {
@@ -1246,6 +1268,21 @@
       if (input) _restorePinValue(input);
     }
   }
+  function _scanAfterNavigation() {
+    let tries = 0;
+    const tick = () => {
+      try {
+        injectIntoAllAssistantsElements();
+        _primeVoiceAssistantsMap();
+      } catch (e) {
+        _debug("post-navigation scan failed: " + _errorMessage(e));
+      }
+      if (++tries < 6) {
+        setTimeout(tick, 200);
+      }
+    };
+    tick();
+  }
   function init() {
     ensureTranslationsLoaded();
     _banner(t("ready_banner", { name: ASSISTANT_NAME }));
@@ -1324,9 +1361,21 @@
       _error("Failed to start MutationObserver: " + _errorMessage(e));
     }
     try {
+      window.addEventListener("location-changed", _scanAfterNavigation);
+      window.addEventListener("popstate", _scanAfterNavigation);
+      _debug("Navigation listeners active (location-changed, popstate)");
+    } catch (e) {
+      _error("Failed to add navigation listeners: " + _errorMessage(e));
+    }
+    try {
       patchExposePage();
     } catch (e) {
       _error("patchExposePage threw: " + _errorMessage(e));
+    }
+    try {
+      _checkVersionForReloadPrompt();
+    } catch (e) {
+      _error("_checkVersionForReloadPrompt threw: " + _errorMessage(e));
     }
     _info("Init complete \u2014 all patches applied");
   }

@@ -175,8 +175,12 @@ function t(key: StringKey, args?: Record<string, string | number>): string {
 function ensureTranslationsLoaded(): Promise<void> {
   if (_translationsPromise) return _translationsPromise;
 
+  // Defer (without memoizing) until hass exists, so we load the user's language
+  // rather than locking in "en". buildCard() re-calls this once hass is present.
   const hass = getHass();
-  const language = hass?.locale?.language || hass?.language || "en";
+  if (!hass) return Promise.resolve();
+
+  const language = hass.locale?.language || hass.language || "en";
 
   // Try the exact language tag, then the base language; EN_STRINGS is the
   // synchronous fallback baked into the bundle if neither resolves.
@@ -342,7 +346,8 @@ let _updatePromptShown = false;
  * After a HACS update + HA restart, the browser can keep serving the old cached
  * frontend.js (HA's service worker holds the prior app shell), so the running
  * bundle is older than what's installed. Compare versions and, on a mismatch,
- * prompt a refresh once.
+ * post a persistent notification once — matching the install notification, and
+ * pointing at a hard refresh (a soft reload just re-serves the cached shell).
  */
 function _maybePromptReload(serverVersion?: string): void {
   if (_updatePromptShown) return;
@@ -354,30 +359,42 @@ function _maybePromptReload(serverVersion?: string): void {
       serverVersion + "); prompting reload",
   );
 
-  const message = t("update_available");
   try {
-    const ha = document.querySelector("home-assistant");
-    if (ha) {
-      const reloadLabel =
-        getHass()?.localize?.("ui.common.refresh") || "Reload";
-      // HA's own sticky toast with a one-click Reload, scoped to this client.
-      ha.dispatchEvent(
-        new CustomEvent("hass-notification", {
-          bubbles: true,
-          composed: true,
-          detail: {
-            message,
-            duration: 0,
-            action: { text: reloadLabel, action: () => location.reload() },
-          },
-        }),
-      );
+    const hass = getHass();
+    if (!hass?.callService) return;
+    hass.callService("persistent_notification", "create", {
+      title: ASSISTANT_NAME,
+      message: t("update_available"),
+      notification_id: "hass_ga_manual_ui_update",
+    });
+  } catch (e) {
+    _error("Failed to post update notification: " + _errorMessage(e));
+  }
+}
+
+// Page-independent stale-bundle check: refreshCardState only runs on the
+// Assistants page, so without this the reload prompt is invisible everywhere
+// else. Waits for hass, then compares the installed version to BUILD_VERSION.
+async function _checkVersionForReloadPrompt(): Promise<void> {
+  if (!BUILD_VERSION) return;
+  for (let i = 0; i < 60 && !_updatePromptShown; i++) {
+    const hass = getHass();
+    if (hass?.callWS) {
+      try {
+        const config = await _withEntryRetry((entryId) =>
+          hass.callWS<{ version?: string }>({
+            type: WS_GET_CONFIG,
+            entry_id: entryId,
+          }),
+        );
+        _maybePromptReload(config.version);
+      } catch (e) {
+        _debug("version check failed: " + (_errorMessage(e)));
+      }
       return;
     }
-  } catch (e) {
-    _debug("hass-notification toast failed, falling back: " + _errorMessage(e));
+    await new Promise((r) => setTimeout(r, 1000));
   }
-  _showToast(message, false);
 }
 
 // ---------------------------------------------------------------------------
@@ -1523,7 +1540,20 @@ function injectCardInto(el: AssistantsPageElement): void {
     const root = el.shadowRoot || (el as unknown as HTMLElement);
     const content = root.querySelector<HTMLElement>(".content");
     if (!content) {
-      _debug("injectCardInto: no .content in shadowRoot of " + el.nodeName);
+      // Page shows <hass-loading-screen> (no .content) until hass is set; wait
+      // for it rather than bailing, or a mid-load scan would never inject.
+      if (!_observerActive.has(el)) {
+        _observerActive.add(el);
+        _debug("injectCardInto: no .content yet, waiting for render of " + el.nodeName);
+        const obs = new MutationObserver(() => {
+          if (root.querySelector(".content")) {
+            obs.disconnect();
+            _observerActive.delete(el);
+            injectCardInto(el);
+          }
+        });
+        obs.observe(root, { childList: true, subtree: true });
+      }
       return;
     }
 
@@ -1816,6 +1846,28 @@ async function _savePin(value: string, input?: TogglableElement): Promise<void> 
 }
 
 // ---------------------------------------------------------------------------
+// SPA navigation — route changes swap panels inside shadow DOM, invisible to
+// the document MutationObserver, so re-scan on HA's nav events. The destination
+// mounts async, so retry briefly; the scan is idempotent.
+// ---------------------------------------------------------------------------
+
+function _scanAfterNavigation(): void {
+  let tries = 0;
+  const tick = (): void => {
+    try {
+      injectIntoAllAssistantsElements();
+      _primeVoiceAssistantsMap();
+    } catch (e) {
+      _debug("post-navigation scan failed: " + (_errorMessage(e)));
+    }
+    if (++tries < 6) {
+      setTimeout(tick, 200);
+    }
+  };
+  tick();
+}
+
+// ---------------------------------------------------------------------------
 // Init — apply all patches, inject cards, start observers
 // ---------------------------------------------------------------------------
 
@@ -1913,11 +1965,27 @@ function init(): void {
     _error("Failed to start MutationObserver: " + (_errorMessage(e)));
   }
 
+  // Re-inject after SPA navigation (see _scanAfterNavigation).
+  try {
+    window.addEventListener("location-changed", _scanAfterNavigation);
+    window.addEventListener("popstate", _scanAfterNavigation);
+    _debug("Navigation listeners active (location-changed, popstate)");
+  } catch (e) {
+    _error("Failed to add navigation listeners: " + (_errorMessage(e)));
+  }
+
   // Expose page patch (async, runs when element is defined)
   try {
     patchExposePage();
   } catch (e) {
     _error("patchExposePage threw: " + (_errorMessage(e)));
+  }
+
+  // Flag a stale bundle regardless of which page is open.
+  try {
+    _checkVersionForReloadPrompt();
+  } catch (e) {
+    _error("_checkVersionForReloadPrompt threw: " + (_errorMessage(e)));
   }
 
   _info("Init complete — all patches applied");

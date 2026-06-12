@@ -1,6 +1,6 @@
 {
   "name": "hass-ga-manual-ui",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "scripts": {
     "build": "esbuild frontend.ts --bundle --outfile=custom_components/hass_ga_manual_ui/frontend.js --target=es2020 --format=iife --define:__BUILD_VERSION__=$(node -p \"JSON.stringify(require('./custom_components/hass_ga_manual_ui/manifest.json').version)\")",

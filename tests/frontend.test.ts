@@ -246,7 +246,8 @@ describe("Google Assistant Manual frontend", () => {
           (c[0] as Record<string, unknown>).type ===
             "hass_ga_manual_ui/get_config"
       );
-      expect(configCalls.length).toBe(1);
+      // At least one (the card); init's page-independent version check adds another.
+      expect(configCalls.length).toBeGreaterThanOrEqual(1);
     });
 
     it("handles failed get_entry_id gracefully", () => {
@@ -393,43 +394,65 @@ describe("Google Assistant Manual frontend", () => {
       return hass;
     }
 
+    // The update prompt is posted as a persistent_notification (consistent with
+    // the install one), so assert on callService rather than a toast event.
+    function updateNotifications(hass: MockHass): unknown[][] {
+      return hass.callService.mock.calls.filter(
+        (c: unknown[]) =>
+          c[0] === "persistent_notification" &&
+          c[1] === "create" &&
+          (c[2] as Record<string, unknown> | undefined)?.notification_id ===
+            "hass_ga_manual_ui_update",
+      );
+    }
+
     it("prompts a reload when the served version differs from the bundle", async () => {
       const hass = mockHassWithVersion("99.0.0-stale");
       setupDom(hass);
-
-      let detail: { message?: string } | null = null;
-      document
-        .querySelector("home-assistant")!
-        .addEventListener("hass-notification", (e: Event) => {
-          detail = (e as CustomEvent).detail;
-        });
 
       evalFrontend();
       await flushMicrotasks();
       await flushMicrotasks();
       await flushMicrotasks();
 
-      expect(detail).not.toBeNull();
-      expect(detail!.message).toContain("new version");
+      const calls = updateNotifications(hass);
+      expect(calls.length).toBeGreaterThanOrEqual(1);
+      expect((calls[0][2] as { message: string }).message).toContain(
+        "new version",
+      );
     });
 
     it("does not prompt when the served version matches the bundle", async () => {
       const hass = mockHassWithVersion(MANIFEST_VERSION);
       setupDom(hass);
 
-      let fired = false;
-      document
-        .querySelector("home-assistant")!
-        .addEventListener("hass-notification", () => {
-          fired = true;
-        });
+      evalFrontend();
+      await flushMicrotasks();
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      expect(updateNotifications(hass).length).toBe(0);
+    });
+
+    it("prompts a reload even when the Assistants page is never opened", async () => {
+      // Only the home-assistant root — no assistants page, so the card never
+      // builds. The prompt must still fire from the init-time version check.
+      const hass = mockHassWithVersion("99.0.0-stale");
+      const homeAssistant = document.createElement("home-assistant");
+      (homeAssistant as unknown as Record<string, unknown>).hass = hass;
+      document.body.appendChild(homeAssistant);
 
       evalFrontend();
       await flushMicrotasks();
       await flushMicrotasks();
       await flushMicrotasks();
 
-      expect(fired).toBe(false);
+      expect(document.querySelector("[data-ga-manual-card]")).toBeNull();
+      const calls = updateNotifications(hass);
+      expect(calls.length).toBeGreaterThanOrEqual(1);
+      expect((calls[0][2] as { message: string }).message).toContain(
+        "new version",
+      );
     });
   });
 

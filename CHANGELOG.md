@@ -5,6 +5,24 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-06-12
+
+### Fixed
+
+- The settings card, expose tab, and entity dialog did not appear when reaching
+  Voice assistants by navigating within Home Assistant (only on a full page load
+  to the page directly). The companion now re-runs its injection on client-side
+  navigation, so it works regardless of how you get there.
+- Card text could fall back to English instead of the user's language after the
+  0.1.5 locale change.
+
+### Changed
+
+- The "a new version is available — refresh" prompt is now a persistent
+  notification (matching the install notification) and appears on any page, not
+  only the Voice assistants page. It points at a hard refresh, which is what
+  actually clears Home Assistant's cached frontend.
+
 ## [0.1.5] - 2026-06-12
 
 ### Changed

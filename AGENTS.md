@@ -183,7 +183,7 @@ All settings rows hidden by default. State fetched via `get_config` WS on mount.
 `frontend.py` serves `frontend.js` at a content-hashed URL (`?v=<sha256[:12]>`), so the file itself is cache-busted. But the `<script>` tag is injected into HA's app document, and HA's frontend service worker can keep serving a previously-cached app shell — so a **brand-new install or an update needs a one-time hard browser refresh** before the new/updated module loads. Two mechanisms surface this to the user (a scripted `location.reload()` can't help: it's a soft reload that won't bypass the service worker, and would risk a reload loop):
 
 - **First install** — `config_flow._notify_installed()` posts a one-time `persistent_notification` (`notification_id="hass_ga_manual_ui_install"`) telling the user to hard-refresh. Server-side, so it reaches the user even though our JS hasn't loaded yet. Localized via `install_notice` in `locale/<lang>.json` with an English fallback.
-- **Update** — the bundle bakes in its version at build time (esbuild `--define:__BUILD_VERSION__` from `manifest.json`, exposed as `BUILD_VERSION`). `ws_get_config` returns the installed `version`; `_maybePromptReload()` compares them and, on a mismatch (stale cached bundle), fires HA's sticky `hass-notification` toast with a one-click Reload action, once per session. Localized via `frontend.update_available`. `_VERSION` is read at Python import time, so the server only reports the new version after the HACS-prompted HA restart — the prompt can't fire prematurely.
+- **Update** — the bundle bakes in its version at build time (esbuild `--define:__BUILD_VERSION__` from `manifest.json`, exposed as `BUILD_VERSION`). `ws_get_config` returns the installed `version`; `_maybePromptReload()` compares them and, on a mismatch (stale cached bundle), posts a `persistent_notification` (id `hass_ga_manual_ui_update`) once per session — consistent with the install notification, and pointing at a hard refresh (a soft reload just re-serves the cached shell). `_checkVersionForReloadPrompt()` runs this at init so it fires on any page, not just the Assistants card. Localized via `frontend.update_available`. `_VERSION` is read at Python import time, so the server only reports the new version after the HACS-prompted HA restart — the prompt can't fire prematurely.
 
 ## Relationships
 
@@ -378,7 +378,6 @@ For (3), the same `locale/<lang>.json` files are read two ways:
 To add a language: add `config`/`options` blocks to `translations/<lang>.json`
 (HA schema) **and** a `locale/<lang>.json` for the custom strings — no code
 changes. Keep `strings.json` and `translations/en.json` identical for English.
-`scripts/extract_locale.py` documents how the `locale/` files were split out.
 
 ## Development Setup
 
