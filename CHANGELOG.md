@@ -17,6 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   does when scrolling the expose table or reordering the entity dialog rows.
   Our self-hosted icon is always used for this integration — never the brands
   CDN.
+- The entity dialog's master "Expose" toggle did not unexpose the entity from
+  Google Assistant (Manual): turning it off left the entity exposed to us (so it
+  stayed in the exposed-entities list), even though toggling our own row off
+  worked. This was Home Assistant's `_toggleAll` dropping the last assistant in
+  its list — which is our injected entry — so the master toggle now explicitly
+  includes our assistant.
 
 ## [0.1.7] - 2026-06-12
 

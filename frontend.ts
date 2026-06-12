@@ -74,6 +74,9 @@ interface EntityVoiceSettingsElement extends HTMLElement, LitLifecycle {
   entityId?: string;
   __gaEntityId?: string;
   __gaInfo?: GaEntityInfo | null;
+  // HA's master "Expose" toggle handler; reads ev.target.assistants. We wrap it
+  // so the toggle also (un)exposes our assistant — see _patchEntityVoiceSettingsProto.
+  _toggleAll?(ev: Event): void;
 }
 
 interface WSError extends Error {
@@ -1047,8 +1050,46 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
   }
 }
 
+/**
+ * Ensure HA's master "Expose" toggle also (un)exposes our assistant.
+ *
+ * HA's _toggleAll exposes/unexposes everything in ev.target.assistants (the
+ * master switch's assistant list, built as `uiAssistants`). That list is
+ * mangled by a long-standing HA splice bug: `uiAssistants.splice(
+ * showAssistants.indexOf(x), 1)` runs *after* x was removed from showAssistants,
+ * so indexOf is -1 and splice(-1, 1) drops the LAST entry. We inject our
+ * assistant last, so our id is the one dropped — and the master Expose toggle
+ * silently skips us, leaving the entity exposed to us after "unexpose all".
+ * Re-add our id (when enabled) so the master toggle treats us like any other
+ * shown assistant. Unexposing an already-unexposed assistant is a safe no-op.
+ */
+function _patchToggleAll(proto: EntityVoiceSettingsElement): void {
+  const protoRec = proto as unknown as Record<string, unknown>;
+  const origToggleAll = protoRec._toggleAll as
+    | ((this: EntityVoiceSettingsElement, ev: Event) => unknown)
+    | undefined;
+  if (typeof origToggleAll !== "function") {
+    _debug("entity-voice-settings._toggleAll not found (HA may have renamed it)");
+    return;
+  }
+  protoRec._toggleAll = function (this: EntityVoiceSettingsElement, ev: Event) {
+    try {
+      if (_gaManualEnabled) {
+        const list = (ev.target as { assistants?: unknown }).assistants;
+        if (Array.isArray(list) && !list.includes(ASSISTANT_ID)) {
+          list.push(ASSISTANT_ID);
+        }
+      }
+    } catch (e) {
+      _debug("Failed to add our assistant to _toggleAll: " + _errorMessage(e));
+    }
+    return origToggleAll.call(this, ev);
+  };
+}
+
 function _patchEntityVoiceSettingsProto(proto: EntityVoiceSettingsElement): void {
   try {
+    _patchToggleAll(proto);
     const origFirstUpdated = proto.firstUpdated;
     const origUpdated = proto.updated;
     proto.firstUpdated = function (this: EntityVoiceSettingsElement, changedProps: Map<string, unknown>) {

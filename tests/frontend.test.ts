@@ -605,4 +605,51 @@ describe("Google Assistant Manual frontend", () => {
       expect(el.render()).toBe("ORIG:conversation");
     });
   });
+
+  // HA's master "Expose" toggle (_toggleAll) unexposes everything in
+  // ev.target.assistants, but an HA splice bug drops the last entry of that
+  // list — which is our injected id. We wrap _toggleAll to re-add our id so the
+  // master toggle (un)exposes our assistant like any other shown one.
+  describe("entity dialog master expose toggle", () => {
+    class FakeEntityVoiceSettings extends HTMLElement {
+      captured: string[] | null = null;
+      _toggleAll(ev: Event) {
+        this.captured = [
+          ...(ev.target as unknown as { assistants: string[] }).assistants,
+        ];
+      }
+    }
+    if (!customElements.get("entity-voice-settings")) {
+      customElements.define("entity-voice-settings", FakeEntityVoiceSettings);
+    }
+
+    it("re-adds our assistant that HA's splice bug dropped", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "entity-voice-settings",
+      ) as unknown as FakeEntityVoiceSettings;
+      // HA's mangled uiAssistants — our (last-injected) id is missing.
+      const target = { assistants: ["conversation", "cloud.alexa"], checked: false };
+      el._toggleAll({ target } as unknown as Event);
+
+      expect(el.captured).toContain("hass_ga_manual_ui");
+      expect(el.captured).toContain("conversation"); // existing entries preserved
+    });
+
+    it("does not duplicate our assistant when already present", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "entity-voice-settings",
+      ) as unknown as FakeEntityVoiceSettings;
+      const target = {
+        assistants: ["conversation", "hass_ga_manual_ui"],
+        checked: false,
+      };
+      el._toggleAll({ target } as unknown as Event);
+
+      expect(
+        el.captured!.filter((a) => a === "hass_ga_manual_ui").length,
+      ).toBe(1);
+    });
+  });
 });

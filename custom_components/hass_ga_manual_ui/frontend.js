@@ -668,8 +668,30 @@
       _error("Error injecting ask_pin checkbox: " + _errorMessage(e));
     }
   }
+  function _patchToggleAll(proto) {
+    const protoRec = proto;
+    const origToggleAll = protoRec._toggleAll;
+    if (typeof origToggleAll !== "function") {
+      _debug("entity-voice-settings._toggleAll not found (HA may have renamed it)");
+      return;
+    }
+    protoRec._toggleAll = function(ev) {
+      try {
+        if (_gaManualEnabled) {
+          const list = ev.target.assistants;
+          if (Array.isArray(list) && !list.includes(ASSISTANT_ID)) {
+            list.push(ASSISTANT_ID);
+          }
+        }
+      } catch (e) {
+        _debug("Failed to add our assistant to _toggleAll: " + _errorMessage(e));
+      }
+      return origToggleAll.call(this, ev);
+    };
+  }
   function _patchEntityVoiceSettingsProto(proto) {
     try {
+      _patchToggleAll(proto);
       const origFirstUpdated = proto.firstUpdated;
       const origUpdated = proto.updated;
       proto.firstUpdated = function(changedProps) {
