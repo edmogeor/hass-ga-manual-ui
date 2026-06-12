@@ -503,118 +503,87 @@
       _error("Failed to patch assistants page proto: " + _errorMessage(e));
     }
   }
-  function _renderManualBrandIcon() {
-    try {
-      const root = this.shadowRoot || this;
-      if (root.querySelector("img[data-ga-manual]")) return;
-      root.innerHTML = "";
-      root.appendChild(_buildManualIconImg());
-    } catch (e) {
-      _error("Error rendering manual brand icon: " + _errorMessage(e));
+  function _manualBrandIconNode(el) {
+    let img = el.__gaIconNode;
+    if (!img) {
+      img = _buildManualIconImg();
+      el.__gaIconNode = img;
+    } else {
+      img.src = getBrandIconUrl();
     }
+    return img;
   }
   function _patchBrandIconProto(proto) {
     try {
       const origRender = proto.render;
-      const origFirstUpdated = proto.firstUpdated;
-      const origUpdated = proto.updated;
       proto.render = function() {
-        if (this.voiceAssistantId === ASSISTANT_ID) return null;
+        if (this.voiceAssistantId === ASSISTANT_ID) {
+          return _manualBrandIconNode(this);
+        }
         try {
-          const result = origRender.call(this);
-          this.__gaRenderFailed = false;
-          return result;
+          return origRender.call(this);
         } catch (e) {
-          this.__gaRenderFailed = true;
           _debug("brand-icon render fell back to local icon: " + _errorMessage(e));
-          return null;
-        }
-      };
-      proto.firstUpdated = function(changedProps) {
-        if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
-          _renderManualBrandIcon.call(this);
-        } else {
-          origFirstUpdated.call(this, changedProps);
-        }
-      };
-      proto.updated = function(changedProps) {
-        if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
-          _renderManualBrandIcon.call(this);
-        } else {
-          origUpdated.call(this, changedProps);
+          return _manualBrandIconNode(this);
         }
       };
     } catch (e) {
       _error("Failed to patch brand icon proto: " + _errorMessage(e));
     }
   }
-  function _renderManualExposeIcon() {
-    try {
-      const root = this.shadowRoot || this;
-      if (root.querySelector("[data-ga-manual]")) return;
-      root.innerHTML = "";
-      const containerId = (this.id || "ga") + "-" + ASSISTANT_ID;
-      const container = document.createElement("div");
-      container.className = "container";
-      container.id = containerId;
-      container.dataset.gaManual = "1";
-      const icon = _buildManualIconImg();
-      if (this.manual) icon.style.filter = "grayscale(100%)";
-      container.appendChild(icon);
-      if (this.unsupported) {
-        const alertIcon = document.createElement("ha-icon");
-        alertIcon.setAttribute("icon", "mdi:alert-circle");
-        alertIcon.classList.add("unsupported");
-        container.appendChild(alertIcon);
-      }
-      root.appendChild(container);
-      const tooltip = document.createElement("ha-tooltip");
-      tooltip.setAttribute("for", containerId);
-      tooltip.setAttribute("placement", "left");
-      if (!this.unsupported && !this.manual) tooltip.setAttribute("disabled", "");
-      const localize = this.hass?.localize;
-      if (this.unsupported) {
-        tooltip.appendChild(
-          document.createTextNode(
-            localize ? localize("ui.panel.config.voice_assistants.expose.not_supported") : ""
-          )
-        );
-        if (this.manual) tooltip.appendChild(document.createElement("br"));
-      }
-      if (this.manual) {
-        tooltip.appendChild(
-          document.createTextNode(
-            localize ? localize("ui.panel.config.voice_assistants.expose.manually_configured") : ""
-          )
-        );
-      }
-      root.appendChild(tooltip);
-    } catch (e) {
-      _error("Error rendering manual expose icon: " + _errorMessage(e));
+  function _manualExposeIconNode(el) {
+    const localize = el.hass?.localize;
+    const lang = el.hass?.locale?.language || el.hass?.language || "";
+    const sig = (el.manual ? "m" : "") + "|" + (el.unsupported ? "u" : "") + "|" + lang;
+    if (el.__gaExposeNode && el.__gaExposeSig === sig) return el.__gaExposeNode;
+    const wrapper = document.createElement("div");
+    wrapper.dataset.gaManual = "1";
+    const containerId = (el.id || "ga") + "-" + ASSISTANT_ID;
+    const container = document.createElement("div");
+    container.className = "container";
+    container.id = containerId;
+    const icon = _buildManualIconImg();
+    if (el.manual) icon.style.filter = "grayscale(100%)";
+    container.appendChild(icon);
+    if (el.unsupported) {
+      const alertIcon = document.createElement("ha-icon");
+      alertIcon.setAttribute("icon", "mdi:alert-circle");
+      alertIcon.classList.add("unsupported");
+      container.appendChild(alertIcon);
     }
+    wrapper.appendChild(container);
+    const tooltip = document.createElement("ha-tooltip");
+    tooltip.setAttribute("for", containerId);
+    tooltip.setAttribute("placement", "left");
+    if (!el.unsupported && !el.manual) tooltip.setAttribute("disabled", "");
+    if (el.unsupported) {
+      tooltip.appendChild(
+        document.createTextNode(
+          localize ? localize("ui.panel.config.voice_assistants.expose.not_supported") : ""
+        )
+      );
+      if (el.manual) tooltip.appendChild(document.createElement("br"));
+    }
+    if (el.manual) {
+      tooltip.appendChild(
+        document.createTextNode(
+          localize ? localize("ui.panel.config.voice_assistants.expose.manually_configured") : ""
+        )
+      );
+    }
+    wrapper.appendChild(tooltip);
+    el.__gaExposeNode = wrapper;
+    el.__gaExposeSig = sig;
+    return wrapper;
   }
   function _patchExposeAssistantIconProto(proto) {
     try {
       const origRender = proto.render;
-      const origFirstUpdated = proto.firstUpdated;
-      const origUpdated = proto.updated;
       proto.render = function() {
-        if (this.assistant === ASSISTANT_ID) return null;
+        if (this.assistant === ASSISTANT_ID) {
+          return _manualExposeIconNode(this);
+        }
         return origRender.call(this);
-      };
-      proto.firstUpdated = function(changedProps) {
-        if (this.assistant === ASSISTANT_ID) {
-          _renderManualExposeIcon.call(this);
-        } else {
-          origFirstUpdated.call(this, changedProps);
-        }
-      };
-      proto.updated = function(changedProps) {
-        if (this.assistant === ASSISTANT_ID) {
-          _renderManualExposeIcon.call(this);
-        } else {
-          origUpdated.call(this, changedProps);
-        }
       };
     } catch (e) {
       _error("Failed to patch expose assistant icon proto: " + _errorMessage(e));

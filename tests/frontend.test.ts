@@ -491,4 +491,118 @@ describe("Google Assistant Manual frontend", () => {
       expect(() => evalFrontend()).not.toThrow();
     });
   });
+
+  // The brand / expose icons are patched at the render() level: our assistant
+  // returns our self-hosted icon as a DOM node, never HA's brands-CDN <img>.
+  // These guard against the recycling regression where Lit reuses an element
+  // for a different assistant id (virtualized tables, unkeyed .map() rows).
+  describe("custom element icon patches", () => {
+    // Custom elements can only be defined once per realm; reuse across tests.
+    class FakeBrandIcon extends HTMLElement {
+      voiceAssistantId = "";
+      hass: unknown = { localize: (k: string) => k };
+      render() {
+        return "ORIG:" + this.voiceAssistantId;
+      }
+    }
+    class FakeExposeIcon extends HTMLElement {
+      assistant = "";
+      hass: unknown = { localize: (k: string) => k };
+      manual = false;
+      unsupported = false;
+      render() {
+        return "ORIG:" + this.assistant;
+      }
+    }
+    if (!customElements.get("voice-assistant-brand-icon")) {
+      customElements.define("voice-assistant-brand-icon", FakeBrandIcon);
+    }
+    if (!customElements.get("voice-assistants-expose-assistant-icon")) {
+      customElements.define(
+        "voice-assistants-expose-assistant-icon",
+        FakeExposeIcon,
+      );
+    }
+
+    it("brand icon renders our self-hosted icon node for our assistant", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "voice-assistant-brand-icon",
+      ) as unknown as FakeBrandIcon;
+      el.voiceAssistantId = "hass_ga_manual_ui";
+
+      const node = el.render() as unknown as HTMLImageElement;
+      expect(node).toBeInstanceOf(HTMLImageElement);
+      expect(node.dataset.gaManual).toBe("1");
+      // Self-hosted, never the brands CDN.
+      expect(node.getAttribute("src")).toContain("/hass_ga_manual_ui/brand/");
+    });
+
+    it("brand icon returns a stable node across re-renders (Lit safe)", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "voice-assistant-brand-icon",
+      ) as unknown as FakeBrandIcon;
+      el.voiceAssistantId = "hass_ga_manual_ui";
+
+      expect(el.render()).toBe(el.render());
+    });
+
+    it("brand icon delegates to HA for non-manual assistants (recycling)", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "voice-assistant-brand-icon",
+      ) as unknown as FakeBrandIcon;
+
+      // Element first shows our assistant, then is reused for another id.
+      el.voiceAssistantId = "hass_ga_manual_ui";
+      expect(el.render()).toBeInstanceOf(HTMLImageElement);
+
+      el.voiceAssistantId = "cloud.google_assistant";
+      // No stale node leaks — HA's own render result is returned.
+      expect(el.render()).toBe("ORIG:cloud.google_assistant");
+    });
+
+    it("expose icon renders our icon + tooltip for our assistant", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "voice-assistants-expose-assistant-icon",
+      ) as unknown as FakeExposeIcon;
+      el.assistant = "hass_ga_manual_ui";
+
+      const node = el.render() as unknown as HTMLElement;
+      expect(node).toBeInstanceOf(HTMLElement);
+      expect(node.dataset.gaManual).toBe("1");
+      const img = node.querySelector<HTMLImageElement>("img[data-ga-manual]");
+      expect(img).not.toBeNull();
+      expect(img!.getAttribute("src")).toContain("/hass_ga_manual_ui/brand/");
+      expect(node.querySelector("ha-tooltip")).not.toBeNull();
+    });
+
+    it("expose icon rebuilds only when its props change", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "voice-assistants-expose-assistant-icon",
+      ) as unknown as FakeExposeIcon;
+      el.assistant = "hass_ga_manual_ui";
+
+      const first = el.render();
+      expect(el.render()).toBe(first); // same props → stable node
+      el.manual = true;
+      expect(el.render()).not.toBe(first); // prop change → rebuilt
+    });
+
+    it("expose icon delegates to HA for non-manual assistants (recycling)", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "voice-assistants-expose-assistant-icon",
+      ) as unknown as FakeExposeIcon;
+
+      el.assistant = "hass_ga_manual_ui";
+      expect(el.render()).toBeInstanceOf(HTMLElement);
+
+      el.assistant = "conversation";
+      expect(el.render()).toBe("ORIG:conversation");
+    });
+  });
 });

@@ -38,9 +38,11 @@ interface AssistantsPageElement extends HTMLElement, LitLifecycle {
 interface VoiceAssistantBrandIcon extends HTMLElement, LitLifecycle {
   voiceAssistantId: string;
   hass?: HomeAssistant;
-  // Set when HA's own render threw (id missing from the voiceAssistants map):
-  // updated() then paints our local icon as a fallback instead of empty.
-  __gaRenderFailed?: boolean;
+  // Cached icon node returned from render() for our assistant (and as the
+  // fallback when HA's own render throws on a missing map entry). Returning a
+  // stable Node keeps the icon inside Lit's render lifecycle, so element reuse
+  // (virtualized tables, unkeyed .map() rows) swaps it correctly.
+  __gaIconNode?: HTMLImageElement;
 }
 
 interface ExposeAssistantIcon extends HTMLElement, LitLifecycle {
@@ -48,6 +50,10 @@ interface ExposeAssistantIcon extends HTMLElement, LitLifecycle {
   hass?: HomeAssistant;
   unsupported?: boolean;
   manual?: boolean;
+  // Cached content node + the prop signature it was built for, returned from
+  // render() for our assistant (see __gaIconNode above for the rationale).
+  __gaExposeNode?: HTMLElement;
+  __gaExposeSig?: string;
 }
 
 interface TogglableElement extends HTMLElement {
@@ -815,48 +821,36 @@ function _patchAssistantsPageProto(proto: AssistantsPageElement): void {
   }
 }
 
-function _renderManualBrandIcon(this: VoiceAssistantBrandIcon): void {
-  try {
-    const root = this.shadowRoot || (this as unknown as HTMLElement);
-    if (root.querySelector("img[data-ga-manual]")) return;
-    root.innerHTML = "";
-    root.appendChild(_buildManualIconImg());
-  } catch (e) {
-    _error("Error rendering manual brand icon: " + (_errorMessage(e)));
+// Build/cache our self-hosted brand icon node for an element, refreshing its
+// themed src on reuse. Returned straight from render() so Lit owns it — never
+// HA's brands-CDN <img> for our assistant.
+function _manualBrandIconNode(el: VoiceAssistantBrandIcon): HTMLImageElement {
+  let img = el.__gaIconNode;
+  if (!img) {
+    img = _buildManualIconImg();
+    el.__gaIconNode = img;
+  } else {
+    img.src = getBrandIconUrl();
   }
+  return img;
 }
 
 function _patchBrandIconProto(proto: VoiceAssistantBrandIcon): void {
   try {
     const origRender = proto.render;
-    const origFirstUpdated = proto.firstUpdated;
-    const origUpdated = proto.updated;
     proto.render = function (this: VoiceAssistantBrandIcon) {
-      if (this.voiceAssistantId === ASSISTANT_ID) return null;
+      // Our assistant always renders our self-hosted icon, never the brands CDN.
+      if (this.voiceAssistantId === ASSISTANT_ID) {
+        return _manualBrandIconNode(this);
+      }
       try {
-        const result = origRender!.call(this);
-        this.__gaRenderFailed = false;
-        return result;
+        return origRender!.call(this);
       } catch (e) {
-        // HA's render reads voiceAssistants[id].name unguarded. Fall back to our
-        // local icon (painted post-commit in updated) instead of empty.
-        this.__gaRenderFailed = true;
+        // HA's render reads voiceAssistants[id].name unguarded and throws when
+        // the id is missing from the map. Fall back to our local icon node
+        // instead of an empty cell.
         _debug("brand-icon render fell back to local icon: " + _errorMessage(e));
-        return null;
-      }
-    };
-    proto.firstUpdated = function (this: VoiceAssistantBrandIcon, changedProps: Map<string, unknown>) {
-      if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
-        _renderManualBrandIcon.call(this);
-      } else {
-        origFirstUpdated!.call(this, changedProps);
-      }
-    };
-    proto.updated = function (this: VoiceAssistantBrandIcon, changedProps: Map<string, unknown>) {
-      if (this.voiceAssistantId === ASSISTANT_ID || this.__gaRenderFailed) {
-        _renderManualBrandIcon.call(this);
-      } else {
-        origUpdated!.call(this, changedProps);
+        return _manualBrandIconNode(this);
       }
     };
   } catch (e) {
@@ -864,83 +858,76 @@ function _patchBrandIconProto(proto: VoiceAssistantBrandIcon): void {
   }
 }
 
-function _renderManualExposeIcon(this: ExposeAssistantIcon): void {
-  try {
-    const root = this.shadowRoot || (this as unknown as HTMLElement);
-    if (root.querySelector("[data-ga-manual]")) return;
-    root.innerHTML = "";
+// Build/cache our expose-tab icon node (icon + tooltip) for an element. Rebuilt
+// only when the props it depends on change (manual/unsupported/language), so a
+// stable Node is returned across the frequent hass re-renders. Returned from
+// render() so Lit swaps it correctly when the data-table recycles the element.
+function _manualExposeIconNode(el: ExposeAssistantIcon): HTMLElement {
+  const localize = el.hass?.localize;
+  const lang = el.hass?.locale?.language || el.hass?.language || "";
+  const sig =
+    (el.manual ? "m" : "") + "|" + (el.unsupported ? "u" : "") + "|" + lang;
+  if (el.__gaExposeNode && el.__gaExposeSig === sig) return el.__gaExposeNode;
 
-    const containerId = ((this as unknown as HTMLElement).id || "ga") + "-" + ASSISTANT_ID;
-    const container = document.createElement("div");
-    container.className = "container";
-    container.id = containerId;
-    container.dataset.gaManual = "1";
+  const wrapper = document.createElement("div");
+  wrapper.dataset.gaManual = "1";
 
-    const icon = _buildManualIconImg();
-    if (this.manual) icon.style.filter = "grayscale(100%)";
-    container.appendChild(icon);
+  const containerId = ((el as unknown as HTMLElement).id || "ga") + "-" + ASSISTANT_ID;
+  const container = document.createElement("div");
+  container.className = "container";
+  container.id = containerId;
 
-    if (this.unsupported) {
-      const alertIcon = document.createElement("ha-icon");
-      alertIcon.setAttribute("icon", "mdi:alert-circle");
-      alertIcon.classList.add("unsupported");
-      container.appendChild(alertIcon);
-    }
-    root.appendChild(container);
+  const icon = _buildManualIconImg();
+  if (el.manual) icon.style.filter = "grayscale(100%)";
+  container.appendChild(icon);
 
-    const tooltip = document.createElement("ha-tooltip");
-    tooltip.setAttribute("for", containerId);
-    tooltip.setAttribute("placement", "left");
-    if (!this.unsupported && !this.manual) tooltip.setAttribute("disabled", "");
-
-    const localize = this.hass?.localize;
-    if (this.unsupported) {
-      tooltip.appendChild(
-        document.createTextNode(
-          localize
-            ? localize("ui.panel.config.voice_assistants.expose.not_supported")
-            : "",
-        ),
-      );
-      if (this.manual) tooltip.appendChild(document.createElement("br"));
-    }
-    if (this.manual) {
-      tooltip.appendChild(
-        document.createTextNode(
-          localize
-            ? localize("ui.panel.config.voice_assistants.expose.manually_configured")
-            : "",
-        ),
-      );
-    }
-    root.appendChild(tooltip);
-  } catch (e) {
-    _error("Error rendering manual expose icon: " + (_errorMessage(e)));
+  if (el.unsupported) {
+    const alertIcon = document.createElement("ha-icon");
+    alertIcon.setAttribute("icon", "mdi:alert-circle");
+    alertIcon.classList.add("unsupported");
+    container.appendChild(alertIcon);
   }
+  wrapper.appendChild(container);
+
+  const tooltip = document.createElement("ha-tooltip");
+  tooltip.setAttribute("for", containerId);
+  tooltip.setAttribute("placement", "left");
+  if (!el.unsupported && !el.manual) tooltip.setAttribute("disabled", "");
+
+  if (el.unsupported) {
+    tooltip.appendChild(
+      document.createTextNode(
+        localize
+          ? localize("ui.panel.config.voice_assistants.expose.not_supported")
+          : "",
+      ),
+    );
+    if (el.manual) tooltip.appendChild(document.createElement("br"));
+  }
+  if (el.manual) {
+    tooltip.appendChild(
+      document.createTextNode(
+        localize
+          ? localize("ui.panel.config.voice_assistants.expose.manually_configured")
+          : "",
+      ),
+    );
+  }
+  wrapper.appendChild(tooltip);
+
+  el.__gaExposeNode = wrapper;
+  el.__gaExposeSig = sig;
+  return wrapper;
 }
 
 function _patchExposeAssistantIconProto(proto: ExposeAssistantIcon): void {
   try {
     const origRender = proto.render;
-    const origFirstUpdated = proto.firstUpdated;
-    const origUpdated = proto.updated;
     proto.render = function (this: ExposeAssistantIcon) {
-      if (this.assistant === ASSISTANT_ID) return null;
+      if (this.assistant === ASSISTANT_ID) {
+        return _manualExposeIconNode(this);
+      }
       return origRender!.call(this);
-    };
-    proto.firstUpdated = function (this: ExposeAssistantIcon, changedProps: Map<string, unknown>) {
-      if (this.assistant === ASSISTANT_ID) {
-        _renderManualExposeIcon.call(this);
-      } else {
-        origFirstUpdated!.call(this, changedProps);
-      }
-    };
-    proto.updated = function (this: ExposeAssistantIcon, changedProps: Map<string, unknown>) {
-      if (this.assistant === ASSISTANT_ID) {
-        _renderManualExposeIcon.call(this);
-      } else {
-        origUpdated!.call(this, changedProps);
-      }
     };
   } catch (e) {
     _error("Failed to patch expose assistant icon proto: " + (_errorMessage(e)));

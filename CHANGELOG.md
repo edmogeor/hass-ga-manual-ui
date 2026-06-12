@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- The Google Assistant icon could intermittently disappear or show the generic
+  Google icon on the expose tab, and the assistant row/toggle could fail to
+  appear when opening an entity. The icon is now rendered inside Home
+  Assistant's own render lifecycle (instead of being painted into the shadow
+  DOM after the fact), so it survives the element reuse that Home Assistant
+  does when scrolling the expose table or reordering the entity dialog rows.
+  Our self-hosted icon is always used for this integration — never the brands
+  CDN.
+
 ## [0.1.7] - 2026-06-12
 
 ### Fixed
