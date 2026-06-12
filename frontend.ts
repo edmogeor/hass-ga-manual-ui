@@ -929,11 +929,29 @@ function _maybeFetchEntity2fa(el: EntityVoiceSettingsElement): void {
       el.__gaInfo = info;
       _injectAskPin(el);
     })
-    .catch(() => {
+    .catch((err: unknown) => {
       if (el.__gaEntityId !== entityId) return;
-      el.__gaInfo = null; // unsupported / not enabled — no checkbox
+      // Retry recoverable failures (clear the marker); cache terminal ones as
+      // null so unsupported entities don't re-fetch on every render.
+      if (_is2faFetchRecoverable(err)) {
+        el.__gaEntityId = undefined;
+        return;
+      }
+      el.__gaInfo = null; // not supported / unknown — no checkbox
       _injectAskPin(el);
     });
+}
+
+/**
+ * Whether a failed get_entity 2FA fetch is worth retrying. Recoverable: the
+ * assistant was briefly disabled ("not enabled") or an internal server error.
+ * Not recoverable: the entity isn't supported by Google or no longer exists.
+ */
+function _is2faFetchRecoverable(err: unknown): boolean {
+  const wsErr = err as WSError;
+  if (wsErr && wsErr.code === "internal_error") return true;
+  const msg = ((wsErr && (wsErr.message || wsErr.error)) || "").toLowerCase();
+  return msg.includes("not enabled");
 }
 
 function _findOurAssistantRow(root: ShadowRoot): HTMLElement | null {

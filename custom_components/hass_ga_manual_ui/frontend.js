@@ -608,11 +608,21 @@
       if (el.__gaEntityId !== entityId) return;
       el.__gaInfo = info;
       _injectAskPin(el);
-    }).catch(() => {
+    }).catch((err) => {
       if (el.__gaEntityId !== entityId) return;
+      if (_is2faFetchRecoverable(err)) {
+        el.__gaEntityId = void 0;
+        return;
+      }
       el.__gaInfo = null;
       _injectAskPin(el);
     });
+  }
+  function _is2faFetchRecoverable(err) {
+    const wsErr = err;
+    if (wsErr && wsErr.code === "internal_error") return true;
+    const msg = (wsErr && (wsErr.message || wsErr.error) || "").toLowerCase();
+    return msg.includes("not enabled");
   }
   function _findOurAssistantRow(root) {
     const items = root.querySelectorAll("ha-md-list-item");

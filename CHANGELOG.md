@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.4] - 2026-06-12
 
+### Fixed
+
+- The "Ask for PIN" checkbox could stay hidden for a security device if its
+  initial lookup failed while the integration was momentarily disabled. Such
+  transient failures are now retried instead of being cached as "no checkbox".
+
 ### Added
 
 - Browser-refresh prompts so the new UI reliably appears after installing or
