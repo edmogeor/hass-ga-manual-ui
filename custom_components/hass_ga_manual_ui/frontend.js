@@ -3,6 +3,7 @@
   // frontend.ts
   var ASSISTANT_ID = "hass_ga_manual_ui";
   var ASSISTANT_NAME = "Google Assistant (Manual)";
+  var BRAND_SLUG = "hass-ga-manual-ui";
   var SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
   var BRAND_URL = `/${ASSISTANT_ID}/brand`;
   var WS_GET_ENTRY_ID = `${ASSISTANT_ID}/get_entry_id`;
@@ -12,7 +13,7 @@
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
   var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
-  var BUILD_VERSION = true ? "0.1.10" : "";
+  var BUILD_VERSION = true ? "0.1.11" : "";
   var EN_STRINGS = {
     yaml_detected: "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
     enable_success: "Google Assistant enabled successfully",
@@ -108,7 +109,7 @@
   function _log(level, message, data) {
     const isProblem = level === "warn" || level === "error";
     if (_DEBUG || isProblem) {
-      const prefixed = "[GA Manual] " + message;
+      const prefixed = "[" + BRAND_SLUG + "] " + message;
       try {
         if (data !== void 0) {
           console[level](prefixed, data);
@@ -135,7 +136,18 @@
   var _bannerForwarded = false;
   function _banner(message) {
     try {
-      console.info(message);
+      if (BUILD_VERSION) {
+        console.info(
+          "%c " + BRAND_SLUG + " %c v" + BUILD_VERSION + " ",
+          "background:#4285f4;color:#fff;font-weight:600;padding:2px 6px;border-radius:4px 0 0 4px;",
+          "background:#202124;color:#8ab4f8;font-weight:600;padding:2px 6px;border-radius:0 4px 4px 0;"
+        );
+      } else {
+        console.info(
+          "%c " + BRAND_SLUG + " ",
+          "background:#4285f4;color:#fff;font-weight:600;padding:2px 6px;border-radius:4px;"
+        );
+      }
     } catch {
     }
     if (!_bannerForwarded) {

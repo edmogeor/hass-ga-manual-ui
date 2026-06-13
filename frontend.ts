@@ -88,6 +88,9 @@ interface WSError extends Error {
 
 const ASSISTANT_ID = "hass_ga_manual_ui";
 const ASSISTANT_NAME = "Google Assistant (Manual)";
+// Developer-facing brand slug for the console badge and log prefix. Distinct
+// from ASSISTANT_NAME, which is the user-facing name shown in the HA UI.
+const BRAND_SLUG = "hass-ga-manual-ui";
 const SORT_TARGET = ["conversation", "cloud.alexa", "cloud.google_assistant"];
 
 // Our brand icon is bundled with the integration and served at /<domain>/brand/
@@ -292,7 +295,7 @@ function _forwardToHaLog(level: "info" | "warn" | "error", message: string): voi
 function _log(level: "debug" | "info" | "warn" | "error", message: string, data?: unknown): void {
   const isProblem = level === "warn" || level === "error";
   if (_DEBUG || isProblem) {
-    const prefixed = "[GA Manual] " + message;
+    const prefixed = "[" + BRAND_SLUG + "] " + message;
     try {
       if (data !== undefined) {
         console[level](prefixed, data);
@@ -311,15 +314,30 @@ function _info(msg: string, data?: unknown): void { _log("info", msg, data); }
 function _warn(msg: string, data?: unknown): void { _log("warn", msg, data); }
 function _error(msg: string, data?: unknown): void { _log("error", msg, data); }
 
-// Always-visible load banner: console + a single info line in the HA logs.
+// Always-visible load banner: a styled console badge (like other HA frontend
+// plugins, e.g. paper-buttons-row) + a single readable info line in the HA logs.
 let _bannerForwarded = false;
 function _banner(message: string): void {
   try {
-    // No "[GA Manual]" prefix — this is the user-facing message.
-    console.info(message);
+    // Two-tone pill: name on Google blue, version on dark. Consoles that ignore
+    // %c styling still print the text legibly.
+    if (BUILD_VERSION) {
+      console.info(
+        "%c " + BRAND_SLUG + " %c v" + BUILD_VERSION + " ",
+        "background:#4285f4;color:#fff;font-weight:600;padding:2px 6px;border-radius:4px 0 0 4px;",
+        "background:#202124;color:#8ab4f8;font-weight:600;padding:2px 6px;border-radius:0 4px 4px 0;",
+      );
+    } else {
+      console.info(
+        "%c " + BRAND_SLUG + " ",
+        "background:#4285f4;color:#fff;font-weight:600;padding:2px 6px;border-radius:4px;",
+      );
+    }
   } catch {
     // console might be unavailable
   }
+  // The readable sentence (with the "manage it under Settings…" hint) still
+  // goes to the HA logs, where %c styling wouldn't render anyway.
   if (!_bannerForwarded) {
     _bannerForwarded = true;
     _forwardToHaLog("info", message);

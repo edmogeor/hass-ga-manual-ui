@@ -5,6 +5,33 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11] - 2026-06-13
+
+### Changed
+
+- The frontend's startup log is now a styled two-tone console badge
+  (`hass-ga-manual-ui vX.Y.Z`), matching other HA frontend plugins. The
+  developer-facing console log prefix changed from `[GA Manual]` to
+  `[hass-ga-manual-ui]`. The user-facing assistant name ("Google Assistant
+  (Manual)") is unchanged.
+
+### Fixed
+
+- Renaming an exposed entity's voice aliases now triggers an immediate Google
+  `requestSync` instead of waiting for the next unrelated sync. Home Assistant's
+  shared "describing attributes" set — which Nabu Casa Cloud also uses to decide
+  when to resync — omits `aliases` even though they become Google nicknames, so
+  alias-only edits never pushed on their own. We now include `aliases` in the
+  resync trigger.
+
+- The entity dialog's "Expose" tab toggles could still show a stale state after
+  toggling exposure, even with the 0.1.10 settle-write fix. Home Assistant's
+  expose dialog hands the toggle component a one-time `exposed` snapshot and
+  never refreshes it when the entity changes, so the corrected state never
+  reached the toggles until the dialog was reopened. We now recompute exposure
+  from the updated entity registry entry and feed it back into the dialog, so
+  the toggles refresh in place.
+
 ## [0.1.10] - 2026-06-13
 
 ### Fixed

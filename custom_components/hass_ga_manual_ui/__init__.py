@@ -493,6 +493,10 @@ def _register_sync_listeners(
         """Resync when any entity's Google exposure changes."""
         _schedule_sync()
 
+    # Core's set omits "aliases" (Google nicknames), so add it to resync on
+    # alias-only edits rather than wait for the next unrelated sync.
+    google_relevant_changes = er.ENTITY_DESCRIBING_ATTRIBUTES | {"aliases"}
+
     @callback
     def _on_entity_registry_updated(event: Event) -> None:
         """Resync when a Google-relevant entity attr changes (name, aliases, area, etc.)."""
@@ -501,7 +505,7 @@ def _register_sync_listeners(
         data = event.data
         # Ignore updates that don't change anything Google cares about.
         if data.get("action") == "update" and not (
-            set(data.get("changes", {})) & er.ENTITY_DESCRIBING_ATTRIBUTES
+            set(data.get("changes", {})) & google_relevant_changes
         ):
             return
         entity_id = data.get("entity_id")

@@ -1004,6 +1004,70 @@ class TestRegisterSyncListeners:
         # listener could not be set up.
         assert len(unsubs) == 2
 
+    @staticmethod
+    def _capture_registry_handler(hass: HomeAssistant, entry, gc):
+        """Register the listeners and return the entity-registry update handler."""
+        from homeassistant.helpers import entity_registry as er
+
+        captured: dict[str, object] = {}
+
+        def _record(event_type, handler):
+            captured[event_type] = handler
+            return MagicMock()
+
+        hass.bus.async_listen = MagicMock(side_effect=_record)
+        with patch(
+            "homeassistant.components.homeassistant.exposed_entities."
+            "async_listen_entity_updates",
+            return_value=MagicMock(),
+        ):
+            _register_sync_listeners(hass, entry, gc)
+        return captured[er.EVENT_ENTITY_REGISTRY_UPDATED]
+
+    def test_alias_change_triggers_resync(self) -> None:
+        """An alias-only registry edit resyncs (core's set omits 'aliases')."""
+        from homeassistant.core import CoreState
+
+        hass = MagicMock(spec=HomeAssistant)
+        hass.bus = MagicMock()
+        hass.state = CoreState.running
+        entry = mock_config_entry(options={"enabled": True})
+        gc = MagicMock()
+        gc.should_expose.return_value = True
+
+        handler = self._capture_registry_handler(hass, entry, gc)
+        event = MagicMock()
+        event.data = {
+            "action": "update",
+            "entity_id": "light.kitchen",
+            "changes": {"aliases": ["old"]},
+        }
+        handler(event)
+
+        gc.async_schedule_google_sync_all.assert_called_once()
+
+    def test_irrelevant_change_does_not_resync(self) -> None:
+        """A change Google ignores (e.g. icon) must not trigger a resync."""
+        from homeassistant.core import CoreState
+
+        hass = MagicMock(spec=HomeAssistant)
+        hass.bus = MagicMock()
+        hass.state = CoreState.running
+        entry = mock_config_entry(options={"enabled": True})
+        gc = MagicMock()
+        gc.should_expose.return_value = True
+
+        handler = self._capture_registry_handler(hass, entry, gc)
+        event = MagicMock()
+        event.data = {
+            "action": "update",
+            "entity_id": "light.kitchen",
+            "changes": {"icon": "mdi:lamp"},
+        }
+        handler(event)
+
+        gc.async_schedule_google_sync_all.assert_not_called()
+
 
 # =============================================================================
 # _find_core_entry / _reconcile_core_ga_entries
