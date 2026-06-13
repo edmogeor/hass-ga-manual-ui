@@ -482,6 +482,7 @@ def _register_sync_listeners(
 
     @callback
     def _schedule_sync() -> None:
+        """Trigger a Google requestSync to push updated device state."""
         try:
             google_config.async_schedule_google_sync_all()
         except Exception:
@@ -489,10 +490,12 @@ def _register_sync_listeners(
 
     @callback
     def _on_exposed_entities_updated() -> None:
+        """Resync when any entity's Google exposure changes."""
         _schedule_sync()
 
     @callback
     def _on_entity_registry_updated(event: Event) -> None:
+        """Resync when a Google-relevant entity attr changes (name, aliases, area, etc.)."""
         if not _is_enabled(entry) or hass.state is not CoreState.running:
             return
         data = event.data
@@ -508,6 +511,7 @@ def _register_sync_listeners(
 
     @callback
     def _on_device_registry_updated(event: Event) -> None:
+        """Resync when a device's area changes and exposes area-inheriting entities."""
         if not _is_enabled(entry) or hass.state is not CoreState.running:
             return
         data = event.data
@@ -803,6 +807,33 @@ def _purge_entity_exposure(hass: HomeAssistant) -> None:
 _ORIGINAL_GOOGLE_CONFIG_PROPS: dict[str, Any] = {}
 
 
+def _cache_original_member(
+    gc_type: Any,
+    gc_type_name: str,
+    name: str,
+    *,
+    is_property: bool,
+    warning: str | None = None,
+) -> None:
+    """Cache GoogleConfig's original getter/method for ``name`` once.
+
+    ``is_property`` selects the property getter (``fget``) over a plain method.
+    On a missing member, logs ``warning`` (if given, with ``gc_type_name``) and
+    records ``None`` so the patch can fall back. Safe to call repeatedly — the
+    original is cached on the first call only, to avoid chaining patches.
+    """
+    if name in _ORIGINAL_GOOGLE_CONFIG_PROPS:
+        return
+    try:
+        member = getattr(gc_type, name)
+        _ORIGINAL_GOOGLE_CONFIG_PROPS[name] = member.fget if is_property else member
+        _LOGGER.debug("Cached original GoogleConfig.%s", name)
+    except AttributeError:
+        if warning:
+            _LOGGER.warning(warning, gc_type_name)
+        _ORIGINAL_GOOGLE_CONFIG_PROPS[name] = None
+
+
 def _patch_google_config_properties(
     google_config: _GoogleConfig, entry: ConfigEntry
 ) -> None:
@@ -813,60 +844,44 @@ def _patch_google_config_properties(
     gc_type: Any = type(google_config)
     gc_type_name = gc_type.__name__ if hasattr(gc_type, "__name__") else str(gc_type)
 
-    # Cache original getters (only on first call to avoid chaining)
-    if "should_report_state" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
-        try:
-            desc = gc_type.should_report_state
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"] = desc.fget
-            _LOGGER.debug("Cached original GoogleConfig.should_report_state getter")
-        except AttributeError:
-            _LOGGER.warning(
-                "GoogleConfig (%s) has no should_report_state property. "
-                "The 'Enable state reporting' toggle will not work correctly.",
-                gc_type_name,
-            )
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"] = None
-
-    if "secure_devices_pin" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
-        try:
-            desc = gc_type.secure_devices_pin
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"] = desc.fget
-            _LOGGER.debug("Cached original GoogleConfig.secure_devices_pin getter")
-        except AttributeError:
-            _LOGGER.warning(
-                "GoogleConfig (%s) has no secure_devices_pin property. "
-                "The 'Security devices PIN' feature will not work correctly.",
-                gc_type_name,
-            )
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"] = None
-
-    # should_expose is a plain method (not a property) on the config-entry
-    # GoogleConfig. The core implementation uses the legacy YAML exposure model
-    # (expose_by_default / exposed_domains / entity_config), which our config
-    # dict never populates. Bridge it to the modern exposed_entities registry
-    # under our ASSISTANT_ID — the same key the UI expose page writes to.
-    if "should_expose" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
-        try:
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_expose"] = gc_type.should_expose
-            _LOGGER.debug("Cached original GoogleConfig.should_expose method")
-        except AttributeError:
-            _LOGGER.warning(
-                "GoogleConfig (%s) has no should_expose method. "
-                "Entities exposed via the UI will not be synced to Google.",
-                gc_type_name,
-            )
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_expose"] = None
-
-    # should_2fa is a plain method; core GA hard-codes it to True (every secure
-    # device always prompts for the PIN). Bridge it to the per-entity
-    # disable_2fa option in the exposed_entities registry, like cloud does, so
-    # the "Ask for PIN" toggle works.
-    if "should_2fa" not in _ORIGINAL_GOOGLE_CONFIG_PROPS:
-        try:
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_2fa"] = gc_type.should_2fa
-            _LOGGER.debug("Cached original GoogleConfig.should_2fa method")
-        except AttributeError:
-            _ORIGINAL_GOOGLE_CONFIG_PROPS["should_2fa"] = None
+    # Cache original getters/methods (only on first call to avoid chaining).
+    _cache_original_member(
+        gc_type,
+        gc_type_name,
+        "should_report_state",
+        is_property=True,
+        warning=(
+            "GoogleConfig (%s) has no should_report_state property. "
+            "The 'Enable state reporting' toggle will not work correctly."
+        ),
+    )
+    _cache_original_member(
+        gc_type,
+        gc_type_name,
+        "secure_devices_pin",
+        is_property=True,
+        warning=(
+            "GoogleConfig (%s) has no secure_devices_pin property. "
+            "The 'Security devices PIN' feature will not work correctly."
+        ),
+    )
+    # should_expose / should_2fa are plain methods (not properties). The core
+    # should_expose uses the legacy YAML exposure model (expose_by_default /
+    # exposed_domains / entity_config), which our config dict never populates,
+    # and should_2fa is hard-coded to True (every secure device always prompts).
+    # Both are bridged below to the modern exposed_entities registry under our
+    # ASSISTANT_ID — the same keys the UI expose page and "Ask for PIN" write to.
+    _cache_original_member(
+        gc_type,
+        gc_type_name,
+        "should_expose",
+        is_property=False,
+        warning=(
+            "GoogleConfig (%s) has no should_expose method. "
+            "Entities exposed via the UI will not be synced to Google."
+        ),
+    )
+    _cache_original_member(gc_type, gc_type_name, "should_2fa", is_property=False)
 
     orig_srs = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_report_state"]
     orig_sdp = _ORIGINAL_GOOGLE_CONFIG_PROPS["secure_devices_pin"]
@@ -874,6 +889,7 @@ def _patch_google_config_properties(
     orig_2fa = _ORIGINAL_GOOGLE_CONFIG_PROPS["should_2fa"]
 
     def _should_report_state(self: Any) -> bool:
+        """Bridge should_report_state to our ConfigEntry options."""
         if self is google_config:
             # A soft-disabled integration reports no state (mirrors cloud, which
             # gates should_report_state on enabled).
@@ -883,6 +899,7 @@ def _patch_google_config_properties(
         return False
 
     def _secure_devices_pin(self: Any) -> str | None:
+        """Bridge secure_devices_pin to our ConfigEntry options."""
         if self is google_config:
             options = entry.options
             return options.get(CONF_SECURE_DEVICES_PIN)
@@ -891,6 +908,7 @@ def _patch_google_config_properties(
         return None
 
     def _should_expose(self: Any, entity_id: str) -> bool:
+        """Bridge should_expose to the exposed_entities registry under our assistant id."""
         if self is google_config:
             # Soft-disabled integration exposes nothing (SYNC returns no
             # devices) even though the core entry/view stay registered.
@@ -923,6 +941,7 @@ def _patch_google_config_properties(
         return False
 
     def _should_2fa(self: Any, state: State) -> bool:
+        """Bridge should_2fa to the per-entity disable_2fa option in the exposed_entities registry."""
         if self is google_config:
             try:
                 from homeassistant.components.homeassistant.exposed_entities import (
@@ -1241,6 +1260,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Enable core GA — re-run setup-phase re-trigger."""
 
         async def _enable() -> None:
+            """Re-run core GA setup-phase re-trigger for this entry."""
             current_entry = _safe_get_entry(
                 _hass, msg["entry_id"], msg["id"], connection
             )
@@ -1298,6 +1318,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         """Disable core GA — tear down webhook, stop report_state."""
 
         async def _disable() -> None:
+            """Soft-disable core GA (report_state off + should_expose returns False)."""
             current_entry = _safe_get_entry(
                 _hass, msg["entry_id"], msg["id"], connection
             )
@@ -1530,6 +1551,7 @@ def _add_assistant_to_schema(schema: object, assistant_id: str) -> None:
     """Recursively walk a voluptuous schema and add assistant_id to vol.In validators."""
 
     def _walk(obj: object, path: str = "root") -> None:
+        """Recurse into a Voluptuous schema, injecting our assistant id into vol.In validators."""
         try:
             if isinstance(obj, vol.In):
                 container = getattr(obj, "container", None)

@@ -813,4 +813,44 @@ describe("Google Assistant Manual frontend", () => {
       });
     });
   });
+
+  // The dialog feeds a static `exposed` snapshot; we recompute it from the entry.
+  describe("expose-tab dialog refresh", () => {
+    class FakeDialogVoiceSettings extends HTMLElement {
+      _params: { exposed?: Record<string, unknown>; extEntityReg?: unknown } | undefined;
+      _entityEntryUpdated(ev: { detail: unknown }) {
+        if (this._params) this._params.extEntityReg = ev.detail;
+      }
+    }
+    if (!customElements.get("dialog-voice-settings")) {
+      customElements.define("dialog-voice-settings", FakeDialogVoiceSettings);
+    }
+
+    it("recomputes exposed from the updated entry", () => {
+      evalFrontend();
+      const el = document.createElement(
+        "dialog-voice-settings",
+      ) as unknown as FakeDialogVoiceSettings;
+      el._params = {
+        exposed: { conversation: true, hass_ga_manual_ui: true },
+        extEntityReg: null,
+      };
+      const entry = {
+        options: {
+          conversation: { should_expose: false },
+          hass_ga_manual_ui: { should_expose: false },
+        },
+      };
+
+      (
+        el as unknown as { _entityEntryUpdated: (e: unknown) => void }
+      )._entityEntryUpdated({ detail: entry });
+
+      expect(el._params!.exposed).toEqual({
+        conversation: false,
+        hass_ga_manual_ui: false,
+      });
+      expect(el._params!.extEntityReg).toBe(entry);
+    });
+  });
 });

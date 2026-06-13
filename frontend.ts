@@ -271,7 +271,7 @@ try {
     (typeof location !== "undefined" &&
       /[?&#]gaManualDebug\b/.test(location.search + location.hash));
 } catch {
-  /* localStorage / location may be unavailable */
+  // localStorage / location may be unavailable
 }
 
 function _forwardToHaLog(level: "info" | "warn" | "error", message: string): void {
@@ -285,7 +285,7 @@ function _forwardToHaLog(level: "info" | "warn" | "error", message: string): voi
       logger: "hass_ga_manual_ui.frontend",
     });
   } catch {
-    /* never let logging throw or recurse */
+    // never let logging throw or recurse
   }
 }
 
@@ -300,7 +300,7 @@ function _log(level: "debug" | "info" | "warn" | "error", message: string, data?
         console[level](prefixed);
       }
     } catch {
-      /* console might be unavailable */
+      // console might be unavailable
     }
   }
   if (isProblem) _forwardToHaLog(level, message);
@@ -318,7 +318,7 @@ function _banner(message: string): void {
     // No "[GA Manual]" prefix — this is the user-facing message.
     console.info(message);
   } catch {
-    /* console might be unavailable */
+    // console might be unavailable
   }
   if (!_bannerForwarded) {
     _bannerForwarded = true;
@@ -346,13 +346,10 @@ function _showToast(message: string, isError: boolean): void {
 
 let _updatePromptShown = false;
 
-/**
- * After a HACS update + HA restart, the browser can keep serving the old cached
- * frontend.js (HA's service worker holds the prior app shell), so the running
- * bundle is older than what's installed. Compare versions and, on a mismatch,
- * post a persistent notification once — matching the install notification, and
- * pointing at a hard refresh (a soft reload just re-serves the cached shell).
- */
+// After a HACS update + HA restart, the browser may serve a stale cached
+// frontend.js (HA's service worker holds the prior app shell). On version
+// mismatch, post a one-time persistent notification pointing at a hard refresh
+// (a soft reload just re-serves the cached shell).
 function _maybePromptReload(serverVersion?: string): void {
   if (_updatePromptShown) return;
   // Can't compare without both versions (older backend, or no --define).
@@ -411,7 +408,7 @@ function _isDarkMode(): boolean {
     const dm = getHass()?.themes?.darkMode;
     if (typeof dm === "boolean") return dm;
   } catch {
-    /* hass/themes may be unavailable */
+    // hass/themes may be unavailable
   }
   try {
     return (
@@ -467,13 +464,11 @@ function getEntryId(): Promise<string> {
 
 let _primeStarted = false;
 
-/**
- * Force the voiceAssistants map to be captured so the expose page advertises us
- * on first visit. Capture is otherwise passive (only on Object.keys), which the
- * expose page never triggers. We trip it via a throwaway ha-filter-voice-assistants
- * whose firstUpdated() runs Object.keys — requestUpdate is stubbed so it never
- * renders (no DOM, no context, no side effects).
- */
+// Prime the voiceAssistants map so the expose page advertises us on first
+// visit. Capture is normally passive (only on Object.keys), which the expose
+// page never triggers. We trip it via a throwaway ha-filter-voice-assistants
+// whose firstUpdated() runs Object.keys — requestUpdate is stubbed so it never
+// renders.
 function _primeVoiceAssistantsMap(): void {
   if (_voiceAssistantsMap) return;
   const PROBE = "ha-filter-voice-assistants";
@@ -505,17 +500,15 @@ function _primeVoiceAssistantsMap(): void {
   }
 }
 
-/** Forget the cached entry_id so the next getEntryId() re-resolves it. */
+// Forget the cached entry_id so the next getEntryId() re-resolves it.
 function _invalidateEntryId(): void {
   _entryId = null;
   _entryIdPromise = null;
 }
 
-/**
- * Run a WS call against the resolved entry_id; if it fails because the entry no
- * longer exists (e.g. the integration was deleted and re-added), drop the
- * cached id, re-resolve, and retry once.
- */
+// Run a WS call against the resolved entry_id; on a "config entry not found"
+// error (e.g. the integration was deleted and re-added), drop the cached id,
+// re-resolve, and retry once.
 async function _withEntryRetry<T>(fn: (entryId: string) => Promise<T>): Promise<T> {
   try {
     return await fn(await getEntryId());
@@ -527,11 +520,8 @@ async function _withEntryRetry<T>(fn: (entryId: string) => Promise<T>): Promise<
   }
 }
 
-/**
- * True when a WS error indicates the entry_id no longer exists — e.g. after the
- * integration was deleted and re-added (which assigns a new entry_id) while a
- * stale id was cached.
- */
+// True when a WS error indicates the entry_id no longer exists (e.g. after the
+// integration was deleted and re-added while a stale id was cached).
 function _isEntryGoneError(err: unknown): boolean {
   const wsErr = err as WSError;
   if (wsErr && wsErr.code === "not_found") return true;
@@ -956,14 +946,14 @@ function _refreshOurIconElements(root: Node): void {
       }
     }
   } catch {
-    /* best-effort */
+    // best-effort
   }
 
   if (el.shadowRoot) {
     try {
       _refreshOurIconElements(el.shadowRoot);
     } catch {
-      /* skip broken shadow roots */
+      // skip broken shadow roots
     }
   }
 
@@ -972,7 +962,7 @@ function _refreshOurIconElements(root: Node): void {
     try {
       _refreshOurIconElements(children[i]);
     } catch {
-      /* skip problem children */
+      // skip problem children
     }
   }
 }
@@ -1016,11 +1006,9 @@ function _maybeFetchEntity2fa(el: EntityVoiceSettingsElement): void {
     });
 }
 
-/**
- * Mark (or clear) our assistant in HA's `_unsupported` map so its render greys
- * out our toggle and shows the "not supported" notice, exactly as it does for
- * the cloud Google Assistant row. Re-renders only when the flag changes.
- */
+// Mark (or clear) our assistant in HA's `_unsupported` map so its render greys
+// out our toggle and shows the "not supported" notice, matching cloud Google
+// Assistant behaviour. Re-renders only when the flag changes.
 function _setOurUnsupported(el: EntityVoiceSettingsElement, unsupported: boolean): void {
   const map = el._unsupported;
   if (!map) return;
@@ -1030,7 +1018,7 @@ function _setOurUnsupported(el: EntityVoiceSettingsElement, unsupported: boolean
   el.requestUpdate?.();
 }
 
-/** Whether a get_entity failure means Google Assistant can't handle the entity. */
+// Whether a get_entity failure means Google Assistant can't handle the entity.
 function _isNotSupported(err: unknown): boolean {
   const wsErr = err as WSError;
   if (wsErr && wsErr.code === "not_supported") return true;
@@ -1038,11 +1026,9 @@ function _isNotSupported(err: unknown): boolean {
   return msg.includes("not supported");
 }
 
-/**
- * Whether a failed get_entity 2FA fetch is worth retrying. Recoverable: the
- * assistant was briefly disabled ("not enabled") or an internal server error.
- * Not recoverable: the entity isn't supported by Google or no longer exists.
- */
+// Whether a failed get_entity 2FA fetch is worth retrying. Recoverable: the
+// assistant was briefly disabled ("not enabled") or an internal server error.
+// Not recoverable: the entity isn't supported by Google or no longer exists.
 function _is2faFetchRecoverable(err: unknown): boolean {
   const wsErr = err as WSError;
   if (wsErr && wsErr.code === "internal_error") return true;
@@ -1114,24 +1100,18 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
   }
 }
 
-/**
- * Make the master "Expose" toggle and per-assistant rows account for us.
- *
- * render() builds `uiAssistants` (the master switch's list, and the basis for
- * `anyExposed` — which drives the master checked state and whether the rows
- * show) via `uiAssistants.splice(showAssistants.indexOf(<cloud id>), 1)` run
- * *after* that id left showAssistants, so indexOf is -1 and splice(-1, 1) drops
- * the array's LAST entry instead — our last-injected id. The toggle and rows
- * then ignore our exposure (an entity exposed only to us shows the master off,
- * with no rows).
- *
- * For the duration of render, return our id from Object.keys(voiceAssistants)
- * ahead of the cloud assistants. HA's tail-dropping splice then removes the
- * cloud ids it intends to and never reaches ours, so the cloud rows behave
- * exactly as in stock HA while our assistant is counted like any other. (We
- * stay last among non-cloud assistants, so with no cloud enabled our row still
- * renders last.)
- */
+// Make the master "Expose" toggle and per-assistant rows account for us.
+//
+// render() builds `uiAssistants` (the basis for `anyExposed`, which drives the
+// master checked state) via `uiAssistants.splice(showAssistants.indexOf(<cloud
+// id>), 1)` — run *after* that id left showAssistants, so indexOf is -1 and
+// splice(-1, 1) drops the LAST entry instead (our last-injected id). The toggle
+// and rows then ignore our exposure.
+//
+// For the duration of render, return our id from Object.keys(voiceAssistants)
+// ahead of the cloud assistants. HA's tail-dropping splice then removes the
+// cloud ids it intends to and never reaches ours — cloud rows stay stock while
+// our assistant is counted like any other.
 function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
   const origRender = proto.render;
   if (typeof origRender !== "function") {
@@ -1167,20 +1147,16 @@ function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
   };
 }
 
-/**
- * Settle expose writes before HA refetches the entity.
- *
- * HA's _toggleAll / _toggleAssistant fire the exposeEntities() WS write without
- * awaiting it, then immediately refetch the entry to refresh the toggles — a
- * race that leaves the toggles (and the `anyExposed` row collapse) showing a
- * stale state until the dialog is reopened. Pre-await an identical write so the
- * refetch sees the new state; the original re-issues the same idempotent write.
- *
- * The original reads ev.target (the switch) again when it runs. After our await
- * the real switch's reactive props are reset by the intervening re-render, so we
- * snapshot them synchronously and hand the original a synthetic event carrying
- * the snapshot — otherwise it would send a malformed expose_entity call.
- */
+// Settle expose writes before HA refetches the entity.
+//
+// HA's _toggleAll / _toggleAssistant fire exposeEntities() WS writes without
+// awaiting, then immediately refetch the entry to refresh toggles — a race that
+// leaves stale toggles until the dialog reopens. Pre-await an identical write so
+// the refetch sees the new state; the original re-issues the idempotent write.
+//
+// The original re-reads ev.target when it runs, but after our await the reactive
+// props are reset by the intervening re-render. Snapshot them synchronously and
+// hand the original a synthetic event carrying the snapshot.
 function _patchToggleRefresh(
   proto: EntityVoiceSettingsElement,
   method: "_toggleAll" | "_toggleAssistant",
@@ -1267,6 +1243,47 @@ function _patchEntityVoiceSettingsProto(proto: EntityVoiceSettingsElement): void
   }
 }
 
+// Refresh the expose-tab dialog's toggles after a change. dialog-voice-settings
+// (stock HA) hands entity-voice-settings a static `exposed` snapshot and never
+// updates it, so we recompute from the entity on entity-entry-updated.
+function _patchVoiceSettingsDialogProto(proto: HTMLElement & LitLifecycle): void {
+  const protoRec = proto as unknown as Record<string, unknown>;
+  const orig = protoRec._entityEntryUpdated as
+    | ((this: unknown, ev: CustomEvent) => void)
+    | undefined;
+  if (typeof orig !== "function") {
+    _debug("dialog-voice-settings._entityEntryUpdated not found (HA may have renamed it)");
+    return;
+  }
+  if ((orig as { __gaWrapped?: boolean }).__gaWrapped) return;
+
+  const wrapped = function (this: Record<string, unknown>, ev: CustomEvent) {
+    orig.call(this, ev);
+    try {
+      const params = this._params as
+        | { exposed?: Record<string, unknown> }
+        | undefined;
+      const entry = ev.detail as
+        | { options?: Record<string, { should_expose?: boolean } | undefined> }
+        | undefined;
+      if (params && entry) {
+        const keys = _voiceAssistantsMap
+          ? Object.keys(_voiceAssistantsMap)
+          : Object.keys(entry.options || {});
+        const exposed: Record<string, boolean | undefined> = {};
+        for (const key of keys) {
+          exposed[key] = entry.options?.[key]?.should_expose;
+        }
+        this._params = { ...params, exposed };
+      }
+    } catch (e) {
+      _debug("Failed to refresh dialog exposed: " + _errorMessage(e));
+    }
+  };
+  (wrapped as { __gaWrapped?: boolean }).__gaWrapped = true;
+  protoRec._entityEntryUpdated = wrapped;
+}
+
 type ProtoPatcher = (proto: HTMLElement & LitLifecycle) => void;
 
 const PATCHERS: Record<string, ProtoPatcher> = {
@@ -1274,6 +1291,7 @@ const PATCHERS: Record<string, ProtoPatcher> = {
   "voice-assistant-brand-icon": _patchBrandIconProto as ProtoPatcher,
   "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto as ProtoPatcher,
   "entity-voice-settings": _patchEntityVoiceSettingsProto as ProtoPatcher,
+  "dialog-voice-settings": _patchVoiceSettingsDialogProto as ProtoPatcher,
 };
 
 function patchCustomElements(): void {
@@ -1400,6 +1418,8 @@ function _setRowsVisible(rows: HTMLElement[], visible: boolean): void {
   }
 }
 
+// Build the GA Manual settings card: header with brand icon + enable switch,
+// settings rows for expose-new, report-state, and secure-devices PIN.
 function buildCard(): HTMLElement | null {
   try {
     const hass = getHass();
@@ -1706,10 +1726,8 @@ async function refreshCardState(
   }
 }
 
-/**
- * Inject the card into a ha-config-voice-assistants-assistants element.
- * Idempotent — safe to call at any time (lifecycle hooks, DOM scans, observers).
- */
+// Inject the card into a ha-config-voice-assistants-assistants element.
+// Idempotent — safe to call at any time (lifecycle hooks, DOM scans, observers).
 function injectCardInto(el: AssistantsPageElement): void {
   if (!el) return;
 
@@ -1793,10 +1811,8 @@ function injectCardInto(el: AssistantsPageElement): void {
   }
 }
 
-/**
- * Recursively search a DOM tree (including all shadow roots) for
- * ha-config-voice-assistants-assistants elements.
- */
+// Recursively search a DOM tree (including all shadow roots) for
+// ha-config-voice-assistants-assistants elements.
 function findAllAssistantsElements(root: Node | null): AssistantsPageElement[] {
   const results: AssistantsPageElement[] = [];
   if (!root) return results;
@@ -1827,20 +1843,18 @@ function findAllAssistantsElements(root: Node | null): AssistantsPageElement[] {
       try {
         results.push(...findAllAssistantsElements(children[i]));
       } catch {
-        /* skip problem children */
+        // skip problem children
       }
     }
   } catch {
-    /* children access may fail on some nodes */
+    // children access may fail on some nodes
   }
 
   return results;
 }
 
-/**
- * Scan the entire DOM (including all shadow roots) for assistants page
- * elements and inject the card into each.
- */
+// Scan the entire DOM (including all shadow roots) for assistants page
+// elements and inject the card into each.
 function injectIntoAllAssistantsElements(): void {
   try {
     const elements = findAllAssistantsElements(document.documentElement);
@@ -1989,7 +2003,7 @@ async function _restorePinValue(input: TogglableElement): Promise<void> {
     );
     input.value = config.secure_devices_pin || "";
   } catch {
-    /* best-effort revert */
+    // best-effort revert
   }
 }
 

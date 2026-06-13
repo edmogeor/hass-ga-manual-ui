@@ -813,11 +813,40 @@
       _error("Failed to patch entity-voice-settings proto: " + _errorMessage(e));
     }
   }
+  function _patchVoiceSettingsDialogProto(proto) {
+    const protoRec = proto;
+    const orig = protoRec._entityEntryUpdated;
+    if (typeof orig !== "function") {
+      _debug("dialog-voice-settings._entityEntryUpdated not found (HA may have renamed it)");
+      return;
+    }
+    if (orig.__gaWrapped) return;
+    const wrapped = function(ev) {
+      orig.call(this, ev);
+      try {
+        const params = this._params;
+        const entry = ev.detail;
+        if (params && entry) {
+          const keys = _voiceAssistantsMap ? Object.keys(_voiceAssistantsMap) : Object.keys(entry.options || {});
+          const exposed = {};
+          for (const key of keys) {
+            exposed[key] = entry.options?.[key]?.should_expose;
+          }
+          this._params = { ...params, exposed };
+        }
+      } catch (e) {
+        _debug("Failed to refresh dialog exposed: " + _errorMessage(e));
+      }
+    };
+    wrapped.__gaWrapped = true;
+    protoRec._entityEntryUpdated = wrapped;
+  }
   var PATCHERS = {
     "ha-config-voice-assistants-assistants": _patchAssistantsPageProto,
     "voice-assistant-brand-icon": _patchBrandIconProto,
     "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto,
-    "entity-voice-settings": _patchEntityVoiceSettingsProto
+    "entity-voice-settings": _patchEntityVoiceSettingsProto,
+    "dialog-voice-settings": _patchVoiceSettingsDialogProto
   };
   function patchCustomElements() {
     try {

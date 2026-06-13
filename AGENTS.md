@@ -465,6 +465,16 @@ npm test        # verify tests pass
 
 `lint`, `check`, `build`, and `test` must all pass with zero errors before committing.
 
+## Commenting conventions
+
+**Python:** every function, class, and module gets a docstring (`"""..."""`). Inner closures and nested callbacks get the same treatment — no bare functions. Docstrings are concise (one line for simple helpers, a few lines for complex logic). Inline `#` comments explain *why*, not *what*; they belong next to surprising behaviour, design compromises, and gotchas — not on every line.
+
+**TypeScript:** no JSDoc. Use `//` line comments above functions for headers and `//` inline comments for rationale. A `//` header sketches the function's job and any non-obvious decisions. Comment density mirrors the Python side — every public function gets a header, private helpers get one when their purpose isn't obvious from the name.
+
+**Separators:** `// ----` (TS) and `# ----` (Python) bracket major logical sections inside long files. Source code uses dashes; tests use equals (`====` / `====`). Keep separator banners narrow (~80 chars) with a short label.
+
+**Block comments:** never use `/* */` for inline comments — use `//` everywhere.
+
 ## Build / Deployment
 
 The project source is TypeScript and Python. Deployment requires the compiled JS artifact.
