@@ -48,7 +48,6 @@ It's recommended to have the manual `google_assistant` setup working via YAML fi
 - **Per-entity 2FA control** — PIN prompt toggle for security devices (locks, garage doors)
 - **Auto-resync** — automatically pushes changes to Google when entities or areas change
 - **Report state** — syncs entity states back to Google for faster commands
-- **YAML import** — existing `google_assistant:` YAML config is imported and can be safely removed
 
 ## Requirements
 
