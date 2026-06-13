@@ -5,3 +5,9 @@ node_modules/
 .ruff_cache/
 .claude/
 **/.claude/
+.venv/
+.env
+.DS_Store
+coverage/
+*.tsbuildinfo
+.eslintcache
