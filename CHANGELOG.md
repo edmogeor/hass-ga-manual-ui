@@ -5,6 +5,21 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.12] - 2026-06-14
+
+### Fixed
+
+- Our brand icon could intermittently fail to appear (blank icon cells in the
+  expose tab and entity settings) after a page refresh. The custom-element
+  patches that draw the icon were installed from the page's `DOMContentLoaded`
+  step, which races against Home Assistant's lazily-loaded voice-assistants
+  panel — when the panel defined and rendered the icon elements first, our
+  override landed too late and the cell stayed blank. The prototype/interceptor
+  patches now install synchronously at module load, before that panel chunk can
+  define its elements, so our icon renders on the first paint. This also makes
+  the same race-free installation cover the settings card, the per-entity
+  "Ask for PIN" checkbox, and the expose toggles.
+
 ## [0.1.11] - 2026-06-13
 
 ### Changed

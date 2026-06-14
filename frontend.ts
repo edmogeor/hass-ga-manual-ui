@@ -2078,37 +2078,23 @@ function _scanAfterNavigation(): void {
 }
 
 // ---------------------------------------------------------------------------
-// Init — apply all patches, inject cards, start observers
+// Init — DOM-dependent setup: inject cards, start observers, nav listeners.
 // ---------------------------------------------------------------------------
 
 function init(): void {
-  // No-op until hass is available; buildCard retries.
-  ensureTranslationsLoaded();
-
-  _banner(t("ready_banner", { name: ASSISTANT_NAME }));
-
-  // Apply each patch independently — one failing does not block the rest
-  try {
-    patchVoiceAssistants();
-  } catch (e) {
-    _error("patchVoiceAssistants threw: " + (_errorMessage(e)));
-  }
-  try {
-    patchSortKey();
-  } catch (e) {
-    _error("patchSortKey threw: " + (_errorMessage(e)));
-  }
-  try {
-    patchCustomElements();
-  } catch (e) {
-    _error("patchCustomElements threw: " + (_errorMessage(e)));
-  }
-
+  // Fallback for elements defined AND rendered before our module evaluated
+  // (a cached panel chunk that won the load race); patched instances already
+  // render our icon directly.
   try {
     _refreshOurIconElements(document.body || document.documentElement);
   } catch (e) {
     _error("_refreshOurIconElements threw: " + (_errorMessage(e)));
   }
+
+  // No-op until hass is available; buildCard retries.
+  ensureTranslationsLoaded();
+
+  _banner(t("ready_banner", { name: ASSISTANT_NAME }));
 
   try {
     injectIntoAllAssistantsElements();
@@ -2190,13 +2176,6 @@ function init(): void {
     _error("Failed to add navigation listeners: " + (_errorMessage(e)));
   }
 
-  // Expose page patch (async, runs when element is defined)
-  try {
-    patchExposePage();
-  } catch (e) {
-    _error("patchExposePage threw: " + (_errorMessage(e)));
-  }
-
   // Flag a stale bundle regardless of which page is open.
   try {
     _checkVersionForReloadPrompt();
@@ -2204,8 +2183,49 @@ function init(): void {
     _error("_checkVersionForReloadPrompt threw: " + (_errorMessage(e)));
   }
 
-  _info("Init complete — all patches applied");
+  _info("Init complete — DOM-dependent setup applied");
 }
+
+// ---------------------------------------------------------------------------
+// Prototype / interceptor patches
+//
+// These rewrite global hooks and custom-element prototypes (no DOM body needed).
+// They must be installed before HA's lazily-imported voice-assistants panel
+// chunk defines its custom elements, or an icon element can render once with
+// HA's stock render() before our override lands — leaving a blank icon cell.
+// Hence module-eval time, not DOMContentLoaded.
+// ---------------------------------------------------------------------------
+
+let _prototypePatchesInstalled = false;
+function installPrototypePatches(): void {
+  if (_prototypePatchesInstalled) return;
+  _prototypePatchesInstalled = true;
+
+  // Apply each patch independently — one failing does not block the rest.
+  try {
+    patchVoiceAssistants();
+  } catch (e) {
+    _error("patchVoiceAssistants threw: " + (_errorMessage(e)));
+  }
+  try {
+    patchSortKey();
+  } catch (e) {
+    _error("patchSortKey threw: " + (_errorMessage(e)));
+  }
+  try {
+    patchCustomElements();
+  } catch (e) {
+    _error("patchCustomElements threw: " + (_errorMessage(e)));
+  }
+  // Async; self-defers via customElements.whenDefined until the element exists.
+  try {
+    patchExposePage();
+  } catch (e) {
+    _error("patchExposePage threw: " + (_errorMessage(e)));
+  }
+}
+
+installPrototypePatches();
 
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);

@@ -13,7 +13,7 @@
   var WS_DISABLE = `${ASSISTANT_ID}/disable`;
   var WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
   var WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
-  var BUILD_VERSION = true ? "0.1.11" : "";
+  var BUILD_VERSION = true ? "0.1.12" : "";
   var EN_STRINGS = {
     yaml_detected: "The <code>google_assistant:</code> section was detected in your <code>configuration.yaml</code> and has been disabled. This integration now manages your Google Assistant configuration. You can safely remove the <code>google_assistant:</code> section from your YAML configuration.",
     enable_success: "Google Assistant enabled successfully",
@@ -1412,28 +1412,13 @@
     tick();
   }
   function init() {
-    ensureTranslationsLoaded();
-    _banner(t("ready_banner", { name: ASSISTANT_NAME }));
-    try {
-      patchVoiceAssistants();
-    } catch (e) {
-      _error("patchVoiceAssistants threw: " + _errorMessage(e));
-    }
-    try {
-      patchSortKey();
-    } catch (e) {
-      _error("patchSortKey threw: " + _errorMessage(e));
-    }
-    try {
-      patchCustomElements();
-    } catch (e) {
-      _error("patchCustomElements threw: " + _errorMessage(e));
-    }
     try {
       _refreshOurIconElements(document.body || document.documentElement);
     } catch (e) {
       _error("_refreshOurIconElements threw: " + _errorMessage(e));
     }
+    ensureTranslationsLoaded();
+    _banner(t("ready_banner", { name: ASSISTANT_NAME }));
     try {
       injectIntoAllAssistantsElements();
     } catch (e) {
@@ -1501,17 +1486,38 @@
       _error("Failed to add navigation listeners: " + _errorMessage(e));
     }
     try {
-      patchExposePage();
-    } catch (e) {
-      _error("patchExposePage threw: " + _errorMessage(e));
-    }
-    try {
       _checkVersionForReloadPrompt();
     } catch (e) {
       _error("_checkVersionForReloadPrompt threw: " + _errorMessage(e));
     }
-    _info("Init complete \u2014 all patches applied");
+    _info("Init complete \u2014 DOM-dependent setup applied");
   }
+  var _prototypePatchesInstalled = false;
+  function installPrototypePatches() {
+    if (_prototypePatchesInstalled) return;
+    _prototypePatchesInstalled = true;
+    try {
+      patchVoiceAssistants();
+    } catch (e) {
+      _error("patchVoiceAssistants threw: " + _errorMessage(e));
+    }
+    try {
+      patchSortKey();
+    } catch (e) {
+      _error("patchSortKey threw: " + _errorMessage(e));
+    }
+    try {
+      patchCustomElements();
+    } catch (e) {
+      _error("patchCustomElements threw: " + _errorMessage(e));
+    }
+    try {
+      patchExposePage();
+    } catch (e) {
+      _error("patchExposePage threw: " + _errorMessage(e));
+    }
+  }
+  installPrototypePatches();
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
