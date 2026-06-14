@@ -20,6 +20,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the same race-free installation cover the settings card, the per-entity
   "Ask for PIN" checkbox, and the expose toggles.
 
+- Our icon could still be missing entirely from the **Expose** tab's assistant
+  column on a hard refresh. That column is built from the page's
+  `_availableAssistants` list, which Home Assistant memoizes along with the
+  column itself — so if our patch that adds our assistant to the list landed
+  after the table's first render, the column stayed cached without our icon and
+  never rebuilt. The expose-page patch now installs synchronously via the same
+  custom-element interceptor as the icon patches, before the table's first
+  render, so our column is present from the start.
+
 ## [0.1.11] - 2026-06-13
 
 ### Changed

@@ -685,34 +685,34 @@ function findExposeElement(root: Node | null): AssistantsPageElement | null {
   return null;
 }
 
-async function patchExposePage(): Promise<void> {
+// Advertise our id via the expose page's `_availableAssistants` getter, and wrap
+// the dialog methods that need a guarded context. Must land before the page's
+// first render: getAvailableAssistants() is memoizeOne, so a column built once
+// without our id stays cached and our icon column never appears. Hence PATCHERS
+// (synchronous define interceptor), not the async whenDefined path.
+function _patchExposePageProto(proto: AssistantsPageElement): void {
   try {
-    await customElements.whenDefined("ha-config-voice-assistants-expose");
-    const cls = customElements.get("ha-config-voice-assistants-expose") as
-      (CustomElementConstructor & { prototype: AssistantsPageElement }) | undefined;
-    if (!cls) {
-      _warn(
-        "ha-config-voice-assistants-expose element not found. " +
-          "The expose page may not have been loaded yet. " +
-          "The patch will be attempted when the element first renders.",
-      );
-      return;
-    }
+    const protoRec = proto as unknown as Record<string, unknown> & {
+      __gaExposePatched?: boolean;
+    };
+    if (protoRec.__gaExposePatched) return;
 
-    const desc = Object.getOwnPropertyDescriptor(cls.prototype, "_availableAssistants");
+    const desc = Object.getOwnPropertyDescriptor(proto, "_availableAssistants");
     if (!desc || !desc.get) {
       _warn(
         "_availableAssistants getter not found on expose element. " +
-          "HA may have renamed this property — exposure dropdown may not " +
+          "HA may have renamed this property — exposure dropdown/table may not " +
           "include " + ASSISTANT_ID + ".",
       );
       return;
     }
+    protoRec.__gaExposePatched = true;
 
     const orig = desc.get;
     let _safeExposeContext = false;
 
-    Object.defineProperty(cls.prototype, "_availableAssistants", {
+    Object.defineProperty(proto, "_availableAssistants", {
+      configurable: true,
       get: function () {
         try {
           const result = orig.call(this) as string[];
@@ -734,18 +734,16 @@ async function patchExposePage(): Promise<void> {
         }
       },
     });
-    _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
 
     const _wrapSafe = (name: string) => {
-      const proto = cls.prototype as unknown as Record<string, unknown>;
-      const origFn = proto[name] as
+      const origFn = protoRec[name] as
         | ((this: unknown, ...args: unknown[]) => unknown)
         | undefined;
       if (typeof origFn !== "function") {
         _debug("Expose page method not found (may have been renamed): " + name);
         return;
       }
-      proto[name] = function (this: unknown, ...args: unknown[]) {
+      protoRec[name] = function (this: unknown, ...args: unknown[]) {
         _safeExposeContext = true;
         try {
           return origFn.apply(this, args);
@@ -757,8 +755,19 @@ async function patchExposePage(): Promise<void> {
     _wrapSafe("_addEntry");
     _wrapSafe("_unexposeSelected");
     _wrapSafe("_exposeSelected");
-    _debug("Patched expose page dialog methods (_addEntry / _unexposeSelected / _exposeSelected)");
 
+    _debug("Patched expose page proto (_availableAssistants getter + dialog methods)");
+  } catch (e) {
+    _error("Failed to patch expose page proto: " + (_errorMessage(e)));
+  }
+}
+
+// Heal an expose page already rendered before the PATCHERS proto patch landed
+// (cached chunk that won the load race): force a re-render so the memoized
+// column rebuilds with our id.
+async function patchExposePage(): Promise<void> {
+  try {
+    await customElements.whenDefined("ha-config-voice-assistants-expose");
     _primeVoiceAssistantsMap();
 
     const el =
@@ -775,10 +784,10 @@ async function patchExposePage(): Promise<void> {
     try {
       _refreshOurIconElements(document.body || document.documentElement);
     } catch (e) {
-      _debug("_refreshOurIconElements after expose patch failed: " + (_errorMessage(e)));
+      _debug("_refreshOurIconElements after expose heal failed: " + (_errorMessage(e)));
     }
   } catch (e) {
-    _error("Failed to apply patch 3/4 (expose page): " + (_errorMessage(e)));
+    _error("Failed to heal expose page: " + (_errorMessage(e)));
   }
 }
 
@@ -1306,6 +1315,7 @@ type ProtoPatcher = (proto: HTMLElement & LitLifecycle) => void;
 
 const PATCHERS: Record<string, ProtoPatcher> = {
   "ha-config-voice-assistants-assistants": _patchAssistantsPageProto as ProtoPatcher,
+  "ha-config-voice-assistants-expose": _patchExposePageProto as ProtoPatcher,
   "voice-assistant-brand-icon": _patchBrandIconProto as ProtoPatcher,
   "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto as ProtoPatcher,
   "entity-voice-settings": _patchEntityVoiceSettingsProto as ProtoPatcher,

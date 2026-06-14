@@ -395,26 +395,22 @@
     }
     return null;
   }
-  async function patchExposePage() {
+  function _patchExposePageProto(proto) {
     try {
-      await customElements.whenDefined("ha-config-voice-assistants-expose");
-      const cls = customElements.get("ha-config-voice-assistants-expose");
-      if (!cls) {
-        _warn(
-          "ha-config-voice-assistants-expose element not found. The expose page may not have been loaded yet. The patch will be attempted when the element first renders."
-        );
-        return;
-      }
-      const desc = Object.getOwnPropertyDescriptor(cls.prototype, "_availableAssistants");
+      const protoRec = proto;
+      if (protoRec.__gaExposePatched) return;
+      const desc = Object.getOwnPropertyDescriptor(proto, "_availableAssistants");
       if (!desc || !desc.get) {
         _warn(
-          "_availableAssistants getter not found on expose element. HA may have renamed this property \u2014 exposure dropdown may not include " + ASSISTANT_ID + "."
+          "_availableAssistants getter not found on expose element. HA may have renamed this property \u2014 exposure dropdown/table may not include " + ASSISTANT_ID + "."
         );
         return;
       }
+      protoRec.__gaExposePatched = true;
       const orig = desc.get;
       let _safeExposeContext = false;
-      Object.defineProperty(cls.prototype, "_availableAssistants", {
+      Object.defineProperty(proto, "_availableAssistants", {
+        configurable: true,
         get: function() {
           try {
             const result = orig.call(this);
@@ -434,15 +430,13 @@
           }
         }
       });
-      _debug("Patch 3/4 applied: expose page (_availableAssistants getter)");
       const _wrapSafe = (name) => {
-        const proto = cls.prototype;
-        const origFn = proto[name];
+        const origFn = protoRec[name];
         if (typeof origFn !== "function") {
           _debug("Expose page method not found (may have been renamed): " + name);
           return;
         }
-        proto[name] = function(...args) {
+        protoRec[name] = function(...args) {
           _safeExposeContext = true;
           try {
             return origFn.apply(this, args);
@@ -454,7 +448,14 @@
       _wrapSafe("_addEntry");
       _wrapSafe("_unexposeSelected");
       _wrapSafe("_exposeSelected");
-      _debug("Patched expose page dialog methods (_addEntry / _unexposeSelected / _exposeSelected)");
+      _debug("Patched expose page proto (_availableAssistants getter + dialog methods)");
+    } catch (e) {
+      _error("Failed to patch expose page proto: " + _errorMessage(e));
+    }
+  }
+  async function patchExposePage() {
+    try {
+      await customElements.whenDefined("ha-config-voice-assistants-expose");
       _primeVoiceAssistantsMap();
       const el = document.querySelector("ha-config-voice-assistants-expose") || findExposeElement(document.documentElement);
       if (el) {
@@ -467,10 +468,10 @@
       try {
         _refreshOurIconElements(document.body || document.documentElement);
       } catch (e) {
-        _debug("_refreshOurIconElements after expose patch failed: " + _errorMessage(e));
+        _debug("_refreshOurIconElements after expose heal failed: " + _errorMessage(e));
       }
     } catch (e) {
-      _error("Failed to apply patch 3/4 (expose page): " + _errorMessage(e));
+      _error("Failed to heal expose page: " + _errorMessage(e));
     }
   }
   function _patchAssistantsPageProto(proto) {
@@ -855,6 +856,7 @@
   }
   var PATCHERS = {
     "ha-config-voice-assistants-assistants": _patchAssistantsPageProto,
+    "ha-config-voice-assistants-expose": _patchExposePageProto,
     "voice-assistant-brand-icon": _patchBrandIconProto,
     "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto,
     "entity-voice-settings": _patchEntityVoiceSettingsProto,
