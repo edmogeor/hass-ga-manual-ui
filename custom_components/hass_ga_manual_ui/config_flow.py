@@ -2,6 +2,7 @@
 
 import json
 import logging
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -43,22 +44,14 @@ def _parse_service_account_json(raw: str) -> dict[str, str]:
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
-        _LOGGER.debug(
-            "Service account JSON parse failed at line %s col %s: %s",
-            exc.lineno,
-            exc.colno,
-            exc.msg,
-        )
         raise vol.Invalid(
             f"Invalid JSON (line {exc.lineno}, column {exc.colno}): {exc.msg}"
         ) from exc
     except Exception as exc:
-        _LOGGER.debug("Unexpected error parsing service account JSON: %s", exc)
         raise vol.Invalid(f"Cannot parse service account JSON: {exc}") from exc
 
     if not isinstance(data, dict):
         actual_type = type(data).__name__
-        _LOGGER.debug("Service account JSON is not a dict (type=%s)", actual_type)
         raise vol.Invalid(
             f"Service account must be a JSON object, got {actual_type}. "
             "Did you paste the entire downloaded JSON key file contents?"
@@ -85,17 +78,10 @@ def _parse_service_account_json(raw: str) -> dict[str, str]:
         )
 
     if not isinstance(client_email, str):
-        _LOGGER.debug(
-            "client_email is not a string (type=%s)", type(client_email).__name__
-        )
         raise vol.Invalid("'client_email' must be a string")
     if not isinstance(private_key, str):
-        _LOGGER.debug(
-            "private_key is not a string (type=%s)", type(private_key).__name__
-        )
         raise vol.Invalid("'private_key' must be a string")
 
-    _LOGGER.debug("Successfully parsed service account for '%s'", client_email)
     return {
         CONF_CLIENT_EMAIL: client_email,
         CONF_PRIVATE_KEY: private_key,
@@ -175,7 +161,6 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 title=title,
                 notification_id="hass_ga_manual_ui_install",
             )
-            _LOGGER.debug("Posted post-install refresh notification")
         except Exception as exc:
             _LOGGER.debug("Could not create install notification: %s", exc)
 
@@ -187,23 +172,14 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             project_id = user_input.get(CONF_PROJECT_ID, "").strip()
-            _LOGGER.debug("Config flow step_user: project_id='%s'", project_id)
 
             if not project_id:
-                _LOGGER.debug("Config flow: empty project_id submitted")
                 errors[CONF_PROJECT_ID] = "project_id_required"
             elif not _is_valid_project_id(project_id):
-                _LOGGER.debug(
-                    "Config flow: invalid project_id format: '%s'", project_id
-                )
                 errors[CONF_PROJECT_ID] = "invalid_project_id"
 
             if not errors:
                 self._data[CONF_PROJECT_ID] = project_id
-                _LOGGER.info(
-                    "Config flow: accepted project_id='%s', advancing to service_account step",
-                    project_id,
-                )
                 return await self.async_step_service_account()
 
         return self.async_show_form(
@@ -232,25 +208,14 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             raw = user_input.get(CONF_SERVICE_ACCOUNT, "").strip()
-            _LOGGER.debug(
-                "Config flow step_service_account for project='%s': "
-                "raw input length=%d chars",
-                project_id,
-                len(raw),
-            )
 
             if not raw:
-                _LOGGER.debug("Config flow: empty service_account submitted")
                 errors[CONF_SERVICE_ACCOUNT] = "service_account_required"
             else:
                 try:
                     account = _parse_service_account_json(raw)
                 except vol.Invalid as exc:
-                    error_msg = str(exc)
-                    _LOGGER.debug(
-                        "Config flow: service_account validation failed: %s", error_msg
-                    )
-                    errors[CONF_SERVICE_ACCOUNT] = error_msg
+                    errors[CONF_SERVICE_ACCOUNT] = str(exc)
                 else:
                     self._data[CONF_SERVICE_ACCOUNT] = account
                     _LOGGER.info(
@@ -285,34 +250,11 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
+# GCP project IDs: 6-30 chars, lowercase-letter-led, lowercase/digits/hyphens,
+# no trailing hyphen. {4,28} middle gives the 6-30 total length.
+_PROJECT_ID_RE = re.compile(r"[a-z][a-z0-9-]{4,28}[a-z0-9]")
+
+
 def _is_valid_project_id(value: str) -> bool:
-    """Check if the string looks like a valid GCP project ID.
-
-    GCP project IDs: 6-30 chars, start with a letter, lowercase letters,
-    digits, and hyphens only. Must not end with a hyphen.
-    """
-    if not value:
-        return False
-    if len(value) < 6:
-        _LOGGER.debug("Project ID '%s' too short (%d chars, min 6)", value, len(value))
-        return False
-    if len(value) > 30:
-        _LOGGER.debug("Project ID '%s' too long (%d chars, max 30)", value, len(value))
-        return False
-    if not value[0].isalpha():
-        _LOGGER.debug("Project ID '%s' does not start with a letter", value)
-        return False
-    if value[-1] == "-":
-        _LOGGER.debug("Project ID '%s' ends with a hyphen", value)
-        return False
-
-    invalid_chars = [c for c in value if not (c.islower() or c.isdigit() or c == "-")]
-    if invalid_chars:
-        _LOGGER.debug(
-            "Project ID '%s' contains invalid characters: %s",
-            value,
-            invalid_chars,
-        )
-        return False
-
-    return True
+    """Check if the string looks like a valid GCP project ID."""
+    return isinstance(value, str) and _PROJECT_ID_RE.fullmatch(value) is not None

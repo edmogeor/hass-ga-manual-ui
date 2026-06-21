@@ -670,17 +670,17 @@
     else delete map[ASSISTANT_ID];
     el.requestUpdate?.();
   }
-  function _isNotSupported(err) {
+  function _wsErrMatches(err, code, substr) {
     const wsErr = err;
-    if (wsErr && wsErr.code === "not_supported") return true;
+    if (wsErr && wsErr.code === code) return true;
     const msg = (wsErr && (wsErr.message || wsErr.error) || "").toLowerCase();
-    return msg.includes("not supported");
+    return msg.includes(substr);
+  }
+  function _isNotSupported(err) {
+    return _wsErrMatches(err, "not_supported", "not supported");
   }
   function _is2faFetchRecoverable(err) {
-    const wsErr = err;
-    if (wsErr && wsErr.code === "internal_error") return true;
-    const msg = (wsErr && (wsErr.message || wsErr.error) || "").toLowerCase();
-    return msg.includes("not enabled");
+    return _wsErrMatches(err, "internal_error", "not enabled");
   }
   function _findOurAssistantRow(root) {
     const items = root.querySelectorAll("ha-md-list-item");

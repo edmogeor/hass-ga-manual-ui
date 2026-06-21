@@ -252,7 +252,7 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up the Google Assistant Manual integration."""
-    _LOGGER.debug("async_setup starting for %s v%s", DOMAIN, _get_version())
+    _LOGGER.debug("async_setup starting for %s v%s", DOMAIN, _VERSION)
     hass.data.setdefault(DOMAIN, {})
 
     # Record whether the user has a `google_assistant:` YAML section (which this
@@ -277,9 +277,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
     _register_entry_discovery(hass)
 
-    _LOGGER.info(
-        "Google Assistant (Manual) setup complete (version %s)", _get_version()
-    )
+    _LOGGER.info("Google Assistant (Manual) setup complete (version %s)", _VERSION)
     return True
 
 
@@ -433,7 +431,6 @@ def _build_core_config(entry: ConfigEntry) -> dict[str, Any]:
     if pin:
         config[CONF_SECURE_DEVICES_PIN] = pin
 
-    _LOGGER.debug("Built core GA config with project_id='%s'", project_id)
     return config
 
 
@@ -764,7 +761,7 @@ def _purge_exposed_entities_store(hass: HomeAssistant) -> None:
 
 
 def _purge_entity_registry_options(hass: HomeAssistant) -> None:
-    """Step 3: drop our assistant's options from entity registry entries."""
+    """Drop our assistant's options from entity registry entries."""
     from homeassistant.helpers import entity_registry as er
 
     ent_reg = er.async_get(hass)
@@ -1046,16 +1043,10 @@ def _register_entry_discovery(hass: HomeAssistant) -> None:
             return
 
         entry_id = entries[0].entry_id
-        _LOGGER.debug(
-            "ws_get_entry_id: returning entry_id=%s for project='%s'",
-            entry_id,
-            _project_id(entries[0]),
-        )
         connection.send_result(msg["id"], {"entry_id": entry_id})
 
     try:
         websocket_api.async_register_command(hass, ws_get_entry_id)
-        _LOGGER.debug("Registered WS command: %s", WS_GET_ENTRY_ID)
     except Exception:
         _LOGGER.exception("Failed to register WS command: %s", WS_GET_ENTRY_ID)
 
@@ -1145,15 +1136,9 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     CONF_SECURE_DEVICES_PIN, ""
                 ),
                 # Lets the frontend detect a stale cached bundle and prompt a refresh.
-                "version": _get_version(),
+                "version": _VERSION,
             }
 
-            _LOGGER.debug(
-                "ws_get_config for project='%s': enabled=%s report_state=%s",
-                _project_id(current_entry),
-                enabled,
-                result[CONF_REPORT_STATE],
-            )
             connection.send_result(msg["id"], result)
         except Exception as exc:
             _LOGGER.exception("Error building config response for ws_get_config")
@@ -1184,11 +1169,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
         data: dict[str, Any] = msg["data"]
         project_id = _project_id(current_entry)
-        _LOGGER.debug(
-            "ws_update_config for project='%s': keys=%s",
-            project_id,
-            list(data.keys()),
-        )
 
         try:
             new_options = {**current_entry.options}
@@ -1485,8 +1465,6 @@ def _patch_core_assistants(hass: HomeAssistant) -> None:
                 ASSISTANT_ID,
                 ee.KNOWN_ASSISTANTS,
             )
-        else:
-            _LOGGER.debug("'%s' already in KNOWN_ASSISTANTS, skipping", ASSISTANT_ID)
     except ImportError as exc:
         _LOGGER.error(
             "Cannot import homeassistant.components.homeassistant.exposed_entities: %s. "
@@ -1589,13 +1567,3 @@ def _add_assistant_to_schema(schema: object, assistant_id: str) -> None:
             )
 
     _walk(schema)
-
-
-# ---------------------------------------------------------------------------
-# Version helper
-# ---------------------------------------------------------------------------
-
-
-def _get_version() -> str:
-    """Return the integration version from manifest.json."""
-    return _VERSION

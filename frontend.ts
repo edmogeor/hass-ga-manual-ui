@@ -1045,22 +1045,24 @@ function _setOurUnsupported(el: EntityVoiceSettingsElement, unsupported: boolean
   el.requestUpdate?.();
 }
 
+// True when a WS error matches the given code, or its message contains `substr`.
+function _wsErrMatches(err: unknown, code: string, substr: string): boolean {
+  const wsErr = err as WSError;
+  if (wsErr && wsErr.code === code) return true;
+  const msg = ((wsErr && (wsErr.message || wsErr.error)) || "").toLowerCase();
+  return msg.includes(substr);
+}
+
 // Whether a get_entity failure means Google Assistant can't handle the entity.
 function _isNotSupported(err: unknown): boolean {
-  const wsErr = err as WSError;
-  if (wsErr && wsErr.code === "not_supported") return true;
-  const msg = ((wsErr && (wsErr.message || wsErr.error)) || "").toLowerCase();
-  return msg.includes("not supported");
+  return _wsErrMatches(err, "not_supported", "not supported");
 }
 
 // Whether a failed get_entity 2FA fetch is worth retrying. Recoverable: the
 // assistant was briefly disabled ("not enabled") or an internal server error.
 // Not recoverable: the entity isn't supported by Google or no longer exists.
 function _is2faFetchRecoverable(err: unknown): boolean {
-  const wsErr = err as WSError;
-  if (wsErr && wsErr.code === "internal_error") return true;
-  const msg = ((wsErr && (wsErr.message || wsErr.error)) || "").toLowerCase();
-  return msg.includes("not enabled");
+  return _wsErrMatches(err, "internal_error", "not enabled");
 }
 
 function _findOurAssistantRow(root: ShadowRoot): HTMLElement | null {
