@@ -12,7 +12,7 @@
     "check_logs": "Bekijk de Home Assistant-logboeken voor details.",
     "report_state_enable_failed": "Statusrapportage inschakelen mislukt. Probeer de integratie uit en weer in te schakelen, of bekijk de Home Assistant-logboeken.",
     "report_state_disable_failed": "Statusrapportage uitschakelen mislukt. Probeer de integratie uit en weer in te schakelen, of bekijk de Home Assistant-logboeken.",
-    "ready_banner": "{name} is gereed — beheer het via Instellingen → Spraakassistenten.",
+    "ready_banner": "{name} is gereed, beheer het via Instellingen → Spraakassistenten.",
     "update_available": "Er is een nieuwe versie van Google Assistant (Handmatig) beschikbaar. Vernieuw uw browser (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om deze te laden."
   }
 }

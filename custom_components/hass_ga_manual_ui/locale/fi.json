@@ -12,7 +12,7 @@
     "check_logs": "Tarkista Home Assistantin lokit yksityiskohtia varten.",
     "report_state_enable_failed": "Tilaraportoinnin käyttöönotto epäonnistui. Yritä kytkeä integraatio pois päältä ja takaisin päälle tai tarkista Home Assistantin lokit.",
     "report_state_disable_failed": "Tilaraportoinnin poistaminen käytöstä epäonnistui. Yritä kytkeä integraatio pois päältä ja takaisin päälle tai tarkista Home Assistantin lokit.",
-    "ready_banner": "{name} on valmis — hallinnoi sitä kohdassa Asetukset → Ääniavustajat.",
+    "ready_banner": "{name} on valmis, hallinnoi sitä kohdassa Asetukset → Ääniavustajat.",
     "update_available": "Google Assistant (Manual) -sovelluksesta on saatavilla uusi versio. Päivitä selaimesi (Ctrl+Shift+R, tai Macissa Cmd+Shift+R) ladataksesi sen."
   }
 }

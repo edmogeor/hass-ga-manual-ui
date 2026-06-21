@@ -12,7 +12,7 @@
     "check_logs": "בדוק את יומני Home Assistant לפרטים.",
     "report_state_enable_failed": "הפעלת דיווח הסטטוס נכשלה. נסה לכבות ולהפעיל מחדש את האינטגרציה, או בדוק את יומני Home Assistant.",
     "report_state_disable_failed": "השבתת דיווח הסטטוס נכשלה. נסה לכבות ולהפעיל מחדש את האינטגרציה, או בדוק את יומני Home Assistant.",
-    "ready_banner": "{name} מוכן — נהל אותו בהגדרות ← עוזרים קוליים.",
+    "ready_banner": "{name} מוכן, נהל אותו בהגדרות ← עוזרים קוליים.",
     "update_available": "גרסה חדשה של Google Assistant (ידני) זמינה. רענן את הדפדפן (Ctrl+Shift+R, או Cmd+Shift+R ב-Mac) כדי לטעון אותה."
   }
 }

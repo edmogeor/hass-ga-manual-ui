@@ -12,7 +12,7 @@
     "check_logs": "Papildinformācijai skatiet Home Assistant žurnālus.",
     "report_state_enable_failed": "Neizdevās iespējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
     "report_state_disable_failed": "Neizdevās atspējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
-    "ready_banner": "{name} ir gatavs — pārvaldiet to sadaļā Iestatījumi → Balss asistenti.",
+    "ready_banner": "{name} ir gatavs, pārvaldiet to sadaļā Iestatījumi → Balss asistenti.",
     "update_available": "Ir pieejama jauna Google Assistant (Manual) versija. Atsvaidziniet pārlūku (Ctrl+Shift+R vai Cmd+Shift+R Mac datorā), lai to ielādētu."
   }
 }

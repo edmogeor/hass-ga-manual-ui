@@ -7,7 +7,7 @@ body:
       value: |
         Thanks for taking the time to report a bug.
 
-        **Important:** This integration is a UI wrapper around Home Assistant's built-in `google_assistant` integration. Please only report bugs with the UI card, entity exposure, or configuration flow — not with the underlying Google Assistant webhook, device sync, or voice command handling. Those are part of Home Assistant core.
+        **Important:** This integration is a UI wrapper around Home Assistant's built-in `google_assistant` integration. Please only report bugs with the UI card, entity exposure, or configuration flow, not with the underlying Google Assistant webhook, device sync, or voice command handling. Those are part of Home Assistant core.
   - type: input
     id: ha_version
     attributes:

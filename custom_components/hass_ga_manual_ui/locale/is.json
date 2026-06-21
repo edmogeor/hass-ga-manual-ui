@@ -12,7 +12,7 @@
     "check_logs": "Athugaðu Home Assistant kladdana fyrir upplýsingar.",
     "report_state_enable_failed": "Tókst ekki að virkja stöðuskýrslugjöf. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
     "report_state_disable_failed": "Tókst ekki að gera stöðuskýrslugjöf óvirka. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
-    "ready_banner": "{name} er tilbúið — sjáðu um það undir Stillingar → Raddaðstoðarmenn.",
+    "ready_banner": "{name} er tilbúið, sjáðu um það undir Stillingar → Raddaðstoðarmenn.",
     "update_available": "Ný útgáfa af Google Assistant (Manual) er tiltæk. Endurhladdu vafranum (Ctrl+Shift+R, eða Cmd+Shift+R á Mac) til að hlaða henni."
   }
 }

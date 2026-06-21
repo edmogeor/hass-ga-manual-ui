@@ -12,7 +12,7 @@
     "check_logs": "Periksa log Home Assistant untuk detail.",
     "report_state_enable_failed": "Gagal mengaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
     "report_state_disable_failed": "Gagal menonaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
-    "ready_banner": "{name} siap — kelola di Pengaturan → Asisten suara.",
+    "ready_banner": "{name} siap, kelola di Pengaturan → Asisten suara.",
     "update_available": "Versi baru Google Assistant (Manual) tersedia. Segarkan browser Anda (Ctrl+Shift+R, atau Cmd+Shift+R di Mac) untuk memuatnya."
   }
 }

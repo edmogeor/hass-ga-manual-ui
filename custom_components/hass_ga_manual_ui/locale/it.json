@@ -12,7 +12,7 @@
     "check_logs": "Controlla i log di Home Assistant per i dettagli.",
     "report_state_enable_failed": "Impossibile abilitare la segnalazione dello stato. Prova a disabilitare e riabilitare l'integrazione, o controlla i log di Home Assistant.",
     "report_state_disable_failed": "Impossibile disabilitare la segnalazione dello stato. Prova a disabilitare e riabilitare l'integrazione, o controlla i log di Home Assistant.",
-    "ready_banner": "{name} è pronto — gestiscilo in Impostazioni → Assistenti vocali.",
+    "ready_banner": "{name} è pronto, gestiscilo in Impostazioni → Assistenti vocali.",
     "update_available": "È disponibile una nuova versione di Google Assistant (Manuale). Aggiorna il browser (Ctrl+Maiusc+R, o Cmd+Maiusc+R su Mac) per caricarla."
   }
 }

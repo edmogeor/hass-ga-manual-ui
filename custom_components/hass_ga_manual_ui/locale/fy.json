@@ -12,7 +12,7 @@
     "check_logs": "Kontrolearje de Home Assistant-logboeken foar details.",
     "report_state_enable_failed": "Statusrapportaazje ynskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
     "report_state_disable_failed": "Statusrapportaazje útskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
-    "ready_banner": "{name} is klear — behearsje it fia Ynstellingen → Spraakadjutanten.",
+    "ready_banner": "{name} is klear, behearsje it fia Ynstellingen → Spraakadjutanten.",
     "update_available": "In nije ferzje fan Google Assistant (Manual) is beskikber. Fernij jo blêder (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om it te laden."
   }
 }

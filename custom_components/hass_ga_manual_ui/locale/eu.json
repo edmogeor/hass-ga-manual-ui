@@ -12,7 +12,7 @@
     "check_logs": "Begiratu Home Assistant erregistroak xehetasunetarako.",
     "report_state_enable_failed": "Ezin izan da egoera-txostena gaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
     "report_state_disable_failed": "Ezin izan da egoera-txostena desgaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
-    "ready_banner": "{name} prest dago — kudeatu Ezarpenak → Ahots-laguntzaileak atalean.",
+    "ready_banner": "{name} prest dago, kudeatu Ezarpenak → Ahots-laguntzaileak atalean.",
     "update_available": "Google Assistant (Manual)-ren bertsio berri bat dago eskuragarri. Freskatu nabigatzailea (Ctrl+Shift+R, edo Mac-en Cmd+Shift+R) kargatzeko."
   }
 }

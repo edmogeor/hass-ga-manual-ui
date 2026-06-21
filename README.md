@@ -14,7 +14,7 @@
   </p>
 </div>
 
-A Home Assistant integration that brings the Google Assistant voice assistant to your Home Assistant without a Nabu Casa Cloud subscription. Once set up, the experience is **identical to the Nabu Casa Cloud Google Assistant** — same voice assistant card, same entity exposure UI, same per-entity 2FA toggle.
+A Home Assistant integration that brings the Google Assistant voice assistant to your Home Assistant without a Nabu Casa Cloud subscription. Once set up, the experience is **identical to the Nabu Casa Cloud Google Assistant**, same voice assistant card, same entity exposure UI, same per-entity 2FA toggle.
 
 ## Screenshots
 
@@ -36,18 +36,18 @@ A Home Assistant integration that brings the Google Assistant voice assistant to
 
 ## How it works
 
-This integration is a **UI wrapper around the built-in `google_assistant` integration** — it doesn't replace it. It configures and manages the core integration so that it appears in the voice assistant UI alongside Nabu Casa Cloud.
+This integration is a **UI wrapper around the built-in `google_assistant` integration**, it doesn't replace it. It configures and manages the core integration so that it appears in the voice assistant UI alongside Nabu Casa Cloud.
 
 It's recommended to have the manual `google_assistant` setup working via YAML first before switching to this integration. That way you know your Google Cloud project and service account are correctly configured.
 
 ## Features
 
-- **Full UI configuration** — project ID, service account, report state, PIN, all configurable in the UI
-- **Google Assistant card** — appears alongside cloud assistants in the voice assistants panel
-- **Entity exposure** — expose devices to Google just like with Nabu Casa Cloud
-- **Per-entity 2FA control** — PIN prompt toggle for security devices (locks, garage doors)
-- **Auto-resync** — automatically pushes changes to Google when entities or areas change
-- **Report state** — syncs entity states back to Google for faster commands
+- **Full UI configuration**, project ID, service account, report state, PIN, all configurable in the UI
+- **Google Assistant card**, appears alongside cloud assistants in the voice assistants panel
+- **Entity exposure**, expose devices to Google just like with Nabu Casa Cloud
+- **Per-entity 2FA control**, PIN prompt toggle for security devices (locks, garage doors)
+- **Auto-resync**, automatically pushes changes to Google when entities or areas change
+- **Report state**, syncs entity states back to Google for faster commands
 
 ## Requirements
 

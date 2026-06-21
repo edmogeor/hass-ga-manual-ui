@@ -12,7 +12,7 @@
     "check_logs": "Kiểm tra nhật ký Home Assistant để biết chi tiết.",
     "report_state_enable_failed": "Không thể bật báo cáo trạng thái. Thử tắt và bật lại tích hợp, hoặc kiểm tra nhật ký Home Assistant.",
     "report_state_disable_failed": "Không thể tắt báo cáo trạng thái. Thử tắt và bật lại tích hợp, hoặc kiểm tra nhật ký Home Assistant.",
-    "ready_banner": "{name} đã sẵn sàng — quản lý trong Cài đặt → Trợ lý giọng nói.",
+    "ready_banner": "{name} đã sẵn sàng, quản lý trong Cài đặt → Trợ lý giọng nói.",
     "update_available": "Đã có phiên bản mới của Google Assistant (Thủ công). Hãy làm mới trình duyệt của bạn (Ctrl+Shift+R, hoặc Cmd+Shift+R trên Mac) để tải phiên bản mới."
   }
 }

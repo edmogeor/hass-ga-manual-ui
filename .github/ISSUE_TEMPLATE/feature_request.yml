@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your idea! Note: this integration is a UI wrapper — feature requests should focus on the manual Google Assistant card, config flow, or entity exposure UX.
+        Thanks for your idea! Note: this integration is a UI wrapper, feature requests should focus on the manual Google Assistant card, config flow, or entity exposure UX.
   - type: textarea
     id: problem
     attributes:

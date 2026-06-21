@@ -12,7 +12,7 @@
     "check_logs": "Ayrıntılar için Home Assistant günlüklerini kontrol edin.",
     "report_state_enable_failed": "Durum raporlama etkinleştirilemedi. Entegrasyonu kapatıp açmayı deneyin veya Home Assistant günlüklerini kontrol edin.",
     "report_state_disable_failed": "Durum raporlama devre dışı bırakılamadı. Entegrasyonu kapatıp açmayı deneyin veya Home Assistant günlüklerini kontrol edin.",
-    "ready_banner": "{name} hazır — Ayarlar → Sesli asistanlar altında yönetin.",
+    "ready_banner": "{name} hazır, Ayarlar → Sesli asistanlar altında yönetin.",
     "update_available": "Google Assistant (Manuel) için yeni bir sürüm mevcut. Yüklemek için tarayıcınızı yenileyin (Ctrl+Shift+R veya Mac'te Cmd+Shift+R)."
   }
 }

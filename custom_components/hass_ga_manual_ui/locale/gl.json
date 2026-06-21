@@ -12,7 +12,7 @@
     "check_logs": "Consulta os rexistros de Home Assistant para obter detalles.",
     "report_state_enable_failed": "Fallou a activación dos informes de estado. Proba a desactivar e reactivar a integración, ou consulta os rexistros de Home Assistant.",
     "report_state_disable_failed": "Fallou a desactivación dos informes de estado. Proba a desactivar e reactivar a integración, ou consulta os rexistros de Home Assistant.",
-    "ready_banner": "{name} está listo — xestiónao en Configuración → Asistentes de voz.",
+    "ready_banner": "{name} está listo, xestiónao en Configuración → Asistentes de voz.",
     "update_available": "Hai unha nova versión de Google Assistant (Manual) dispoñible. Actualice o navegador (Ctrl+Mayús+R, ou Cmd+Mayús+R en Mac) para cargala."
   }
 }

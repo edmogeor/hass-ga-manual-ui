@@ -12,7 +12,7 @@
     "check_logs": "Verificați jurnalele Home Assistant pentru detalii.",
     "report_state_enable_failed": "Activarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
     "report_state_disable_failed": "Dezactivarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
-    "ready_banner": "{name} este pregătit — gestionați-l în Setări → Asistenți vocali.",
+    "ready_banner": "{name} este pregătit, gestionați-l în Setări → Asistenți vocali.",
     "update_available": "Este disponibilă o nouă versiune de Google Assistant (Manual). Reîmprospătați browserul (Ctrl+Shift+R sau Cmd+Shift+R pe Mac) pentru a o încărca."
   }
 }

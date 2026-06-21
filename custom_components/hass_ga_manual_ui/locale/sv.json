@@ -12,7 +12,7 @@
     "check_logs": "Kontrollera Home Assistants loggar för mer information.",
     "report_state_enable_failed": "Det gick inte att aktivera statusrapportering. Försök att stänga av och slå på integrationen igen, eller kontrollera Home Assistants loggar.",
     "report_state_disable_failed": "Det gick inte att inaktivera statusrapportering. Försök att stänga av och slå på integrationen igen, eller kontrollera Home Assistants loggar.",
-    "ready_banner": "{name} är redo — hantera det under Inställningar → Röstassistenter.",
+    "ready_banner": "{name} är redo, hantera det under Inställningar → Röstassistenter.",
     "update_available": "En ny version av Google Assistant (Manual) är tillgänglig. Uppdatera din webbläsare (Ctrl+Shift+R, eller Cmd+Shift+R på Mac) för att ladda den."
   }
 }

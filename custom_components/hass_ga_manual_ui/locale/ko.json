@@ -12,7 +12,7 @@
     "check_logs": "자세한 내용은 Home Assistant 로그를 확인하세요.",
     "report_state_enable_failed": "상태 보고 활성화에 실패했습니다. 통합을 끄고 다시 켜거나 Home Assistant 로그를 확인해 보세요.",
     "report_state_disable_failed": "상태 보고 비활성화에 실패했습니다. 통합을 끄고 다시 켜거나 Home Assistant 로그를 확인해 보세요.",
-    "ready_banner": "{name}이(가) 준비되었습니다 — 설정 → 음성 도우미에서 관리하세요.",
+    "ready_banner": "{name}이(가) 준비되었습니다, 설정 → 음성 도우미에서 관리하세요.",
     "update_available": "Google Assistant(수동)의 새 버전이 있습니다. 브라우저를 새로고침하여(Ctrl+Shift+R, Mac에서는 Cmd+Shift+R) 불러오세요."
   }
 }

@@ -12,7 +12,7 @@
     "check_logs": "Norėdami gauti daugiau informacijos, peržiūrėkite Home Assistant žurnalus.",
     "report_state_enable_failed": "Nepavyko įjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
     "report_state_disable_failed": "Nepavyko išjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
-    "ready_banner": "{name} yra paruoštas — tvarkykite jį Nustatymai → Balso asistentai.",
+    "ready_banner": "{name} yra paruoštas, tvarkykite jį Nustatymai → Balso asistentai.",
     "update_available": "Yra nauja Google Assistant (Manual) versija. Atnaujinkite naršyklę (Ctrl+Shift+R, arba Cmd+Shift+R „Mac“), kad ją įkeltumėte."
   }
 }

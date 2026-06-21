@@ -12,7 +12,7 @@
     "check_logs": "Verifique os logs do Home Assistant para mais detalhes.",
     "report_state_enable_failed": "Falha ao ativar o relatório de estado. Tente desligar e ligar a integração, ou verifique os logs do Home Assistant.",
     "report_state_disable_failed": "Falha ao desativar o relatório de estado. Tente desligar e ligar a integração, ou verifique os logs do Home Assistant.",
-    "ready_banner": "{name} está pronto — gerencie em Configurações → Assistentes de voz.",
+    "ready_banner": "{name} está pronto, gerencie em Configurações → Assistentes de voz.",
     "update_available": "Está disponível uma nova versão do Google Assistant (Manual). Atualize o navegador (Ctrl+Shift+R ou Cmd+Shift+R no Mac) para carregá-la."
   }
 }

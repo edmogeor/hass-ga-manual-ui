@@ -12,7 +12,7 @@
     "check_logs": "Za detalje provjerite dnevnike Home Assistanta.",
     "report_state_enable_failed": "Omogućavanje izvješćivanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
     "report_state_disable_failed": "Onemogućavanje izvješćivanja o stanju nije uspjelo. Pokušajte isključiti i uključiti integraciju ili provjerite dnevnike Home Assistanta.",
-    "ready_banner": "{name} je spreman — upravljajte njime u Postavke → Glasovni asistenti.",
+    "ready_banner": "{name} je spreman, upravljajte njime u Postavke → Glasovni asistenti.",
     "update_available": "Dostupna je nova verzija Google Assistant (Manual). Osvježite preglednik (Ctrl+Shift+R, ili Cmd+Shift+R na Macu) da biste je učitali."
   }
 }

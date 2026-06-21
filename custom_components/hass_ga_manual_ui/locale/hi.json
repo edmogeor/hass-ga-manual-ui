@@ -12,7 +12,7 @@
     "check_logs": "विवरण के लिए Home Assistant लॉग देखें।",
     "report_state_enable_failed": "स्थिति रिपोर्टिंग सक्षम करने में विफल। इंटीग्रेशन को बंद और चालू करने का प्रयास करें, या Home Assistant लॉग देखें।",
     "report_state_disable_failed": "स्थिति रिपोर्टिंग अक्षम करने में विफल। इंटीग्रेशन को बंद और चालू करने का प्रयास करें, या Home Assistant लॉग देखें।",
-    "ready_banner": "{name} तैयार है — इसे सेटिंग → वॉयस असिस्टेंट में प्रबंधित करें।",
+    "ready_banner": "{name} तैयार है, इसे सेटिंग → वॉयस असिस्टेंट में प्रबंधित करें।",
     "update_available": "Google Assistant (Manual) का एक नया संस्करण उपलब्ध है। इसे लोड करने के लिए अपना ब्राउज़र रिफ्रेश करें (Ctrl+Shift+R, या Mac पर Cmd+Shift+R)।"
   }
 }

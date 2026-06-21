@@ -12,7 +12,7 @@
     "check_logs": "Za podrobnosti preverite dnevnike Home Assistant.",
     "report_state_enable_failed": "Omogočanje poročanja o stanju ni uspelo. Poskusite izklopiti in vklopiti integracijo ali preverite dnevnike Home Assistant.",
     "report_state_disable_failed": "Onemogočanje poročanja o stanju ni uspelo. Poskusite izklopiti in vklopiti integracijo ali preverite dnevnike Home Assistant.",
-    "ready_banner": "{name} je pripravljen — upravljajte ga v Nastavitve → Glasovni asistenti.",
+    "ready_banner": "{name} je pripravljen, upravljajte ga v Nastavitve → Glasovni asistenti.",
     "update_available": "Na voljo je nova različica Google Assistant (Ročno). Osvežite brskalnik (Ctrl+Shift+R ali Cmd+Shift+R na Macu), da jo naložite."
   }
 }

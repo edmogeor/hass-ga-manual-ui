@@ -12,7 +12,7 @@
     "check_logs": "請查看 Home Assistant 記錄以取得詳細資訊。",
     "report_state_enable_failed": "啟用狀態回報失敗。請嘗試關閉並重新開啟整合，或查看 Home Assistant 記錄。",
     "report_state_disable_failed": "停用狀態回報失敗。請嘗試關閉並重新開啟整合，或查看 Home Assistant 記錄。",
-    "ready_banner": "{name} 已就緒 — 請在設定 → 語音助理中進行管理。",
+    "ready_banner": "{name} 已就緒，請在設定 → 語音助理中進行管理。",
     "update_available": "Google Assistant（手動）有新版本可用。請重新整理瀏覽器（Ctrl+Shift+R，Mac 上為 Cmd+Shift+R）以載入新版本。"
   }
 }

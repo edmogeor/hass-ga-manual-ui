@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   expose tab and entity settings) after a page refresh. The custom-element
   patches that draw the icon were installed from the page's `DOMContentLoaded`
   step, which races against Home Assistant's lazily-loaded voice-assistants
-  panel — when the panel defined and rendered the icon elements first, our
+  panel, when the panel defined and rendered the icon elements first, our
   override landed too late and the cell stayed blank. The prototype/interceptor
   patches now install synchronously at module load, before that panel chunk can
   define its elements, so our icon renders on the first paint. This also makes
@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Our icon could still be missing entirely from the **Expose** tab's assistant
   column on a hard refresh. That column is built from the page's
   `_availableAssistants` list, which Home Assistant memoizes along with the
-  column itself — so if our patch that adds our assistant to the list landed
+  column itself, so if our patch that adds our assistant to the list landed
   after the table's first render, the column stayed cached without our icon and
   never rebuilt. The expose-page patch now installs synchronously via the same
   custom-element interceptor as the icon patches, before the table's first
@@ -43,8 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renaming an exposed entity's voice aliases now triggers an immediate Google
   `requestSync` instead of waiting for the next unrelated sync. Home Assistant's
-  shared "describing attributes" set — which Nabu Casa Cloud also uses to decide
-  when to resync — omits `aliases` even though they become Google nicknames, so
+  shared "describing attributes" set, which Nabu Casa Cloud also uses to decide
+  when to resync, omits `aliases` even though they become Google nicknames, so
   alias-only edits never pushed on their own. We now include `aliases` in the
   resync trigger.
 
@@ -61,8 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - After toggling the entity dialog's master "Expose" switch (or a per-assistant
-  switch), the toggles could show a stale state — the rows not collapsing when
-  unexposed, or only some assistants showing on after re-exposing — until the
+  switch), the toggles could show a stale state, the rows not collapsing when
+  unexposed, or only some assistants showing on after re-exposing, until the
   dialog was reopened. Home Assistant fires the expose write without awaiting it
   and then immediately refetches the entity, so the refresh could read a
   half-written entry. We now settle the write first, snapshotting the switch
@@ -104,13 +104,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Assistant's own render lifecycle (instead of being painted into the shadow
   DOM after the fact), so it survives the element reuse that Home Assistant
   does when scrolling the expose table or reordering the entity dialog rows.
-  Our self-hosted icon is always used for this integration — never the brands
+  Our self-hosted icon is always used for this integration, never the brands
   CDN.
 - The entity dialog's master "Expose" toggle did not unexpose the entity from
   Google Assistant (Manual): turning it off left the entity exposed to us (so it
   stayed in the exposed-entities list), even though toggling our own row off
   worked. This was Home Assistant's `_toggleAll` dropping the last assistant in
-  its list — which is our injected entry — so the master toggle now explicitly
+  its list, which is our injected entry, so the master toggle now explicitly
   includes our assistant.
 
 ## [0.1.7] - 2026-06-12
@@ -139,7 +139,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The "a new version is available — refresh" prompt is now a persistent
+- The "a new version is available, refresh" prompt is now a persistent
   notification (matching the install notification) and appears on any page, not
   only the Voice assistants page. It points at a hard refresh, which is what
   actually clears Home Assistant's cached frontend.
@@ -151,8 +151,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internal: the integration's own UI strings (the setup notices and the
   voice-assistant card text) now load from a dedicated `locale/` store served by
   the integration, rather than as custom keys inside Home Assistant's translation
-  files. This lets the integration pass Home Assistant's `hassfest` validation —
-  a requirement for the HACS default store — while keeping full translations for
+  files. This lets the integration pass Home Assistant's `hassfest` validation,
+  a requirement for the HACS default store, while keeping full translations for
   all 63 supported languages. No user-facing change.
 
 ## [0.1.4] - 2026-06-12
@@ -174,7 +174,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   which the browser can serve from cache, so a one-time hard refresh is needed
   to pick it up. A fresh install now posts a notification with that guidance,
   and after an update the card shows a reload prompt when it detects the browser
-  is running a stale cached bundle — instead of leaving you to guess. Translated
+  is running a stale cached bundle, instead of leaving you to guess. Translated
   for all 63 supported languages.
 
 ### Changed
@@ -197,7 +197,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `_toggleIntegration`, `refreshCardState`, and `_restorePinValue` now delegate
   entry-gone retry to `_withEntryRetry`, removing duplicated retry logic.
 - Removed dead `_ensureVoiceAssistantEntry` and inlined single-use
-  `_safeAssistantsFold` — both superseded by the expose-page fix.
+  `_safeAssistantsFold`, both superseded by the expose-page fix.
 
 ### Added
 

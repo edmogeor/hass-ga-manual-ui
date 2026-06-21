@@ -12,7 +12,7 @@
     "check_logs": "Podrobnosti nájdete v protokoloch Home Assistant.",
     "report_state_enable_failed": "Nepodarilo sa aktivovať hlásenie stavu. Skúste integráciu vypnúť a znovu zapnúť alebo skontrolujte protokoly Home Assistant.",
     "report_state_disable_failed": "Nepodarilo sa deaktivovať hlásenie stavu. Skúste integráciu vypnúť a znovu zapnúť alebo skontrolujte protokoly Home Assistant.",
-    "ready_banner": "{name} je pripravený — spravujte ho v Nastavenia → Hlasoví asistenti.",
+    "ready_banner": "{name} je pripravený, spravujte ho v Nastavenia → Hlasoví asistenti.",
     "update_available": "Je k dispozícii nová verzia Google Assistant (Manual). Obnovte prehliadač (Ctrl+Shift+R alebo Cmd+Shift+R na Macu) a načítajte ju."
   }
 }

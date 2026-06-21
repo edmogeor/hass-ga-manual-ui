@@ -12,7 +12,7 @@
     "check_logs": "Gwiriwch logiau Home Assistant am fanylion.",
     "report_state_enable_failed": "Methodd alluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
     "report_state_disable_failed": "Methodd analluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
-    "ready_banner": "Mae {name} yn barod — rheolwch ef o dan Gosodiadau → Cynorthwywyr Llais.",
+    "ready_banner": "Mae {name} yn barod, rheolwch ef o dan Gosodiadau → Cynorthwywyr Llais.",
     "update_available": "Mae fersiwn newydd o Google Assistant (Manual) ar gael. Adnewyddwch eich porwr (Ctrl+Shift+R, neu Cmd+Shift+R ar Mac) i'w lwytho."
   }
 }

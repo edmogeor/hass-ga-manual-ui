@@ -12,7 +12,7 @@
     "check_logs": "Kontrolu la protokolojn de Home Assistant por detaloj.",
     "report_state_enable_failed": "Malsukcesis aktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
     "report_state_disable_failed": "Malsukcesis malaktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
-    "ready_banner": "{name} estas preta — administru ĝin sub Agordoj → Voĉasistantoj.",
+    "ready_banner": "{name} estas preta, administru ĝin sub Agordoj → Voĉasistantoj.",
     "update_available": "Nova versio de Google Assistant (Manual) disponeblas. Reŝargu vian retumilon (Ctrl+Shift+R, aŭ Cmd+Shift+R ĉe Mac) por ŝargi ĝin."
   }
 }

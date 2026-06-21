@@ -12,7 +12,7 @@
     "check_logs": "Sjekk Home Assistant-loggane for detaljar.",
     "report_state_enable_failed": "Klarte ikkje å aktivere statusrapportering. Prøv å slå av og på integrasjonen, eller sjekk Home Assistant-loggane.",
     "report_state_disable_failed": "Klarte ikkje å deaktivere statusrapportering. Prøv å slå av og på integrasjonen, eller sjekk Home Assistant-loggane.",
-    "ready_banner": "{name} er klar — administrer det under Innstillingar → Stemmassistantar.",
+    "ready_banner": "{name} er klar, administrer det under Innstillingar → Stemmassistantar.",
     "update_available": "Ein ny versjon av Google Assistant (Manual) er tilgjengeleg. Oppdater nettlesaren din (Ctrl+Shift+R, eller Cmd+Shift+R på Mac) for å laste han inn."
   }
 }

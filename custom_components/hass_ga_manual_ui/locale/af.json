@@ -12,7 +12,7 @@
     "check_logs": "Kyk Home Assistant-logboeke vir besonderhede.",
     "report_state_enable_failed": "Kon nie toestandrapportering aktiveer nie. Probeer die integrasie af- en aanskakel, of kyk Home Assistant-logboeke.",
     "report_state_disable_failed": "Kon nie toestandrapportering deaktiveer nie. Probeer die integrasie af- en aanskakel, of kyk Home Assistant-logboeke.",
-    "ready_banner": "{name} is gereed — bestuur dit onder Instellings → Stemassistente.",
+    "ready_banner": "{name} is gereed, bestuur dit onder Instellings → Stemassistente.",
     "update_available": "'n Nuwe weergawe van Google Assistant (Manual) is beskikbaar. Herlaai jou blaaier (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om dit te laai."
   }
 }

@@ -12,7 +12,7 @@
     "check_logs": "Üksikasjade jaoks kontrollige Home Assistanti logisid.",
     "report_state_enable_failed": "Oleku aruandluse lubamine ebaõnnestus. Proovige integratsioon välja ja uuesti sisse lülitada või kontrollige Home Assistanti logisid.",
     "report_state_disable_failed": "Oleku aruandluse keelamine ebaõnnestus. Proovige integratsioon välja ja uuesti sisse lülitada või kontrollige Home Assistanti logisid.",
-    "ready_banner": "{name} on valmis — hallake seda jaotises Seaded → Häälassistendid.",
+    "ready_banner": "{name} on valmis, hallake seda jaotises Seaded → Häälassistendid.",
     "update_available": "Google Assistant (Manual) uus versioon on saadaval. Värskendage brauserit (Ctrl+Shift+R või Macis Cmd+Shift+R), et see laadida."
   }
 }

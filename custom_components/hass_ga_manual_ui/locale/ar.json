@@ -12,7 +12,7 @@
     "check_logs": "تحقق من سجلات Home Assistant للحصول على التفاصيل.",
     "report_state_enable_failed": "فشل تفعيل الإبلاغ عن الحالة. جرّب إيقاف التكاملة وإعادة تشغيلها، أو تحقق من سجلات Home Assistant.",
     "report_state_disable_failed": "فشل تعطيل الإبلاغ عن الحالة. جرّب إيقاف التكاملة وإعادة تشغيلها، أو تحقق من سجلات Home Assistant.",
-    "ready_banner": "{name} جاهز — أديره من الإعدادات ← المساعدات الصوتية.",
+    "ready_banner": "{name} جاهز، أديره من الإعدادات ← المساعدات الصوتية.",
     "update_available": "يتوفر إصدار جديد من Google Assistant (يدوي). قم بتحديث متصفحك (Ctrl+Shift+R، أو Cmd+Shift+R على Mac) لتحميله."
   }
 }

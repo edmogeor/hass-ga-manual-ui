@@ -12,7 +12,7 @@
     "check_logs": "Kontrolléier d'Home Assistant-Logbicher fir Details.",
     "report_state_enable_failed": "Statusberichterstattung aktivéieren ass gescheitert. Probéier d'Integratioun aus- an erëm anzeschalten, oder kontrolléier d'Home Assistant-Logbicher.",
     "report_state_disable_failed": "Statusberichterstattung deaktivéieren ass gescheitert. Probéier d'Integratioun aus- an erëm anzeschalten, oder kontrolléier d'Home Assistant-Logbicher.",
-    "ready_banner": "{name} ass prett — verwalte et ënner Astellungen → Sproochassisteenten.",
+    "ready_banner": "{name} ass prett, verwalte et ënner Astellungen → Sproochassisteenten.",
     "update_available": "Eng nei Versioun vu Google Assistant (Manual) ass verfügbar. Luet Äre Browser nei (Ctrl+Shift+R, oder Cmd+Shift+R um Mac) fir se ze lueden."
   }
 }

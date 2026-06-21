@@ -12,7 +12,7 @@
     "check_logs": "Sprawdź logi Home Assistant, aby uzyskać szczegóły.",
     "report_state_enable_failed": "Nie udało się włączyć raportowania stanu. Spróbuj wyłączyć i ponownie włączyć integrację lub sprawdź logi Home Assistant.",
     "report_state_disable_failed": "Nie udało się wyłączyć raportowania stanu. Spróbuj wyłączyć i ponownie włączyć integrację lub sprawdź logi Home Assistant.",
-    "ready_banner": "{name} jest gotowy — zarządzaj nim w Ustawienia → Asystenci głosowi.",
+    "ready_banner": "{name} jest gotowy, zarządzaj nim w Ustawienia → Asystenci głosowi.",
     "update_available": "Dostępna jest nowa wersja Google Assistant (Ręczny). Odśwież przeglądarkę (Ctrl+Shift+R lub Cmd+Shift+R na Macu), aby ją załadować."
   }
 }

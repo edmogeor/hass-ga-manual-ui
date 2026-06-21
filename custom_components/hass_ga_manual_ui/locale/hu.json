@@ -12,7 +12,7 @@
     "check_logs": "Részletekért tekintse meg a Home Assistant naplóit.",
     "report_state_enable_failed": "Az állapotjelentés engedélyezése sikertelen. Próbálja ki- és bekapcsolni az integrációt, vagy tekintse meg a Home Assistant naplóit.",
     "report_state_disable_failed": "Az állapotjelentés letiltása sikertelen. Próbálja ki- és bekapcsolni az integrációt, vagy tekintse meg a Home Assistant naplóit.",
-    "ready_banner": "{name} készen áll — kezelje a Beállítások → Hangalapú asszisztensek menüben.",
+    "ready_banner": "{name} készen áll, kezelje a Beállítások → Hangalapú asszisztensek menüben.",
     "update_available": "A Google Assistant (Manual) új verziója érhető el. Frissítse a böngészőjét (Ctrl+Shift+R, vagy Macen Cmd+Shift+R) a betöltéséhez."
   }
 }

@@ -12,7 +12,7 @@
     "check_logs": "请查看 Home Assistant 日志以获取详细信息。",
     "report_state_enable_failed": "启用状态上报失败。请尝试关闭并重新开启集成，或查看 Home Assistant 日志。",
     "report_state_disable_failed": "禁用状态上报失败。请尝试关闭并重新开启集成，或查看 Home Assistant 日志。",
-    "ready_banner": "{name} 已就绪 — 请在设置 → 语音助手中进行管理。",
+    "ready_banner": "{name} 已就绪，请在设置 → 语音助手中进行管理。",
     "update_available": "Google Assistant（手动）有新版本可用。请刷新浏览器（Ctrl+Shift+R，Mac 上为 Cmd+Shift+R）以加载新版本。"
   }
 }
