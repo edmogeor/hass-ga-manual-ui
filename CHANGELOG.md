@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.13] - 2026-06-21
+
+### Changed
+
+- Internal cleanup with no change to behavior. Project-ID validation now uses a
+  single regex instead of a hand-rolled character loop, the `_get_version()`
+  wrapper was inlined to a module global, the two identical websocket-error
+  predicates were factored into one helper, and the navigation-scan magic
+  numbers were given names. Removed roughly 18 narration/duplicate debug and
+  info log lines from the config flow and websocket handlers that only restated
+  control flow or an error already raised to the user.
+
 ## [0.1.12] - 2026-06-14
 
 ### Fixed
