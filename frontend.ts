@@ -1,5 +1,5 @@
 /**
- * Google Assistant (Manual) — Frontend companion module.
+ * Google Assistant (Manual) - Frontend companion module.
  * Patches the HA frontend at runtime so the integration appears in the
  * voice assistants UI alongside the built-in cloud assistants.
  */
@@ -153,7 +153,7 @@ const EN_STRINGS: LocaleTable = {
   report_state_disable_failed:
     "Failed to disable state reporting. " +
     "Try toggling the integration off and on, or check Home Assistant logs.",
-  ready_banner: "{name} is ready — manage it under Settings → Voice assistants.",
+  ready_banner: "{name} is ready - manage it under Settings → Voice assistants.",
   update_available:
     "A new version of Google Assistant (Manual) is available. " +
     "Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it.",
@@ -249,21 +249,15 @@ let _entryIdPromise: Promise<string> | null = null;
 let _gaManualEnabled = true;
 // Captured reference to HA's voiceAssistants map (from data/expose.ts) the first
 // time our Object.keys interceptor sees it. Needed so we can resolve our
-// assistant's display name — dialogs do voiceAssistants[id].name directly.
+// assistant's display name - dialogs do voiceAssistants[id].name directly.
 let _voiceAssistantsMap: Record<string, unknown> | null = null;
 
 // ---------------------------------------------------------------------------
-// Logging helpers
-//
-// Three tiers:
-//   - _banner(): always shown (console) + a one-time line in the HA logs, so
-//     the user can confirm the companion loaded without opening dev tools.
-//   - _warn()/_error(): always shown in the console AND forwarded to the HA
-//     logs (so problems are visible without dev tools).
-//   - _debug()/_info(): verbose; only shown when the debug flag is set.
-//
-// Enable verbose logging with:  localStorage.setItem("gaManualDebug", "1")
-// (or add ?gaManualDebug to the URL), then reload.
+// Logging helpers. Three tiers, all visible without dev tools:
+//   - _banner():        console + a one-time line in the HA logs.
+//   - _warn()/_error(): console + forwarded to the HA logs.
+//   - _debug()/_info(): verbose; only when the debug flag is set.
+// Enable verbose: localStorage.setItem("gaManualDebug", "1") (or ?gaManualDebug), reload.
 // ---------------------------------------------------------------------------
 
 let _DEBUG = false;
@@ -353,7 +347,7 @@ function _showToast(message: string, isError: boolean): void {
     const hass = getHass();
     if (!hass || !hass.callService) return;
     hass.callService("persistent_notification", "create", {
-      title: ASSISTANT_NAME + (isError ? " — Error" : " — Notice"),
+      title: ASSISTANT_NAME + (isError ? " - Error" : " - Notice"),
       message,
       notification_id: "hass_ga_manual_ui_notification",
     });
@@ -485,14 +479,14 @@ let _primeStarted = false;
 // Prime the voiceAssistants map so the expose page advertises us on first
 // visit. Capture is normally passive (only on Object.keys), which the expose
 // page never triggers. We trip it via a throwaway ha-filter-voice-assistants
-// whose firstUpdated() runs Object.keys — requestUpdate is stubbed so it never
+// whose firstUpdated() runs Object.keys - requestUpdate is stubbed so it never
 // renders.
 function _primeVoiceAssistantsMap(): void {
   if (_voiceAssistantsMap) return;
   const PROBE = "ha-filter-voice-assistants";
   const cls = customElements.get(PROBE);
   if (!cls) {
-    // Not loaded yet — retry once it is (e.g. when the filter pane first opens).
+    // Not loaded yet - retry once it is (e.g. when the filter pane first opens).
     if (!_primeStarted) {
       _primeStarted = true;
       customElements
@@ -604,7 +598,7 @@ function patchVoiceAssistants(): void {
           // The voiceAssistants map (data/expose.ts) and per-entity expose
           // settings share the same three keys, but the map's values are
           // { domain, name } descriptors whereas expose settings map to
-          // booleans. Only capture/inject the former — matching expose settings
+          // booleans. Only capture/inject the former - matching expose settings
           // would pollute them and break the self-uninstall below.
           const conv = record.conversation;
           if (conv && typeof conv === "object" && "domain" in conv) {
@@ -701,7 +695,7 @@ function _patchExposePageProto(proto: AssistantsPageElement): void {
     if (!desc || !desc.get) {
       _warn(
         "_availableAssistants getter not found on expose element. " +
-          "HA may have renamed this property — exposure dropdown/table may not " +
+          "HA may have renamed this property - exposure dropdown/table may not " +
           "include " + ASSISTANT_ID + ".",
       );
       return;
@@ -869,7 +863,7 @@ function _patchBrandIconProto(proto: VoiceAssistantBrandIcon): void {
         return origRender!.call(this);
       } catch (e) {
         // HA's render reads voiceAssistants[id].name unguarded; on a missing
-        // map entry it throws — fall back to our icon instead of an empty cell.
+        // map entry it throws - fall back to our icon instead of an empty cell.
         _debug("brand-icon render fell back to local icon: " + _errorMessage(e));
         return _manualBrandIconNode(this);
       }
@@ -1027,7 +1021,7 @@ function _maybeFetchEntity2fa(el: EntityVoiceSettingsElement): void {
         el.__gaEntityId = undefined;
         return;
       }
-      el.__gaInfo = null; // not supported / unknown — no checkbox
+      el.__gaInfo = null; // not supported / unknown - no checkbox
       if (_isNotSupported(err)) _setOurUnsupported(el, true);
       _injectAskPin(el);
     });
@@ -1131,16 +1125,14 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
 
 // Make the master "Expose" toggle and per-assistant rows account for us.
 //
-// render() builds `uiAssistants` (the basis for `anyExposed`, which drives the
+// render() builds `uiAssistants` (basis for `anyExposed`, which drives the
 // master checked state) via `uiAssistants.splice(showAssistants.indexOf(<cloud
-// id>), 1)` — run *after* that id left showAssistants, so indexOf is -1 and
-// splice(-1, 1) drops the LAST entry instead (our last-injected id). The toggle
-// and rows then ignore our exposure.
+// id>), 1)` - run *after* that id left showAssistants, so indexOf is -1 and
+// splice(-1, 1) drops the LAST entry (our injected id) instead.
 //
-// For the duration of render, return our id from Object.keys(voiceAssistants)
-// ahead of the cloud assistants. HA's tail-dropping splice then removes the
-// cloud ids it intends to and never reaches ours — cloud rows stay stock while
-// our assistant is counted like any other.
+// Fix: for the duration of render, return our id from Object.keys ahead of the
+// cloud assistants, so HA's tail-dropping splice removes cloud ids and never
+// reaches ours.
 function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
   const origRender = proto.render;
   if (typeof origRender !== "function") {
@@ -1152,7 +1144,7 @@ function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
     Object.keys = function (obj: object): string[] {
       const keys = origKeys(obj);
       // Match only the voiceAssistants map: { domain, name } descriptors that
-      // include our id — never the per-entity expose settings (booleans).
+      // include our id - never the per-entity expose settings (booleans).
       const conv = (obj as Record<string, unknown>).conversation;
       if (
         _gaManualEnabled &&
@@ -1179,7 +1171,7 @@ function _patchVoiceSettingsRender(proto: EntityVoiceSettingsElement): void {
 // Settle expose writes before HA refetches the entity.
 //
 // HA's _toggleAll / _toggleAssistant fire exposeEntities() WS writes without
-// awaiting, then immediately refetch the entry to refresh toggles — a race that
+// awaiting, then immediately refetch the entry to refresh toggles - a race that
 // leaves stale toggles until the dialog reopens. Pre-await an identical write so
 // the refetch sees the new state; the original re-issues the idempotent write.
 //
@@ -1372,7 +1364,7 @@ function patchCustomElements(): void {
 // [data-ga-manual-card] marker is the source of truth. Lit may re-render
 // .content and remove injected DOM, so re-inject when marker is missing.
 // _observerActive prevents duplicate MutationObservers on the same element.
-// injectCardInto is idempotent — safe at any lifecycle stage.
+// injectCardInto is idempotent - safe at any lifecycle stage.
 // ---------------------------------------------------------------------------
 
 const _observerActive = new WeakSet<AssistantsPageElement>();
@@ -1757,7 +1749,7 @@ async function refreshCardState(
 }
 
 // Inject the card into a ha-config-voice-assistants-assistants element.
-// Idempotent — safe to call at any time (lifecycle hooks, DOM scans, observers).
+// Idempotent - safe to call at any time (lifecycle hooks, DOM scans, observers).
 function injectCardInto(el: AssistantsPageElement): void {
   if (!el) return;
 
@@ -1929,7 +1921,7 @@ function refreshExposeToggle(card: HTMLElement): void {
   if (!hass) return;
   // Scope to .card-content so we never select the global enable/disable
   // toggle, which lives in the header (.card-header) and would otherwise be
-  // matched as the first ha-switch — clobbering it back to expose_new (false).
+  // matched as the first ha-switch - clobbering it back to expose_new (false).
   const sw = card.querySelector<HTMLInputElement>(".card-content ha-switch");
   const btn = card.querySelector<HTMLElement>("[data-ga-count]");
 
@@ -2067,10 +2059,13 @@ async function _savePin(value: string, input?: TogglableElement): Promise<void> 
 }
 
 // ---------------------------------------------------------------------------
-// SPA navigation — route changes swap panels inside shadow DOM, invisible to
+// SPA navigation - route changes swap panels inside shadow DOM, invisible to
 // the document MutationObserver, so re-scan on HA's nav events. The destination
 // mounts async, so retry briefly; the scan is idempotent.
 // ---------------------------------------------------------------------------
+
+const _NAV_SCAN_RETRIES = 6;
+const _NAV_SCAN_INTERVAL_MS = 200;
 
 function _scanAfterNavigation(): void {
   let tries = 0;
@@ -2082,15 +2077,15 @@ function _scanAfterNavigation(): void {
     } catch (e) {
       _debug("post-navigation scan failed: " + (_errorMessage(e)));
     }
-    if (++tries < 6) {
-      setTimeout(tick, 200);
+    if (++tries < _NAV_SCAN_RETRIES) {
+      setTimeout(tick, _NAV_SCAN_INTERVAL_MS);
     }
   };
   tick();
 }
 
 // ---------------------------------------------------------------------------
-// Init — DOM-dependent setup: inject cards, start observers, nav listeners.
+// Init - DOM-dependent setup: inject cards, start observers, nav listeners.
 // ---------------------------------------------------------------------------
 
 function init(): void {
@@ -2195,17 +2190,16 @@ function init(): void {
     _error("_checkVersionForReloadPrompt threw: " + (_errorMessage(e)));
   }
 
-  _info("Init complete — DOM-dependent setup applied");
+  _info("Init complete - DOM-dependent setup applied");
 }
 
 // ---------------------------------------------------------------------------
 // Prototype / interceptor patches
 //
-// These rewrite global hooks and custom-element prototypes (no DOM body needed).
-// They must be installed before HA's lazily-imported voice-assistants panel
-// chunk defines its custom elements, or an icon element can render once with
-// HA's stock render() before our override lands — leaving a blank icon cell.
-// Hence module-eval time, not DOMContentLoaded.
+// Rewrite global hooks and custom-element prototypes (no DOM body needed).
+// Must run at module-eval time, not DOMContentLoaded: if HA's lazy voice-
+// assistants chunk defines its elements first, an icon can render once with
+// HA's stock render() before our override lands, leaving a blank icon cell.
 // ---------------------------------------------------------------------------
 
 let _prototypePatchesInstalled = false;
@@ -2213,7 +2207,7 @@ function installPrototypePatches(): void {
   if (_prototypePatchesInstalled) return;
   _prototypePatchesInstalled = true;
 
-  // Apply each patch independently — one failing does not block the rest.
+  // Apply each patch independently - one failing does not block the rest.
   try {
     patchVoiceAssistants();
   } catch (e) {

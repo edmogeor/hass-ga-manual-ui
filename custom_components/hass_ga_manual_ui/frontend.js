@@ -25,7 +25,7 @@
     check_logs: "Check Home Assistant logs for details.",
     report_state_enable_failed: "Failed to enable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
     report_state_disable_failed: "Failed to disable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
-    ready_banner: "{name} is ready \u2014 manage it under Settings \u2192 Voice assistants.",
+    ready_banner: "{name} is ready - manage it under Settings \u2192 Voice assistants.",
     update_available: "A new version of Google Assistant (Manual) is available. Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it."
   };
   var _loadedStrings = {};
@@ -160,7 +160,7 @@
       const hass = getHass();
       if (!hass || !hass.callService) return;
       hass.callService("persistent_notification", "create", {
-        title: ASSISTANT_NAME + (isError ? " \u2014 Error" : " \u2014 Notice"),
+        title: ASSISTANT_NAME + (isError ? " - Error" : " - Notice"),
         message,
         notification_id: "hass_ga_manual_ui_notification"
       });
@@ -402,7 +402,7 @@
       const desc = Object.getOwnPropertyDescriptor(proto, "_availableAssistants");
       if (!desc || !desc.get) {
         _warn(
-          "_availableAssistants getter not found on expose element. HA may have renamed this property \u2014 exposure dropdown/table may not include " + ASSISTANT_ID + "."
+          "_availableAssistants getter not found on expose element. HA may have renamed this property - exposure dropdown/table may not include " + ASSISTANT_ID + "."
         );
         return;
       }
@@ -1397,6 +1397,8 @@
       if (input) _restorePinValue(input);
     }
   }
+  var _NAV_SCAN_RETRIES = 6;
+  var _NAV_SCAN_INTERVAL_MS = 200;
   function _scanAfterNavigation() {
     let tries = 0;
     const tick = () => {
@@ -1407,8 +1409,8 @@
       } catch (e) {
         _debug("post-navigation scan failed: " + _errorMessage(e));
       }
-      if (++tries < 6) {
-        setTimeout(tick, 200);
+      if (++tries < _NAV_SCAN_RETRIES) {
+        setTimeout(tick, _NAV_SCAN_INTERVAL_MS);
       }
     };
     tick();
@@ -1492,7 +1494,7 @@
     } catch (e) {
       _error("_checkVersionForReloadPrompt threw: " + _errorMessage(e));
     }
-    _info("Init complete \u2014 DOM-dependent setup applied");
+    _info("Init complete - DOM-dependent setup applied");
   }
   var _prototypePatchesInstalled = false;
   function installPrototypePatches() {

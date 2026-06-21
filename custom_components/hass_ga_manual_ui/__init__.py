@@ -97,7 +97,7 @@ def _find_core_entry(hass: HomeAssistant, entry: ConfigEntry) -> ConfigEntry | N
 class _GoogleConfig(Protocol):
     """Structural interface for core GA's GoogleConfig instances.
 
-    Only declares the members we use — avoids importing the real class
+    Only declares the members we use - avoids importing the real class
     (which may not be available at type-check time).
     """
 
@@ -164,19 +164,15 @@ def _entity_assistant_options(hass: HomeAssistant, entity_id: str) -> dict[str, 
 
 
 async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
-    """Prepare core GA entries during async_setup (before they auto-load).
+    """Prepare core GA entries during async_setup, before they auto-load.
 
-    We keep the framework-registered core GA entry across restarts (it carries
-    the device-registry links), so we must NOT blindly remove it. Instead:
+    The persisted core GA entry carries device-registry links, so we keep it
+    across restarts rather than removing it. Two steps:
 
-    1. Populate ``hass.data["google_assistant"][DATA_CONFIG]`` from our config
-       entry so that when HA auto-sets-up the persisted core entry on boot, it
-       does not crash with ``KeyError: 'google_assistant'``.
-    2. Prune only the shadow entries *we own* that are orphaned (parent gone)
-       or duplicated (a second shadow for the same parent). Unmarked entries are
-       left untouched, and a present-but-disabled parent keeps its shadow (the
-       soft-disable path neutralises it via should_expose) so device-registry
-       links survive restarts.
+    1. Seed ``hass.data["google_assistant"][DATA_CONFIG]`` so the boot-time
+       auto-setup of that entry doesn't crash with ``KeyError``.
+    2. Prune only shadow entries *we own* that are orphaned or duplicated;
+       leave unmarked and disabled-but-present ones (their links must survive).
     """
     # Never act on uncertainty: if we cannot read our own entries, prune nothing.
     try:
@@ -189,8 +185,7 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
         )
         return
 
-    # 1. Seed DATA_CONFIG early so a boot-time auto-setup of the core entry
-    #    has a config to read.
+    # 1. Seed DATA_CONFIG before the core entry's boot-time auto-setup reads it.
     for e in our_entries:
         if not _is_enabled(e):
             continue
@@ -255,9 +250,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     _LOGGER.debug("async_setup starting for %s v%s", DOMAIN, _VERSION)
     hass.data.setdefault(DOMAIN, {})
 
-    # Record whether the user has a `google_assistant:` YAML section (which this
-    # integration overrides) so the card can surface a notice. _sync_yaml_suppressed
-    # mirrors this onto the entry; recomputed each boot so it clears when removed.
+    # Note a `google_assistant:` YAML section (which we override) so the card can
+    # surface a notice. Recomputed each boot, so it clears once the section goes.
     yaml_detected = CORE_GA_DOMAIN in config
     hass.data[DOMAIN][_DATA_YAML_DETECTED] = yaml_detected
     if yaml_detected:
@@ -282,7 +276,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up from a config entry — bridge to core GA."""
+    """Set up from a config entry - bridge to core GA."""
     _LOGGER.debug(
         "async_setup_entry starting for project='%s' entry_id=%s",
         _project_id(entry),
@@ -318,7 +312,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry — tear down core GA."""
+    """Unload a config entry - tear down core GA."""
     _LOGGER.debug(
         "async_unload_entry for project='%s' entry_id=%s",
         _project_id(entry),
@@ -338,9 +332,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Handle removal of a config entry — purge all entity exposure settings."""
+    """Handle removal of a config entry - purge all entity exposure settings."""
     # Remove the shadow core GA entry we created so it doesn't linger as an
-    # orphan. Only ever remove one we own — never a google_assistant entry the
+    # orphan. Only ever remove one we own - never a google_assistant entry the
     # user configured independently, nor a legacy unmarked one we never adopted.
     core_entry = _find_core_entry(hass, entry)
     if core_entry is not None and _owns_core_entry(core_entry):
@@ -406,7 +400,7 @@ def _build_core_config(entry: ConfigEntry) -> dict[str, Any]:
     if not project_id:
         raise ValueError(
             "Config entry data is missing 'project_id'. "
-            "This indicates a corrupt entry — delete and re-add the integration."
+            "This indicates a corrupt entry - delete and re-add the integration."
         )
 
     config: dict[str, Any] = {
@@ -553,7 +547,7 @@ def _register_sync_listeners(
 async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Bridge config to core GA and activate it.
 
-    Raises on failure — caller (async_setup_entry or ws_enable) must handle.
+    Raises on failure - caller (async_setup_entry or ws_enable) must handle.
     """
     project_id = _project_id(entry)
     _LOGGER.debug("Bridging to core GA for project='%s'", project_id)
@@ -581,18 +575,14 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
             "This integration requires the built-in 'google_assistant' component."
         ) from exc
 
-    # Reuse the framework-registered core GA entry across restarts when one
-    # already exists (it carries device-registry links). Only create a fresh
-    # one on first enable. async_add() both registers AND sets up the entry, so
-    # we must NOT call core GA's async_setup_entry ourselves.
+    # Reuse the persisted core GA entry across restarts when one exists (it
+    # carries device-registry links); create one only on first enable. async_add
+    # both registers and sets up, so we never call core's async_setup_entry.
     #
-    # The core GA config entry has no async_unload_entry and registers an HTTP
-    # view + local-SDK webhook that cannot be cleanly removed at runtime. So we
-    # set it up at most once per process and never tear it down on disable —
-    # disable is a soft toggle (see _teardown_core_ga): report_state is turned
-    # off and should_expose is gated on entry.options["enabled"], so SYNC
-    # returns no devices. This avoids the duplicate-webhook / unremovable-route
-    # errors that add/remove churn produced.
+    # Core GA has no async_unload_entry and registers an unremovable HTTP view +
+    # webhook, so we set it up once per process and never tear it down. Disable
+    # is soft (see _teardown_core_ga): report_state off + should_expose gated on
+    # "enabled", so SYNC returns no devices - avoiding add/remove churn errors.
     core_entry = _find_core_entry(hass, entry)
     if core_entry is None:
         core_entry = _make_core_entry(entry)
@@ -632,7 +622,7 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
     _patch_google_config_properties(google_config, entry)
 
-    # Ensure report_state matches the option — covers re-enabling after a soft
+    # Ensure report_state matches the option - covers re-enabling after a soft
     # disable (which turned it off). async_enable_report_state is idempotent.
     if entry.options.get(CONF_REPORT_STATE):
         try:
@@ -655,18 +645,16 @@ async def _teardown_core_ga(
 ) -> None:
     """Tear down or soft-disable core GA.
 
-    ``disable=False`` (a plain unload/reload of our entry): leave the
-    framework-registered core GA entry loaded and persisted so it survives the
-    restart and keeps its device-registry links — just drop our runtime pointer.
+    ``disable=False`` (plain unload/reload): leave the core GA entry loaded and
+    persisted so it survives the restart with its device-registry links - just
+    drop our runtime pointer.
 
-    ``disable=True`` (the user toggled the integration off): **soft** disable.
-    Core GA has no async_unload_entry and registers an HTTP view + local-SDK
-    webhook that can't be cleanly removed at runtime, so we do NOT unload/remove
-    the core entry. Instead we turn off report_state and set enabled=False; the
-    patched should_expose then returns False for every entity, so SYNC reports
-    no devices. (The core entry is removed only on entry *deletion* — a
-    present-but-disabled parent keeps its shadow across restarts so its
-    device-registry links survive a disable → restart → re-enable cycle.)
+    ``disable=True`` (user toggled off): soft disable. Core GA can't be unloaded
+    at runtime (see _setup_core_ga), so we leave the entry and instead turn off
+    report_state and set enabled=False; the patched should_expose then returns
+    False for every entity, so SYNC reports no devices. The entry is removed only
+    on deletion - a disabled parent keeps its shadow so links survive a
+    disable/restart/re-enable cycle.
     """
     project_id = _project_id(entry)
     runtime = entry.runtime_data
@@ -820,7 +808,7 @@ def _cache_original_member(
 
     ``is_property`` selects the property getter (``fget``) over a plain method.
     On a missing member, logs ``warning`` (if given, with ``gc_type_name``) and
-    records ``None`` so the patch can fall back. Safe to call repeatedly — the
+    records ``None`` so the patch can fall back. Safe to call repeatedly - the
     original is cached on the first call only, to avoid chaining patches.
     """
     if name in _ORIGINAL_GOOGLE_CONFIG_PROPS:
@@ -840,7 +828,7 @@ def _patch_google_config_properties(
 ) -> None:
     """Monkey-patch GoogleConfig properties to read from our ConfigEntry options.
 
-    Safe to call multiple times — original property getters are cached once.
+    Safe to call multiple times - original property getters are cached once.
     """
     gc_type: Any = type(google_config)
     gc_type_name = gc_type.__name__ if hasattr(gc_type, "__name__") else str(gc_type)
@@ -866,12 +854,10 @@ def _patch_google_config_properties(
             "The 'Security devices PIN' feature will not work correctly."
         ),
     )
-    # should_expose / should_2fa are plain methods (not properties). The core
-    # should_expose uses the legacy YAML exposure model (expose_by_default /
-    # exposed_domains / entity_config), which our config dict never populates,
-    # and should_2fa is hard-coded to True (every secure device always prompts).
-    # Both are bridged below to the modern exposed_entities registry under our
-    # ASSISTANT_ID — the same keys the UI expose page and "Ask for PIN" write to.
+    # should_expose / should_2fa are plain methods. Core's versions use the
+    # legacy YAML model (which our config never populates) and hard-code 2FA on;
+    # both are bridged below to the exposed_entities registry under ASSISTANT_ID -
+    # the same keys the UI expose page and "Ask for PIN" write to.
     _cache_original_member(
         gc_type,
         gc_type_name,
@@ -997,7 +983,7 @@ def _patch_google_config_properties(
 
 
 # ---------------------------------------------------------------------------
-# WebSocket commands — entry discovery (always available)
+# WebSocket commands - entry discovery (always available)
 # ---------------------------------------------------------------------------
 
 
@@ -1052,7 +1038,7 @@ def _register_entry_discovery(hass: HomeAssistant) -> None:
 
 
 # ---------------------------------------------------------------------------
-# WebSocket commands — config entry operations
+# WebSocket commands - config entry operations
 # ---------------------------------------------------------------------------
 
 WS_CONFIG_SCHEMA = vol.Schema(
@@ -1241,7 +1227,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         connection: websocket_api.ActiveConnection,
         msg: dict[str, Any],
     ) -> None:
-        """Enable core GA — re-run setup-phase re-trigger."""
+        """Enable core GA - re-run setup-phase re-trigger."""
 
         async def _enable() -> None:
             """Re-run core GA setup-phase re-trigger for this entry."""
@@ -1299,7 +1285,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         connection: websocket_api.ActiveConnection,
         msg: dict[str, Any],
     ) -> None:
-        """Disable core GA — tear down webhook, stop report_state."""
+        """Disable core GA - tear down webhook, stop report_state."""
 
         async def _disable() -> None:
             """Soft-disable core GA (report_state off + should_expose returns False)."""
@@ -1501,7 +1487,7 @@ def _patch_core_assistants(hass: HomeAssistant) -> None:
         if cmd not in handlers:
             _LOGGER.warning(
                 "WS command '%s' not found in handlers. "
-                "Schema will not be patched — the '%s' assistant may not appear "
+                "Schema will not be patched - the '%s' assistant may not appear "
                 "in entity exposure dropdowns.",
                 cmd,
                 ASSISTANT_ID,

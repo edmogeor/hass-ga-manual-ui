@@ -125,7 +125,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
 
         A fresh install needs a hard browser refresh before the injected card
         appears; this server-side notification reaches the user even though our
-        frontend JS hasn't loaded yet. Best-effort — never blocks the entry.
+        frontend JS hasn't loaded yet. Best-effort - never blocks the entry.
         """
         hass = getattr(self, "hass", None)
         if hass is None:
@@ -167,7 +167,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the initial step — project_id."""
+        """Handle the initial step - project_id."""
         errors: dict[str, str] = {}
 
         if user_input is not None:
