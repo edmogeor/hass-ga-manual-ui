@@ -440,100 +440,66 @@ function _onImportClick(): void {
   input.click();
 }
 
-// Confirm via HA's shared generic dialog: fire the same bubbling+composed
-// "show-dialog" event HA's showConfirmationDialog uses, handled by the dialog
-// manager on <home-assistant>. When dialog-box is not registered yet (HA lazy-
-// loads it and an injected script can't reference its bundle-relative import),
-// we render our own HA-themed modal instead of the browser's native confirm, so
-// the user always gets an HA-styled dialog.
-function _confirmDialog(title: string, text: string): Promise<boolean> {
-  const root = document.querySelector("home-assistant");
-  if (!root || !customElements.get("dialog-box")) {
-    return _haThemedConfirm(title, text);
-  }
-  const hass = getHass();
-  return new Promise<boolean>((resolve) => {
-    root.dispatchEvent(
-      new CustomEvent("show-dialog", {
-        bubbles: true,
-        composed: true,
-        detail: {
-          dialogTag: "dialog-box",
-          dialogImport: () => customElements.whenDefined("dialog-box"),
-          dialogParams: {
-            confirmation: true,
-            destructive: true,
-            title,
-            text,
-            confirmText: hass?.localize("ui.common.yes"),
-            dismissText: hass?.localize("ui.dialogs.generic.cancel"),
-            confirm: () => resolve(true),
-            cancel: () => resolve(false),
-          },
-        },
-      }),
-    );
-  });
+// Inject the ::backdrop scrim style once (can't be set inline). Uses HA's scrim
+// token so the dimming matches HA's own dialogs.
+let _confirmStyleInjected = false;
+function _ensureConfirmStyle(): void {
+  if (_confirmStyleInjected) return;
+  _confirmStyleInjected = true;
+  const style = document.createElement("style");
+  style.textContent =
+    "dialog[data-ga-confirm-dialog]::backdrop{" +
+    "background:var(--mdc-dialog-scrim-color,rgba(0,0,0,0.32))}";
+  document.head.appendChild(style);
 }
 
-// Self-rendered confirmation styled with HA's own dialog theme tokens (surface
-// background, border radius, elevation, scrim, content padding, spacing) and
-// ha-button (always defined - the card uses it). Used when HA's dialog-box is
-// not loaded yet, so we never drop to the browser's native confirm. Resolves
-// true/false; backdrop click, Escape, and Cancel all resolve false.
-function _haThemedConfirm(title: string, text: string): Promise<boolean> {
+// Confirmation modal built from the native <dialog> element (top-layer, focus
+// trap, Escape, and ::backdrop scrim handled by the browser) wrapping a real HA
+// ha-card surface and ha-button actions - both already loaded, since our card
+// uses them on this page. One consistent dialog every time, with no dependency
+// on HA's lazy-loaded dialog-box and no native window.confirm fallback. Resolves
+// true on confirm; Escape, backdrop click, and Cancel resolve false.
+function _confirmDialog(title: string, text: string): Promise<boolean> {
   const hass = getHass();
+  _ensureConfirmStyle();
   return new Promise<boolean>((resolve) => {
-    const overlay = document.createElement("div");
-    overlay.setAttribute("data-ga-confirm-overlay", "");
-    overlay.style.cssText =
-      "position:fixed;inset:0;z-index:1000;display:flex;align-items:center;" +
-      "justify-content:center;" +
-      "background:var(--mdc-dialog-scrim-color,rgba(0,0,0,0.5))";
+    const dlg = document.createElement("dialog");
+    dlg.setAttribute("data-ga-confirm-dialog", "");
+    dlg.style.cssText =
+      "padding:0;border:none;background:transparent;overflow:visible;" +
+      "max-width:min(90vw,400px);color:var(--primary-text-color,#212121)";
 
-    // Same theme tokens HA's ha-dialog surface uses (surface bg, radius,
-    // elevation, content padding) so it tracks the active theme, not hardcoded.
-    const surface = document.createElement("div");
-    surface.style.cssText =
-      "background:var(--ha-dialog-surface-background," +
-      "var(--card-background-color,#fff));" +
-      "color:var(--primary-text-color,#212121);" +
-      "border-radius:var(--ha-dialog-border-radius," +
-      "var(--ha-border-radius-3xl,28px));" +
-      "box-shadow:var(--dialog-box-shadow," +
-      "var(--wa-shadow-l,0 8px 24px rgba(0,0,0,0.4)));" +
-      "max-width:min(var(--ha-dialog-width-sm,320px),90vw);width:100%;" +
-      "padding:var(--dialog-content-padding,var(--ha-space-6,24px));" +
-      "box-sizing:border-box";
+    const card = document.createElement("ha-card");
+    card.style.cssText =
+      "padding:var(--dialog-content-padding,var(--ha-space-6,24px));box-sizing:border-box";
 
     const heading = document.createElement("h2");
     heading.textContent = title;
     heading.style.cssText =
-      "margin:0 0 var(--ha-space-3,12px);" +
-      "font-size:var(--ha-font-size-2xl,1.5rem);" +
+      "margin:0 0 var(--ha-space-3,12px);font-size:var(--ha-font-size-2xl,1.5rem);" +
       "font-weight:var(--ha-font-weight-normal,400);" +
       "line-height:var(--ha-line-height-condensed,1.2)";
 
     const body = document.createElement("p");
     body.textContent = text;
     body.style.cssText =
-      "margin:0 0 var(--ha-space-6,24px);color:var(--primary-text-color,#212121);" +
-      "line-height:var(--ha-line-height-normal,1.5)";
+      "margin:0 0 var(--ha-space-6,24px);line-height:var(--ha-line-height-normal,1.5)";
 
-    const buttons = document.createElement("div");
-    buttons.style.cssText =
+    const actions = document.createElement("div");
+    actions.style.cssText =
       "display:flex;justify-content:flex-end;gap:var(--ha-space-2,8px);flex-wrap:wrap";
 
+    let done = false;
     const finish = (result: boolean) => {
-      window.removeEventListener("keydown", onKey, true);
-      overlay.remove();
-      resolve(result);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        finish(false);
+      if (done) return;
+      done = true;
+      try {
+        dlg.close();
+      } catch {
+        // jsdom / browsers without showModal: nothing to close.
       }
+      dlg.remove();
+      resolve(result);
     };
 
     const cancelBtn = document.createElement("ha-button");
@@ -549,14 +515,24 @@ function _haThemedConfirm(title: string, text: string): Promise<boolean> {
     confirmBtn.textContent = hass?.localize("ui.common.yes") || "Yes";
     confirmBtn.addEventListener("click", () => finish(true));
 
-    buttons.append(cancelBtn, confirmBtn);
-    surface.append(heading, body, buttons);
-    overlay.appendChild(surface);
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) finish(false);
+    actions.append(cancelBtn, confirmBtn);
+    card.append(heading, body, actions);
+    dlg.appendChild(card);
+    // Escape fires "cancel" on a modal dialog; backdrop click targets the dialog.
+    dlg.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      finish(false);
     });
-    window.addEventListener("keydown", onKey, true);
-    document.body.appendChild(overlay);
+    dlg.addEventListener("click", (e) => {
+      if (e.target === dlg) finish(false);
+    });
+
+    document.body.appendChild(dlg);
+    if (typeof dlg.showModal === "function") {
+      dlg.showModal();
+    } else {
+      dlg.setAttribute("open", ""); // jsdom / very old browsers
+    }
   });
 }
 
