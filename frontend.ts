@@ -87,10 +87,6 @@ interface WSError extends Error {
   code?: string;
 }
 
-interface CardElement extends HTMLElement {
-  _gaRefreshCardState?: () => void;
-}
-
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -434,10 +430,8 @@ function _onImportClick(): void {
       await _withEntryRetry((entryId) =>
         hass.callWS({ type: WS_IMPORT_CONFIG, entry_id: entryId, yaml }),
       );
-      const card = document.querySelector<CardElement>(
-        "[data-ga-manual-card]",
-      );
-      if (card?._gaRefreshCardState) await card._gaRefreshCardState();
+      const card = document.querySelector<HTMLElement>("[data-ga-manual-card]");
+      if (card) await refreshCardByElement(card);
       _showToast(t("import_success"), false);
     } catch (e) {
       const detail = _wsErrorMessage(e);
@@ -1725,6 +1719,7 @@ function buildCard(): HTMLElement | null {
     let pinInput: TogglableElement | null = null;
 
     function addSetting(el: HTMLElement) {
+      el.setAttribute("data-ga-row", "");
       settingsRows.push(el);
       body.appendChild(el);
     }
@@ -1748,6 +1743,7 @@ function buildCard(): HTMLElement | null {
       onReportStateToggle,
     );
     reportStateSwitch = reportStateItem.querySelector("ha-switch");
+    reportStateSwitch?.setAttribute("data-ga-report-state", "");
     addSetting(reportStateItem);
 
     const securityItem = makeSettingItem(
@@ -1798,6 +1794,7 @@ function buildCard(): HTMLElement | null {
 
     card.appendChild(actions);
 
+    actions.setAttribute("data-ga-row", "");
     settingsRows.push(actions);
 
     // Global toggle: calls enable/disable WS commands
@@ -1811,11 +1808,6 @@ function buildCard(): HTMLElement | null {
     // Hidden until the initial config state is fetched.
     _setRowsVisible(settingsRows, false);
     refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
-
-    // Store a refresh callback so the import handler can refresh card state
-    // after importing settings without needing references to local elements.
-    (card as CardElement)._gaRefreshCardState = () =>
-      refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
 
     return card;
   } catch (e) {
@@ -1900,6 +1892,23 @@ async function _toggleIntegration(
 // ---------------------------------------------------------------------------
 // Card state refresh
 // ---------------------------------------------------------------------------
+
+// Refresh a card given only its element, re-querying the controls from the DOM.
+// Used by callers that hold the card but not buildCard's local references
+// (the import handler and card re-injection).
+function refreshCardByElement(card: HTMLElement): Promise<void> {
+  const globalSwitch = card.querySelector<HTMLElement>(".card-header ha-switch");
+  const yamlAlert = card.querySelector<HTMLElement>("ha-alert");
+  if (!globalSwitch || !yamlAlert) return Promise.resolve();
+  return refreshCardState(
+    card,
+    globalSwitch,
+    [...card.querySelectorAll<HTMLElement>("[data-ga-row]")],
+    card.querySelector<HTMLElement>("[data-ga-report-state]"),
+    card.querySelector("ha-input") as TogglableElement | null,
+    yamlAlert,
+  );
+}
 
 async function refreshCardState(
   card: HTMLElement,
@@ -1999,8 +2008,8 @@ async function injectCardInto(el: AssistantsPageElement): Promise<void> {
       _observerActive.delete(el);
       // Card already injected, but config or exposures may have changed
       // (e.g. user was on the Expose tab or changed settings elsewhere).
-      const card = content.querySelector<CardElement>("[data-ga-manual-card]");
-      if (card?._gaRefreshCardState) await card._gaRefreshCardState();
+      const card = content.querySelector<HTMLElement>("[data-ga-manual-card]");
+      if (card) await refreshCardByElement(card);
       return;
     }
 

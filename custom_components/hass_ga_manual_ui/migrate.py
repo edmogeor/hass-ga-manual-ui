@@ -32,24 +32,18 @@ _LOGGER = logging.getLogger(__name__)
 
 # YAML dumper that uses literal block style (|) for multi-line strings so
 # private keys render cleanly instead of as indented single-quoted blocks.
-try:
-    from yaml import CSafeDumper as _BaseSafeDumper
-except ImportError:
-    from yaml import SafeDumper as _BaseSafeDumper
-
-
-class _ExportDumper(_BaseSafeDumper):  # pyrefly: ignore[invalid-inheritance]
+class _ExportDumper(yaml.SafeDumper):
     """YAML dumper that emits multi-line strings as literal block scalars."""
 
 
-def _str_representer(dumper: yaml.Dumper, data: str) -> Any:
+def _str_representer(dumper: yaml.SafeDumper, data: str) -> yaml.Node:
     """Represent multi-line strings with | (literal block) style."""
     if "\n" in data:
         return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
     return dumper.represent_str(data)
 
 
-def _none_representer(dumper: yaml.Dumper, _data: Any) -> Any:
+def _none_representer(dumper: yaml.SafeDumper, _data: None) -> yaml.Node:
     """Emit None as an empty value (`key:`) rather than `key: null`."""
     return dumper.represent_scalar("tag:yaml.org,2002:null", "")
 
