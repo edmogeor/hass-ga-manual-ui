@@ -392,7 +392,9 @@ def _schedule_yaml_migration(hass: HomeAssistant, entry: ConfigEntry) -> None:
             entry, options={**entry.options, OPT_YAML_MIGRATED: True}
         )
 
-    hass.async_at_start(_run)
+    from homeassistant.helpers.start import async_at_start
+
+    async_at_start(hass, _run)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
