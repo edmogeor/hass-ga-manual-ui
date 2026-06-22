@@ -83,7 +83,7 @@ def _yaml_should_expose(
     exposed_domains: list[str],
     entity_config: dict[str, Any],
 ) -> bool:
-    """Core GA's YAML exposure rule, hand-copied from google_assistant/http.py:160-189.
+    """Core GA's YAML exposure rule, hand-copied from google_assistant/http.py.
 
     Reimplemented (vs instantiating a real GoogleConfig) to keep migration light;
     the unit test pins this against core so drift is caught.
