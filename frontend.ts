@@ -254,7 +254,6 @@ function _wsErrorMessage(err: unknown): string {
 
 let _entryId: string | null = null;
 let _entryIdPromise: Promise<string> | null = null;
-let _entryMissing = false; // true when the server confirms no config entry exists
 let _gaManualEnabled = true;
 // Captured reference to HA's voiceAssistants map (from data/expose.ts) the first
 // time our Object.keys interceptor sees it. Needed so we can resolve our
@@ -725,7 +724,6 @@ function _primeVoiceAssistantsMap(): void {
 function _invalidateEntryId(): void {
   _entryId = null;
   _entryIdPromise = null;
-  _entryMissing = false;
 }
 
 // Run a WS call against the resolved entry_id; on a "config entry not found"
@@ -773,14 +771,12 @@ async function _fetchEntryId(): Promise<string> {
           "Settings → Devices & Services → Add Integration first.",
       );
     }
-    _entryMissing = false;
     return result.entry_id;
   } catch (err: unknown) {
     _debug(
       "No config entry found: " +
         _wsErrorMessage(err),
     );
-    _entryMissing = true;
     throw err;
   }
 }
@@ -1966,7 +1962,7 @@ async function refreshCardState(
     await refreshExposeToggle(card);
   } catch (err: unknown) {
     _error("Failed to fetch card state: " + _wsErrorMessage(err));
-    if (_entryMissing) {
+    if (_isEntryGoneError(err)) {
       _info("Config entry no longer exists, removing card");
       card.remove();
     }
@@ -2032,7 +2028,6 @@ async function injectCardInto(el: AssistantsPageElement): Promise<void> {
     try {
       await getEntryId();
     } catch {
-      _entryMissing = true;
       return;
     }
 

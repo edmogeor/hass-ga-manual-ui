@@ -159,6 +159,16 @@ def _live_toggle_report_state(
         )
 
 
+def _resync_google(google_config: _GoogleConfig | None) -> None:
+    """Schedule a Google requestSync so changes appear now, not at next sync. None-safe."""
+    if google_config is None:
+        return
+    try:
+        google_config.async_schedule_google_sync_all()
+    except Exception:
+        _LOGGER.debug("async_schedule_google_sync_all failed", exc_info=True)
+
+
 def _sync_yaml_suppressed(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Persist this-boot's YAML detection onto the entry's ``yaml_suppressed`` option.
 
@@ -560,10 +570,7 @@ def _register_sync_listeners(
     @callback
     def _schedule_sync() -> None:
         """Trigger a Google requestSync to push updated device state."""
-        try:
-            google_config.async_schedule_google_sync_all()
-        except Exception:
-            _LOGGER.debug("async_schedule_google_sync_all failed", exc_info=True)
+        _resync_google(google_config)
 
     @callback
     def _on_exposed_entities_updated() -> None:
@@ -1274,8 +1281,8 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
             # The PIN is sent in the SYNC response for each secure device;
             # resync so Google picks up the new value immediately.
-            if CONF_SECURE_DEVICES_PIN in data and google_config is not None:
-                google_config.async_schedule_google_sync_all()
+            if CONF_SECURE_DEVICES_PIN in data:
+                _resync_google(google_config)
 
             connection.send_result(msg["id"])
         except Exception as exc:
@@ -1608,9 +1615,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
         # Push changes to Google so newly exposed/unexposed devices appear
         # immediately rather than waiting for the next periodic sync.
-        gc = _our_google_config(_hass)
-        if gc is not None:
-            gc.async_schedule_google_sync_all()
+        _resync_google(_our_google_config(_hass))
 
         connection.send_result(msg["id"], {"summary": summary})
 

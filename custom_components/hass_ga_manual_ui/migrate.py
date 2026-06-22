@@ -49,7 +49,13 @@ def _str_representer(dumper: yaml.Dumper, data: str) -> Any:
     return dumper.represent_str(data)
 
 
+def _none_representer(dumper: yaml.Dumper, _data: Any) -> Any:
+    """Emit None as an empty value (`key:`) rather than `key: null`."""
+    return dumper.represent_scalar("tag:yaml.org,2002:null", "")
+
+
 _ExportDumper.add_representer(str, _str_representer)
+_ExportDumper.add_representer(type(None), _none_representer)
 
 
 # Core-GA YAML keys (google_assistant/const.py). These are our import/export wire
@@ -337,4 +343,4 @@ def export_ga_config(hass: HomeAssistant, entry: Any) -> str:
         allow_unicode=True,
         sort_keys=False,
         Dumper=_ExportDumper,
-    ).replace(": null\n", ":\n")
+    )
