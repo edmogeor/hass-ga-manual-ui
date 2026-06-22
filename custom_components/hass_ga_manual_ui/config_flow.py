@@ -120,11 +120,24 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         return None
 
     async def _yaml_notice(self) -> str:
-        """Return the localized 'remove your YAML' notice, or '' if none is needed."""
+        """Return the localized 'remove your YAML' notice, or '' if none is needed.
+
+        Shown as the body of the dedicated migration step, so leading/trailing
+        whitespace is stripped (the locale string carries a leading blank line
+        from when it was appended to another description).
+        """
         if self._yaml_block is None:
             return ""
         strings = await async_load_locale(self.hass, self.hass.config.language)
-        return strings.get("yaml_notice", "")
+        return strings.get("yaml_notice", "").strip()
+
+    def _migrating(self) -> bool:
+        """Whether the user opted to migrate an existing YAML block.
+
+        Gates every read of YAML details (project_id / service_account prefill):
+        if the checkbox is unchecked, we pull nothing from the YAML.
+        """
+        return bool(self._data.get(CONF_MIGRATE_YAML)) and self._yaml_block is not None
 
     async def _notify_installed(self) -> None:
         """Post a one-time 'refresh your browser' notification on install.
@@ -151,7 +164,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 hass, hass.config.language, "config", {DOMAIN}
             )
             title = translations.get(
-                f"component.{DOMAIN}.config.step.user.title",
+                f"component.{DOMAIN}.config.step.credentials.title",
                 "Google Assistant (Manual)",
             )
         except Exception as exc:
@@ -173,13 +186,69 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the initial step - project_id (+ optional YAML migration)."""
-        errors: dict[str, str] = {}
+        """Entry point.
 
-        # Read the YAML block once; drives the notice, prefill, and checkbox.
+        When a `google_assistant:` YAML block exists, show a dedicated migration
+        page (the notice + opt-in checkbox) first. When it does not, skip straight
+        to the credentials step so users without YAML never see a migration prompt.
+        """
+        # Read the YAML block once; cached for prefill / migration.
         if self._yaml_block is None:
             self._yaml_block = await self._read_ga_yaml()
-        has_yaml = self._yaml_block is not None
+
+        if self._yaml_block is None:
+            return await self.async_step_credentials()
+
+        if user_input is not None:
+            self._data[CONF_MIGRATE_YAML] = bool(
+                user_input.get(CONF_MIGRATE_YAML, True)
+            )
+            return await self.async_step_credentials()
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=vol.Schema(
+                {vol.Optional(CONF_MIGRATE_YAML, default=True): bool}
+            ),
+            description_placeholders={"yaml_notice": await self._yaml_notice()},
+        )
+
+    def _yaml_project_id(self) -> str | None:
+        """A valid project_id from the YAML block when migrating, else None."""
+        if self._yaml_block is None or not self._migrating():
+            return None
+        pid = self._yaml_block.get(CONF_PROJECT_ID)
+        return pid if isinstance(pid, str) and _is_valid_project_id(pid) else None
+
+    def _yaml_service_account(self) -> dict[str, str] | None:
+        """The parsed {client_email, private_key} from the YAML block when migrating.
+
+        The loader resolves `!include`/`!secret`, so the value is normally a dict;
+        a JSON string is also accepted. Returns None (not migrating, missing, or
+        unparseable) so the caller can fall back to asking the user.
+        """
+        if self._yaml_block is None or not self._migrating():
+            return None
+        sa = self._yaml_block.get(CONF_SERVICE_ACCOUNT)
+        try:
+            raw = json.dumps(sa) if isinstance(sa, dict) else sa
+            if not isinstance(raw, str):
+                return None
+            return _parse_service_account_json(raw)
+        except Exception as exc:
+            _LOGGER.debug("Could not read service account from YAML: %s", exc)
+            return None
+
+    async def async_step_credentials(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Project ID step.
+
+        Skipped when migrating and the YAML already has a valid project_id; only
+        shown when we cannot get one (no migration, or YAML lacks/has an invalid
+        project_id), prefilled with the YAML value when there is one to fix.
+        """
+        errors: dict[str, str] = {}
 
         if user_input is not None:
             project_id = user_input.get(CONF_PROJECT_ID, "").strip()
@@ -191,84 +260,59 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
 
             if not errors:
                 self._data[CONF_PROJECT_ID] = project_id
-                if has_yaml:
-                    self._data[CONF_MIGRATE_YAML] = bool(
-                        user_input.get(CONF_MIGRATE_YAML, True)
-                    )
+                return await self.async_step_service_account()
+        else:
+            yaml_pid = self._yaml_project_id()
+            if yaml_pid:
+                self._data[CONF_PROJECT_ID] = yaml_pid
                 return await self.async_step_service_account()
 
-        # Prefill project_id from YAML when not already entered.
+        # Prefill with the raw YAML project_id (even if invalid) so the user can
+        # correct it rather than retype it.
         default_project_id = self._data.get(CONF_PROJECT_ID, "")
-        if not default_project_id and self._yaml_block is not None:
-            default_project_id = str(self._yaml_block.get(CONF_PROJECT_ID, ""))
-
-        schema: dict[Any, Any] = {
-            vol.Required(CONF_PROJECT_ID, default=default_project_id): str,
-        }
-        if has_yaml:
-            schema[vol.Optional(CONF_MIGRATE_YAML, default=True)] = bool
+        if (
+            not default_project_id
+            and self._yaml_block is not None
+            and self._migrating()
+        ):
+            default_project_id = str(self._yaml_block.get(CONF_PROJECT_ID, "") or "")
 
         return self.async_show_form(
-            step_id="user",
-            data_schema=vol.Schema(schema),
+            step_id="credentials",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_PROJECT_ID, default=default_project_id): str}
+            ),
             errors=errors,
-            description_placeholders={
-                "guide_url": _GUIDE_URL,
-                "yaml_notice": await self._yaml_notice(),
-            },
+            description_placeholders={"guide_url": _GUIDE_URL},
         )
-
-    def _sa_suggested_value(self) -> str:
-        """Prefill the SA field from the YAML block, or '' when unavailable.
-
-        The loader resolves `!include`/`!secret` so the value is normally a dict;
-        a JSON string is also accepted. Falls back to '' (blank field) on any
-        failure rather than blocking the flow.
-        """
-        if self._yaml_block is None:
-            return ""
-        sa = self._yaml_block.get(CONF_SERVICE_ACCOUNT)
-        try:
-            raw = json.dumps(sa) if isinstance(sa, dict) else sa
-            if not isinstance(raw, str):
-                return ""
-            return json.dumps(_parse_service_account_json(raw), indent=2)
-        except Exception as exc:
-            _LOGGER.debug("Could not prefill service account from YAML: %s", exc)
-            return ""
 
     async def async_step_service_account(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the service account JSON step."""
+        """Service account step.
+
+        Skipped when migrating and the YAML already has a usable service account;
+        only shown when we cannot get one (no migration, or YAML lacks/has an
+        unparseable account).
+        """
         errors: dict[str, str] = {}
-        project_id = self._data.get(CONF_PROJECT_ID, "<missing>")
 
         if user_input is not None:
             raw = user_input.get(CONF_SERVICE_ACCOUNT, "").strip()
-
             if not raw:
                 errors[CONF_SERVICE_ACCOUNT] = "service_account_required"
             else:
                 try:
-                    account = _parse_service_account_json(raw)
+                    self._data[CONF_SERVICE_ACCOUNT] = _parse_service_account_json(raw)
                 except vol.Invalid as exc:
                     errors[CONF_SERVICE_ACCOUNT] = str(exc)
                 else:
-                    self._data[CONF_SERVICE_ACCOUNT] = account
-                    _LOGGER.info(
-                        "Config flow: creating entry for project='%s' "
-                        "with client_email='%s'",
-                        project_id,
-                        account[CONF_CLIENT_EMAIL],
-                    )
-
-                    await self._notify_installed()
-
-                    return self.async_create_entry(
-                        title=project_id,
-                        data=self._data,
-                    )
+                    return await self._create_entry()
+        else:
+            yaml_sa = self._yaml_service_account()
+            if yaml_sa is not None:
+                self._data[CONF_SERVICE_ACCOUNT] = yaml_sa
+                return await self._create_entry()
 
         return self.async_show_form(
             step_id="service_account",
@@ -276,7 +320,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(
                         CONF_SERVICE_ACCOUNT,
-                        description={"suggested_value": self._sa_suggested_value()},
+                        description={"suggested_value": ""},
                     ): str,
                 }
             ),
@@ -286,6 +330,18 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 "guide_url": _GUIDE_URL,
             },
         )
+
+    async def _create_entry(self) -> ConfigFlowResult:
+        """Finalize the flow: notify, then create the config entry."""
+        project_id = self._data.get(CONF_PROJECT_ID, "<missing>")
+        account = self._data.get(CONF_SERVICE_ACCOUNT, {})
+        _LOGGER.info(
+            "Config flow: creating entry for project='%s' with client_email='%s'",
+            project_id,
+            account.get(CONF_CLIENT_EMAIL, "<missing>"),
+        )
+        await self._notify_installed()
+        return self.async_create_entry(title=project_id, data=self._data)
 
 
 # GCP project IDs: 6-30 chars, lowercase-letter-led, lowercase/digits/hyphens,
