@@ -1,6 +1,10 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "How this works",
+        "description": "This integration manages Google Assistant and overrides any `google_assistant:` section in your configuration.yaml. You can export or import a standalone YAML config later from Settings → Voice assistants."
+      },
       "user": {
         "title": "Migrate existing configuration",
         "description": "{yaml_notice}",

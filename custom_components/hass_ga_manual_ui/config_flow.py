@@ -188,16 +188,17 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Entry point.
 
-        When a `google_assistant:` YAML block exists, show a dedicated migration
-        page (the notice + opt-in checkbox) first. When it does not, skip straight
-        to the credentials step so users without YAML never see a migration prompt.
+        Always opens with an intro page. When a `google_assistant:` YAML block
+        exists it is the migration page (notice + opt-in checkbox); otherwise it
+        is a from-scratch heads-up that this integration overrides any YAML and
+        that export/import is available later from the voice assistants page.
         """
         # Read the YAML block once; cached for prefill / migration.
         if self._yaml_block is None:
             self._yaml_block = await self._read_ga_yaml()
 
         if self._yaml_block is None:
-            return await self.async_step_credentials()
+            return await self.async_step_intro()
 
         if user_input is not None:
             self._data[CONF_MIGRATE_YAML] = bool(
@@ -212,6 +213,19 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
             description_placeholders={"yaml_notice": await self._yaml_notice()},
         )
+
+    async def async_step_intro(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """From-scratch heads-up page (shown when there is no YAML to migrate).
+
+        Acknowledge-only: makes a fresh user aware that this integration overrides
+        any future `google_assistant:` YAML, and that a standalone YAML can be
+        exported/imported later from Settings -> Voice assistants.
+        """
+        if user_input is not None:
+            return await self.async_step_credentials()
+        return self.async_show_form(step_id="intro", data_schema=vol.Schema({}))
 
     def _yaml_project_id(self) -> str | None:
         """A valid project_id from the YAML block when migrating, else None."""

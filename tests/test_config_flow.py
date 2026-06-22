@@ -229,18 +229,24 @@ def config_flow() -> GoogleAssistantManualConfigFlow:
 
 
 class TestConfigFlowUserStep:
-    """Test the entry point: with no YAML it goes straight to the credentials step."""
+    """Test the entry point: with no YAML it opens the from-scratch intro page."""
 
     @pytest.mark.asyncio
-    async def test_no_yaml_shows_credentials_form(
+    async def test_no_yaml_shows_intro_page(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        # No hass -> _read_ga_yaml returns None -> routed to the credentials step.
+        # No hass -> _read_ga_yaml returns None -> from-scratch intro page.
         result = await config_flow.async_step_user()
         assert result["type"] == "form"
-        assert result["step_id"] == "credentials"
-        assert "project_id" in result["data_schema"].schema
+        assert result["step_id"] == "intro"
         assert not _schema_has(result, CONF_MIGRATE_YAML)
+
+    @pytest.mark.asyncio
+    async def test_intro_advances_to_credentials(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_intro({})
+        assert result["step_id"] == "credentials"
 
 
 class TestConfigFlowCredentialsStep:
@@ -342,7 +348,8 @@ class TestConfigFlowYamlMigration:
     ) -> None:
         _with_yaml(config_flow, None)
         result = await config_flow.async_step_user()
-        assert result["step_id"] == "credentials"
+        # From-scratch: intro page, no migrate checkbox.
+        assert result["step_id"] == "intro"
         assert not _schema_has(result, CONF_MIGRATE_YAML)
 
     @pytest.mark.asyncio
@@ -575,7 +582,7 @@ class TestConfigFlowServiceAccountStep:
     async def test_no_migrate_page_when_section_absent(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        """No google_assistant: section => skip straight to credentials, no locale lookup."""
+        """No google_assistant: section => from-scratch intro page, no locale lookup."""
         config_flow.hass = MagicMock()
         with (
             patch(
@@ -588,23 +595,21 @@ class TestConfigFlowServiceAccountStep:
             ) as mock_locale,
         ):
             result = await config_flow.async_step_user()
-        assert result["step_id"] == "credentials"
-        assert "yaml_notice" not in result["description_placeholders"]
+        assert result["step_id"] == "intro"
         mock_locale.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_no_migrate_page_when_yaml_unreadable(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        """A malformed/unreadable configuration.yaml => no migrate page, go to credentials."""
+        """A malformed/unreadable configuration.yaml => from-scratch intro page."""
         config_flow.hass = MagicMock()
         with patch(
             "hass_ga_manual_ui.config_flow.async_hass_config_yaml",
             AsyncMock(side_effect=OSError("boom")),
         ):
             result = await config_flow.async_step_user()
-        assert result["step_id"] == "credentials"
-        assert "yaml_notice" not in result["description_placeholders"]
+        assert result["step_id"] == "intro"
 
     @pytest.mark.asyncio
     async def test_yaml_notice_detects_suffixed_domain_key(
