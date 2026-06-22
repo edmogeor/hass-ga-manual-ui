@@ -913,6 +913,48 @@ describe("Google Assistant Manual frontend", () => {
       clickSpy.mockRestore();
     });
 
+    it("import shows an HA-themed modal (not native confirm) when dialog-box is absent", async () => {
+      // dialog-box is not registered here, so the self-rendered modal is used.
+      expect(customElements.get("dialog-box")).toBeUndefined();
+      const confirmSpy = vi
+        .spyOn(window, "confirm")
+        .mockImplementation(() => true);
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "e1" });
+        }
+        return Promise.resolve({ summary: {} });
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      actionButtons().importBtn.dispatchEvent(new Event("click"));
+      const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+      const file = new File(["google_assistant:\n  project_id: p\n"], "c.yaml", {
+        type: "text/yaml",
+      });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      input.dispatchEvent(new Event("change"));
+      await flush();
+
+      const overlay = document.querySelector("[data-ga-confirm-overlay]");
+      expect(overlay).not.toBeNull();
+      expect(confirmSpy).not.toHaveBeenCalled(); // never the native modal
+
+      overlay!.querySelector<HTMLElement>("[data-ga-confirm]")!.dispatchEvent(
+        new Event("click"),
+      );
+      await flush();
+      await flush();
+
+      expect(document.querySelector("[data-ga-confirm-overlay]")).toBeNull();
+      expect(hass.callWS).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "hass_ga_manual_ui/import_config" }),
+      );
+      confirmSpy.mockRestore();
+    });
+
     it("import confirms via show-dialog then calls the import WS on confirm", async () => {
       const hass = createMockHass();
       hass.callWS.mockImplementation((msg: Record<string, unknown>) => {

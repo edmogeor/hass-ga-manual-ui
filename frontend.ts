@@ -442,12 +442,14 @@ function _onImportClick(): void {
 
 // Confirm via HA's shared generic dialog: fire the same bubbling+composed
 // "show-dialog" event HA's showConfirmationDialog uses, handled by the dialog
-// manager on <home-assistant>. Falls back to window.confirm() if dialog-box is
-// not registered yet (no dialog shown this session), so we never hang.
+// manager on <home-assistant>. When dialog-box is not registered yet (HA lazy-
+// loads it and an injected script can't reference its bundle-relative import),
+// we render our own HA-themed modal instead of the browser's native confirm, so
+// the user always gets an HA-styled dialog.
 function _confirmDialog(title: string, text: string): Promise<boolean> {
   const root = document.querySelector("home-assistant");
   if (!root || !customElements.get("dialog-box")) {
-    return Promise.resolve(window.confirm(text));
+    return _haThemedConfirm(title, text);
   }
   const hass = getHass();
   return new Promise<boolean>((resolve) => {
@@ -471,6 +473,76 @@ function _confirmDialog(title: string, text: string): Promise<boolean> {
         },
       }),
     );
+  });
+}
+
+// Self-rendered confirmation styled with HA theme variables and ha-button (which
+// is always defined - the card uses it). Used when HA's dialog-box is not loaded
+// yet, so we never drop to the browser's native confirm. Resolves true/false;
+// backdrop click, Escape, and Cancel all resolve false.
+function _haThemedConfirm(title: string, text: string): Promise<boolean> {
+  const hass = getHass();
+  return new Promise<boolean>((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.setAttribute("data-ga-confirm-overlay", "");
+    overlay.style.cssText =
+      "position:fixed;inset:0;z-index:1000;display:flex;align-items:center;" +
+      "justify-content:center;background:rgba(0,0,0,0.5)";
+
+    const surface = document.createElement("div");
+    surface.style.cssText =
+      "background:var(--ha-card-background,var(--card-background-color,#fff));" +
+      "color:var(--primary-text-color,#212121);" +
+      "border-radius:var(--ha-card-border-radius,12px);" +
+      "box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:400px;width:90%;" +
+      "padding:24px;box-sizing:border-box";
+
+    const heading = document.createElement("h2");
+    heading.textContent = title;
+    heading.style.cssText = "margin:0 0 12px;font-size:1.25rem;font-weight:500";
+
+    const body = document.createElement("p");
+    body.textContent = text;
+    body.style.cssText =
+      "margin:0 0 24px;color:var(--secondary-text-color,#727272);line-height:1.5";
+
+    const buttons = document.createElement("div");
+    buttons.style.cssText =
+      "display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap";
+
+    const finish = (result: boolean) => {
+      window.removeEventListener("keydown", onKey, true);
+      overlay.remove();
+      resolve(result);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        finish(false);
+      }
+    };
+
+    const cancelBtn = document.createElement("ha-button");
+    cancelBtn.setAttribute("appearance", "plain");
+    cancelBtn.setAttribute("data-ga-cancel", "");
+    cancelBtn.textContent = hass?.localize("ui.dialogs.generic.cancel") || "Cancel";
+    cancelBtn.addEventListener("click", () => finish(false));
+
+    const confirmBtn = document.createElement("ha-button");
+    confirmBtn.setAttribute("appearance", "accent");
+    confirmBtn.setAttribute("variant", "danger");
+    confirmBtn.setAttribute("data-ga-confirm", "");
+    confirmBtn.textContent = hass?.localize("ui.common.yes") || "Yes";
+    confirmBtn.addEventListener("click", () => finish(true));
+
+    buttons.append(cancelBtn, confirmBtn);
+    surface.append(heading, body, buttons);
+    overlay.appendChild(surface);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) finish(false);
+    });
+    window.addEventListener("keydown", onKey, true);
+    document.body.appendChild(overlay);
   });
 }
 
