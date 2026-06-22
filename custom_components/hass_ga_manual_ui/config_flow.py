@@ -446,16 +446,14 @@ async def _mint_homegraph_token(hass: Any, client_email: str, private_key: str) 
         },
     ) as resp:
         if 400 <= resp.status < 500:
-            raise _CredentialsRejected(await _google_token_error(resp))
+            try:
+                body = await resp.json()
+                reason = (
+                    body.get("error_description")
+                    or body.get("error")
+                    or f"HTTP {resp.status}"
+                )
+            except Exception:
+                reason = f"HTTP {resp.status}"
+            raise _CredentialsRejected(reason)
         resp.raise_for_status()
-
-
-async def _google_token_error(resp: Any) -> str:
-    """Extract a human-readable reason from Google's token error response."""
-    try:
-        body = await resp.json()
-        return (
-            body.get("error_description") or body.get("error") or f"HTTP {resp.status}"
-        )
-    except Exception:
-        return f"HTTP {resp.status}"
