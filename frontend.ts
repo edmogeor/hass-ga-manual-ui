@@ -169,6 +169,18 @@ function t(key: StringKey, args?: Record<string, string | number>): string {
   return str;
 }
 
+// A translated `ha-button` whose label re-resolves on language change.
+function _actionButton(key: StringKey, onClick: () => void): HTMLElement {
+  const btn = document.createElement("ha-button");
+  btn.setAttribute("appearance", "plain");
+  btn.textContent = t(key);
+  btn.addEventListener("click", onClick);
+  _retranslate.push(() => {
+    btn.textContent = t(key);
+  });
+  return btn;
+}
+
 // Fetch the localized card strings once (memoized on the first call) from the
 // integration's static locale endpoint; fails silently to EN_STRINGS.
 function ensureTranslationsLoaded(): Promise<void> {
@@ -1770,23 +1782,12 @@ function buildCard(): HTMLElement | null {
     exposeLink.appendChild(exposeBtn);
     actions.appendChild(exposeLink);
 
-    const exportBtn = document.createElement("ha-button");
-    exportBtn.setAttribute("appearance", "plain");
-    exportBtn.textContent = t("export_yaml");
-    exportBtn.addEventListener("click", () => void _onExportClick());
-    _retranslate.push(() => {
-      exportBtn.textContent = t("export_yaml");
-    });
-    actions.appendChild(exportBtn);
-
-    const importBtn = document.createElement("ha-button");
-    importBtn.setAttribute("appearance", "plain");
-    importBtn.textContent = t("import_yaml");
-    importBtn.addEventListener("click", () => void _onImportClick());
-    _retranslate.push(() => {
-      importBtn.textContent = t("import_yaml");
-    });
-    actions.appendChild(importBtn);
+    actions.appendChild(
+      _actionButton("export_yaml", () => void _onExportClick()),
+    );
+    actions.appendChild(
+      _actionButton("import_yaml", () => void _onImportClick()),
+    );
 
     card.appendChild(actions);
 

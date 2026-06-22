@@ -202,7 +202,7 @@ def apply_ga_config(
 
     # 5. report_state live side effects (None-safe; skipped when disabled).
     if report_state is not None:
-        from . import _live_toggle_report_state, _our_google_config
+        from . import _live_toggle_report_state, _our_google_config, _project_id
 
         _live_toggle_report_state(
             _our_google_config(hass), bool(report_state), _project_id(entry)
@@ -210,11 +210,6 @@ def apply_ga_config(
 
     _LOGGER.info("Applied GA config: %s", summary)
     return summary
-
-
-def _project_id(entry: Any) -> str:
-    """Project id for logging."""
-    return entry.data.get(CONF_PROJECT_ID, "<missing>")
 
 
 def export_filename(entry: Any) -> str:
