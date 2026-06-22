@@ -13,6 +13,12 @@
     "report_state_enable_failed": "Failed to enable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
     "report_state_disable_failed": "Failed to disable state reporting. Try toggling the integration off and on, or check Home Assistant logs.",
     "ready_banner": "{name} is ready, manage it under Settings → Voice assistants.",
-    "update_available": "A new version of Google Assistant (Manual) is available. Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it."
+    "update_available": "A new version of Google Assistant (Manual) is available. Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it.",
+    "export_yaml": "Export YAML",
+    "import_yaml": "Import YAML",
+    "import_confirm_title": "Import YAML configuration?",
+    "import_confirm_text": "This replaces the current exposure and settings for Google Assistant (Manual) with the contents of the file. Aliases are added, never removed. This cannot be undone.",
+    "import_success": "Configuration imported successfully.",
+    "import_failed": "Failed to import configuration."
   }
 }

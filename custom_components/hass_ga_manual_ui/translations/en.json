@@ -5,10 +5,12 @@
         "title": "Google Assistant (Manual)",
         "description": "Enter your Google Cloud project ID.\n\nFollow the setup guide at {guide_url} (steps 1–13). You'll paste your service account JSON key in the next step.{yaml_notice}",
         "data": {
-          "project_id": "Project ID"
+          "project_id": "Project ID",
+          "migrate_yaml": "Migrate my existing YAML configuration"
         },
         "data_description": {
-          "project_id": "Your Google Cloud project ID"
+          "project_id": "Your Google Cloud project ID",
+          "migrate_yaml": "Copy exposure, state reporting, security PIN, and aliases from your existing google_assistant: YAML into this integration, once, on first start."
         }
       },
       "service_account": {

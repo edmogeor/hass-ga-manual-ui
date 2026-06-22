@@ -853,4 +853,140 @@ describe("Google Assistant Manual frontend", () => {
       expect(el._params!.extEntityReg).toBe(entry);
     });
   });
+
+  describe("export / import YAML", () => {
+    const flush = () => new Promise<void>((r) => setTimeout(r, 0));
+
+    function actionButtons() {
+      const card = document.querySelector("[data-ga-manual-card]")!;
+      const btns = Array.from(card.querySelectorAll("ha-button"));
+      return {
+        exportBtn: btns.find((b) => b.textContent === "Export YAML")!,
+        importBtn: btns.find((b) => b.textContent === "Import YAML")!,
+      };
+    }
+
+    it("renders Export and Import buttons in the card actions", () => {
+      setupDom(createMockHass());
+      evalFrontend();
+      const { exportBtn, importBtn } = actionButtons();
+      expect(exportBtn).toBeTruthy();
+      expect(importBtn).toBeTruthy();
+    });
+
+    it("export downloads the YAML returned by the backend", async () => {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "e1" });
+        }
+        if (msg.type === "hass_ga_manual_ui/export_config") {
+          return Promise.resolve({
+            yaml: "google_assistant:\n  project_id: p\n",
+            filename: "export.yaml",
+          });
+        }
+        return Promise.resolve({});
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      const createObjectURL = vi.fn(() => "blob:1");
+      const revokeObjectURL = vi.fn();
+      (URL as unknown as Record<string, unknown>).createObjectURL = createObjectURL;
+      (URL as unknown as Record<string, unknown>).revokeObjectURL = revokeObjectURL;
+      const clickSpy = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => undefined);
+
+      actionButtons().exportBtn.dispatchEvent(new Event("click"));
+      await flush();
+
+      expect(hass.callWS).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "hass_ga_manual_ui/export_config",
+          entry_id: "e1",
+        }),
+      );
+      expect(createObjectURL).toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalled();
+      clickSpy.mockRestore();
+    });
+
+    it("import confirms via show-dialog then calls the import WS on confirm", async () => {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "e1" });
+        }
+        return Promise.resolve({ summary: {} });
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      // A registered dialog-box makes _confirmDialog use the show-dialog event.
+      if (!customElements.get("dialog-box")) {
+        customElements.define("dialog-box", class extends HTMLElement {});
+      }
+      let sawDialog = false;
+      document.querySelector("home-assistant")!.addEventListener(
+        "show-dialog",
+        (e: Event) => {
+          sawDialog = true;
+          (e as CustomEvent).detail.dialogParams.confirm();
+        },
+      );
+
+      actionButtons().importBtn.dispatchEvent(new Event("click"));
+      const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+      const file = new File(["google_assistant:\n  project_id: p\n"], "c.yaml", {
+        type: "text/yaml",
+      });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      input.dispatchEvent(new Event("change"));
+      await flush();
+      await flush();
+
+      expect(sawDialog).toBe(true);
+      expect(hass.callWS).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "hass_ga_manual_ui/import_config",
+          entry_id: "e1",
+        }),
+      );
+    });
+
+    it("import does NOT call the import WS when the confirm is cancelled", async () => {
+      const hass = createMockHass();
+      setupDom(hass);
+      evalFrontend();
+
+      if (!customElements.get("dialog-box")) {
+        customElements.define("dialog-box", class extends HTMLElement {});
+      }
+      document.querySelector("home-assistant")!.addEventListener(
+        "show-dialog",
+        (e: Event) => {
+          (e as CustomEvent).detail.dialogParams.cancel();
+        },
+      );
+
+      actionButtons().importBtn.dispatchEvent(new Event("click"));
+      const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+      const file = new File(["google_assistant:\n  project_id: p\n"], "c.yaml", {
+        type: "text/yaml",
+      });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      input.dispatchEvent(new Event("change"));
+      await flush();
+      await flush();
+
+      const importCalls = hass.callWS.mock.calls.filter(
+        (c: unknown[]) =>
+          typeof c[0] === "object" &&
+          (c[0] as Record<string, unknown>).type === "hass_ga_manual_ui/import_config",
+      );
+      expect(importCalls.length).toBe(0);
+    });
+  });
 });

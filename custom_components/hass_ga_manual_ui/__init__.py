@@ -21,6 +21,7 @@ from homeassistant.helpers.typing import ConfigType
 from .const import (
     ASSISTANT_ID,
     CONF_CLIENT_EMAIL,
+    CONF_MIGRATE_YAML,
     CONF_PRIVATE_KEY,
     CONF_PROJECT_ID,
     CONF_REPORT_STATE,
@@ -31,12 +32,15 @@ from .const import (
     CORE_GA_DOMAIN,
     CORE_GA_PARENT_ENTRY_ID,
     DOMAIN,
+    OPT_YAML_MIGRATED,
     PREF_DISABLE_2FA,
     WS_DISABLE,
     WS_ENABLE,
+    WS_EXPORT_CONFIG,
     WS_GET_CONFIG,
     WS_GET_ENTITY,
     WS_GET_ENTRY_ID,
+    WS_IMPORT_CONFIG,
     WS_UPDATE_CONFIG,
     WS_UPDATE_ENTITY,
 )
@@ -124,6 +128,35 @@ def _our_google_config(hass: HomeAssistant) -> _GoogleConfig | None:
 def _is_enabled(entry: ConfigEntry) -> bool:
     """Whether the user's soft-enable toggle is on (defaults to enabled)."""
     return bool(entry.options.get("enabled", True))
+
+
+def _live_toggle_report_state(
+    google_config: _GoogleConfig | None, enabled: bool, project_id: str = ""
+) -> None:
+    """Enable/disable report_state on the live GoogleConfig and resync. None-safe.
+
+    Shared by ws_update_config and migrate/import. ``google_config`` is None when
+    the integration is disabled or core GA setup failed; the option is still
+    persisted by the caller and applied at next setup, so we just skip the live
+    toggle. willReportState is per-device in SYNC, so we resync to push it.
+    """
+    if google_config is None:
+        return
+    try:
+        if enabled:
+            google_config.async_enable_report_state()
+        else:
+            google_config.async_disable_report_state()
+        google_config.async_schedule_google_sync_all()
+        _LOGGER.debug(
+            "Live-toggled report_state=%s for project='%s'", enabled, project_id
+        )
+    except Exception:
+        _LOGGER.exception(
+            "Failed to live-toggle report_state for project='%s'. "
+            "Toggle the integration off and on to apply.",
+            project_id,
+        )
 
 
 def _sync_yaml_suppressed(hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -290,6 +323,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _register_ws_commands(hass, entry)
 
+    if entry.data.get(CONF_MIGRATE_YAML) and not entry.options.get(OPT_YAML_MIGRATED):
+        _schedule_yaml_migration(hass, entry)
+
     if _is_enabled(entry):
         try:
             await _setup_core_ga(hass, entry)
@@ -309,6 +345,54 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _is_enabled(entry),
     )
     return True
+
+
+def _schedule_yaml_migration(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """One-time migrate a `google_assistant:` YAML block into our settings.
+
+    Runs on HA started (not inline in setup): entities from integrations that
+    load after us are not in the registry yet at setup time, so an inline loop
+    would miss them. One-shot - persists OPT_YAML_MIGRATED so it never reruns.
+    """
+
+    async def _run(_hass: HomeAssistant) -> None:
+        """Read configuration.yaml once started, apply the GA block, mark done."""
+        if entry.options.get(OPT_YAML_MIGRATED):
+            return
+
+        block: Any = None
+        try:
+            from homeassistant.config import async_hass_config_yaml
+
+            block = (await async_hass_config_yaml(hass)).get(CORE_GA_DOMAIN)
+        except Exception as exc:
+            _LOGGER.warning(
+                "YAML migration: could not read configuration.yaml (%s); "
+                "marking migrated so it does not retry.",
+                exc,
+            )
+
+        if block:
+            try:
+                from .migrate import GA_CONFIG_SCHEMA, apply_ga_config
+
+                summary = apply_ga_config(hass, entry, GA_CONFIG_SCHEMA(block))
+                _LOGGER.info(
+                    "YAML migration complete for project='%s': %s",
+                    _project_id(entry),
+                    summary,
+                )
+            except Exception:
+                _LOGGER.exception(
+                    "YAML migration failed for project='%s'", _project_id(entry)
+                )
+
+        # Persist the one-shot flag regardless of outcome, so it runs only once.
+        hass.config_entries.async_update_entry(
+            entry, options={**entry.options, OPT_YAML_MIGRATED: True}
+        )
+
+    hass.async_at_start(_run)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -1183,27 +1267,10 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 runtime.get("google_config") if isinstance(runtime, dict) else None
             )
 
-            if google_config is not None and CONF_REPORT_STATE in data:
-                try:
-                    if data[CONF_REPORT_STATE]:
-                        google_config.async_enable_report_state()
-                        _LOGGER.debug(
-                            "Live-enabled report_state for project='%s'", project_id
-                        )
-                    else:
-                        google_config.async_disable_report_state()
-                        _LOGGER.debug(
-                            "Live-disabled report_state for project='%s'", project_id
-                        )
-                    # willReportState is a per-device attribute in the SYNC
-                    # response, so re-sync to push the new value to Google.
-                    google_config.async_schedule_google_sync_all()
-                except Exception:
-                    _LOGGER.exception(
-                        "Failed to live-toggle report_state for project='%s'. "
-                        "Toggle the integration off and on to apply.",
-                        project_id,
-                    )
+            if CONF_REPORT_STATE in data:
+                _live_toggle_report_state(
+                    google_config, data[CONF_REPORT_STATE], project_id
+                )
 
             connection.send_result(msg["id"])
         except Exception as exc:
@@ -1418,6 +1485,79 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.exception("Error in ws_update_entity for '%s'", entity_id)
             connection.send_error(msg["id"], "internal_error", str(exc))
 
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_EXPORT_CONFIG,
+            vol.Required("entry_id"): str,
+        }
+    )
+    def ws_export_config(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Export current settings as a standalone `google_assistant:` YAML file."""
+        current_entry = _safe_get_entry(_hass, msg["entry_id"], msg["id"], connection)
+        if current_entry is None:
+            return
+        try:
+            from .migrate import export_filename, export_ga_config
+
+            connection.send_result(
+                msg["id"],
+                {
+                    "yaml": export_ga_config(_hass, current_entry),
+                    "filename": export_filename(current_entry),
+                },
+            )
+        except Exception as exc:
+            _LOGGER.exception("Error exporting config for ws_export_config")
+            connection.send_error(msg["id"], "export_failed", str(exc))
+
+    @callback
+    @websocket_api.require_admin
+    @websocket_api.websocket_command(
+        {
+            vol.Required("type"): WS_IMPORT_CONFIG,
+            vol.Required("entry_id"): str,
+            vol.Required("yaml"): str,
+        }
+    )
+    def ws_import_config(
+        _hass: HomeAssistant,
+        connection: websocket_api.ActiveConnection,
+        msg: dict[str, Any],
+    ) -> None:
+        """Parse + validate an uploaded YAML file and apply it (settings only)."""
+        current_entry = _safe_get_entry(_hass, msg["entry_id"], msg["id"], connection)
+        if current_entry is None:
+            return
+        try:
+            from homeassistant.util.yaml import parse_yaml
+
+            from .migrate import GA_CONFIG_SCHEMA, apply_ga_config
+
+            parsed = parse_yaml(msg["yaml"])
+            # Accept either a bare block or a full `google_assistant:` wrapper.
+            block = (
+                parsed.get(CORE_GA_DOMAIN, parsed)
+                if isinstance(parsed, dict)
+                else parsed
+            )
+            cfg = GA_CONFIG_SCHEMA(block)
+        except Exception as exc:
+            _LOGGER.warning("Import: invalid YAML for ws_import_config: %s", exc)
+            connection.send_error(msg["id"], "invalid_yaml", str(exc))
+            return
+        try:
+            summary = apply_ga_config(_hass, current_entry, cfg)
+            connection.send_result(msg["id"], {"summary": summary})
+        except Exception as exc:
+            _LOGGER.exception("Error applying imported config for ws_import_config")
+            connection.send_error(msg["id"], "import_failed", str(exc))
+
     commands = [
         ("ws_get_config", ws_get_config),
         ("ws_update_config", ws_update_config),
@@ -1425,6 +1565,8 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
         ("ws_disable", ws_disable),
         ("ws_get_entity", ws_get_entity),
         ("ws_update_entity", ws_update_entity),
+        ("ws_export_config", ws_export_config),
+        ("ws_import_config", ws_import_config),
     ]
     for name, handler in commands:
         try:

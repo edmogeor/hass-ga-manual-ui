@@ -105,6 +105,8 @@ const WS_ENABLE = `${ASSISTANT_ID}/enable`;
 const WS_DISABLE = `${ASSISTANT_ID}/disable`;
 const WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
 const WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
+const WS_EXPORT_CONFIG = `${ASSISTANT_ID}/export_config`;
+const WS_IMPORT_CONFIG = `${ASSISTANT_ID}/import_config`;
 
 // Injected at build time via esbuild --define (see package.json). Compared to
 // the server-reported version to detect a stale (cached) bundle; "" disables it.
@@ -131,6 +133,12 @@ interface LocaleTable {
   report_state_disable_failed: string;
   ready_banner: string;
   update_available: string;
+  export_yaml: string;
+  import_yaml: string;
+  import_confirm_title: string;
+  import_confirm_text: string;
+  import_success: string;
+  import_failed: string;
 }
 
 const EN_STRINGS: LocaleTable = {
@@ -157,6 +165,14 @@ const EN_STRINGS: LocaleTable = {
   update_available:
     "A new version of Google Assistant (Manual) is available. " +
     "Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it.",
+  export_yaml: "Export YAML",
+  import_yaml: "Import YAML",
+  import_confirm_title: "Import YAML configuration?",
+  import_confirm_text:
+    "This replaces the current exposure and settings for Google Assistant (Manual) " +
+    "with the contents of the file. Aliases are added, never removed. This cannot be undone.",
+  import_success: "Configuration imported successfully.",
+  import_failed: "Failed to import configuration.",
 };
 
 type StringKey = keyof LocaleTable;
@@ -354,6 +370,108 @@ function _showToast(message: string, isError: boolean): void {
   } catch (e) {
     _error("Failed to show toast: " + _errorMessage(e));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Export / import YAML config
+// ---------------------------------------------------------------------------
+
+// Download text as a file via a throwaway anchor (no dep). The <a> is appended
+// to document.body to satisfy user-gesture rules and removed straight after.
+function _downloadText(text: string, filename: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type: "text/yaml" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// Export: ask the backend for the standalone YAML + filename, then download it.
+async function _onExportClick(): Promise<void> {
+  const hass = getHass();
+  if (!hass?.callWS) return;
+  try {
+    const res = await _withEntryRetry((entryId) =>
+      hass.callWS<{ yaml: string; filename: string }>({
+        type: WS_EXPORT_CONFIG,
+        entry_id: entryId,
+      }),
+    );
+    _downloadText(res.yaml, res.filename);
+  } catch (e) {
+    _error("Export failed: " + _errorMessage(e));
+    _showToast(t("check_logs"), true);
+  }
+}
+
+// Import: pick a file, confirm (import overwrites exposure + flags), then apply.
+// The confirm fires after a file is chosen and before the WS call, so cancelling
+// at either point leaves everything untouched.
+function _onImportClick(): void {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".yaml,.yml";
+  input.style.display = "none";
+  document.body.appendChild(input);
+  input.addEventListener("change", async () => {
+    try {
+      const file = input.files?.[0];
+      if (!file) return;
+      const yaml = await file.text();
+      if (!(await _confirmDialog(t("import_confirm_title"), t("import_confirm_text")))) {
+        return;
+      }
+      const hass = getHass();
+      if (!hass?.callWS) return;
+      await _withEntryRetry((entryId) =>
+        hass.callWS({ type: WS_IMPORT_CONFIG, entry_id: entryId, yaml }),
+      );
+      _showToast(t("import_success"), false);
+    } catch (e) {
+      _error("Import failed: " + _errorMessage(e));
+      _showToast(t("import_failed"), true);
+    } finally {
+      input.remove();
+    }
+  });
+  input.click();
+}
+
+// Confirm via HA's shared generic dialog: fire the same bubbling+composed
+// "show-dialog" event HA's showConfirmationDialog uses, handled by the dialog
+// manager on <home-assistant>. Falls back to window.confirm() if dialog-box is
+// not registered yet (no dialog shown this session), so we never hang.
+function _confirmDialog(title: string, text: string): Promise<boolean> {
+  const root = document.querySelector("home-assistant");
+  if (!root || !customElements.get("dialog-box")) {
+    return Promise.resolve(window.confirm(text));
+  }
+  const hass = getHass();
+  return new Promise<boolean>((resolve) => {
+    root.dispatchEvent(
+      new CustomEvent("show-dialog", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          dialogTag: "dialog-box",
+          dialogImport: () => customElements.whenDefined("dialog-box"),
+          dialogParams: {
+            confirmation: true,
+            destructive: true,
+            title,
+            text,
+            confirmText: hass?.localize("ui.common.yes"),
+            dismissText: hass?.localize("ui.dialogs.generic.cancel"),
+            confirm: () => resolve(true),
+            cancel: () => resolve(false),
+          },
+        },
+      }),
+    );
+  });
 }
 
 let _updatePromptShown = false;
@@ -1583,6 +1701,24 @@ function buildCard(): HTMLElement | null {
     exposeBtn.setAttribute("data-ga-count", "");
     exposeLink.appendChild(exposeBtn);
     actions.appendChild(exposeLink);
+
+    const exportBtn = document.createElement("ha-button");
+    exportBtn.setAttribute("appearance", "plain");
+    exportBtn.textContent = t("export_yaml");
+    exportBtn.addEventListener("click", () => void _onExportClick());
+    _retranslate.push(() => {
+      exportBtn.textContent = t("export_yaml");
+    });
+    actions.appendChild(exportBtn);
+
+    const importBtn = document.createElement("ha-button");
+    importBtn.setAttribute("appearance", "plain");
+    importBtn.textContent = t("import_yaml");
+    importBtn.addEventListener("click", () => void _onImportClick());
+    _retranslate.push(() => {
+      importBtn.textContent = t("import_yaml");
+    });
+    actions.appendChild(importBtn);
 
     card.appendChild(actions);
 

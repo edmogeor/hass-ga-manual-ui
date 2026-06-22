@@ -17,6 +17,12 @@ WS_ENABLE = "hass_ga_manual_ui/enable"
 WS_DISABLE = "hass_ga_manual_ui/disable"
 WS_GET_ENTITY = "hass_ga_manual_ui/get_entity"
 WS_UPDATE_ENTITY = "hass_ga_manual_ui/update_entity"
+WS_EXPORT_CONFIG = "hass_ga_manual_ui/export_config"
+WS_IMPORT_CONFIG = "hass_ga_manual_ui/import_config"
+
+# One-time YAML migration: config-flow checkbox + persisted "done" flag.
+CONF_MIGRATE_YAML = "migrate_yaml"
+OPT_YAML_MIGRATED = "yaml_migrated"
 
 # Per-entity assistant option mirroring cloud's PREF_DISABLE_2FA.
 PREF_DISABLE_2FA = "disable_2fa"
