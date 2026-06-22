@@ -369,11 +369,13 @@ For (3), the same `locale/<lang>.json` files are read two ways:
   `ensureTranslationsLoaded()` `fetch()`es `/<domain>/locale/<lang>.json` once
   (exact tag, then base language) and maps its `frontend` block into
   `_loadedStrings`. `t("key", { … })` returns the loaded string, falling back to
-  `EN_STRINGS`, with `{placeholders}` substituted. `EN_STRINGS` (typed by
-  `LocaleTable`) is the synchronous fallback and canonical key list, keep it in
-  sync with the `frontend` block. Because the fetch is async, text rendered at
-  card-build time registers a `_retranslate` callback so it refreshes once
-  strings arrive.
+  `EN_STRINGS`, with `{placeholders}` substituted. `EN_STRINGS` is **not**
+  hand-maintained: `frontend.ts` imports `locale/en.json` and esbuild inlines its
+  `frontend` block at build time (`resolveJsonModule`), so `en.json` is the single
+  English source of truth. `LocaleTable` still pins the key set, so a key missing
+  from `en.json`'s `frontend` block is a compile error. Because the fetch is
+  async, text rendered at card-build time registers a `_retranslate` callback so
+  it refreshes once strings arrive.
 
 To add a language: add `config`/`options` blocks to `translations/<lang>.json`
 (HA schema) **and** a `locale/<lang>.json` for the custom strings, no code

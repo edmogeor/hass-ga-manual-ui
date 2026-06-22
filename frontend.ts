@@ -4,6 +4,11 @@
  * voice assistants UI alongside the built-in cloud assistants.
  */
 
+// English card strings live in locale/en.json (single source of truth). esbuild
+// inlines its "frontend" block here at build time as the synchronous fallback;
+// other languages are fetched over HTTP at runtime.
+import EN_LOCALE from "./custom_components/hass_ga_manual_ui/locale/en.json";
+
 // ---------------------------------------------------------------------------
 // Home Assistant frontend type declarations
 // ---------------------------------------------------------------------------
@@ -118,7 +123,9 @@ const BUILD_VERSION: string =
 // Localization (see AGENTS.md "Frontend localization")
 // ---------------------------------------------------------------------------
 // Card strings live in locale/<lang>.json under "frontend" and are fetched over
-// HTTP for the user's language at runtime; EN_STRINGS is the synchronous fallback.
+// HTTP for the user's language at runtime; EN_STRINGS (derived from en.json at
+// build time) is the synchronous fallback. LocaleTable pins the key set so a
+// missing key in en.json is a compile error.
 
 interface LocaleTable {
   yaml_detected: string;
@@ -142,40 +149,7 @@ interface LocaleTable {
   import_failed: string;
 }
 
-const EN_STRINGS: LocaleTable = {
-  yaml_detected:
-    "The <code>google_assistant:</code> section was detected in your " +
-    "<code>configuration.yaml</code> and has been disabled. " +
-    "This integration now manages your Google Assistant configuration. " +
-    "You can safely remove the <code>google_assistant:</code> section " +
-    "from your YAML configuration.",
-  enable_success: "Google Assistant enabled successfully",
-  enable_failed: "Failed to enable Google Assistant.",
-  enable_fail_hint: "Try reloading the integration from Settings → Devices & Services.",
-  disable_success: "Google Assistant disabled successfully",
-  disable_failed: "Failed to disable Google Assistant.",
-  disable_fail_hint: "Try removing the integration from Settings → Devices & Services.",
-  check_logs: "Check Home Assistant logs for details.",
-  report_state_enable_failed:
-    "Failed to enable state reporting. " +
-    "Try toggling the integration off and on, or check Home Assistant logs.",
-  report_state_disable_failed:
-    "Failed to disable state reporting. " +
-    "Try toggling the integration off and on, or check Home Assistant logs.",
-  ready_banner: "{name} is ready - manage it under Settings → Voice assistants.",
-  update_available:
-    "A new version of Google Assistant (Manual) is available. " +
-    "Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it.",
-  export_yaml: "Export YAML",
-  import_yaml: "Import YAML",
-  import_confirm_title: "Import YAML configuration?",
-  import_confirm_text:
-    "This replaces all settings for Google Assistant (and exposed entities) " +
-    "with the contents of this file. Aliases are added and never removed.",
-  import_confirm_warning: "This cannot be undone.",
-  import_success: "Configuration imported successfully.",
-  import_failed: "Failed to import configuration.",
-};
+const EN_STRINGS: LocaleTable = EN_LOCALE.frontend;
 
 type StringKey = keyof LocaleTable;
 
