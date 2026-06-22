@@ -7,6 +7,7 @@ import pytest
 import voluptuous as vol
 from hass_ga_manual_ui.config_flow import (
     GoogleAssistantManualConfigFlow,
+    _CredentialsRejected,
     _is_valid_project_id,
     _parse_service_account_json,
 )
@@ -743,3 +744,92 @@ class TestNotifyInstalled:
         ) as mock_create:
             await config_flow._notify_installed()
         mock_create.assert_not_called()
+
+
+_MINT = "hass_ga_manual_ui.config_flow._mint_homegraph_token"
+
+
+class TestConfigFlowCredentialValidation:
+    """The service account is verified against Google before the entry is created."""
+
+    @pytest.mark.asyncio
+    async def test_valid_credentials_create_entry(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow.hass = MagicMock()
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        config_flow._notify_installed = AsyncMock()  # type: ignore[method-assign]
+        with patch(_MINT, AsyncMock()):
+            result = await config_flow.async_step_service_account(
+                {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+            )
+        assert result["type"] == "create_entry"
+
+    @pytest.mark.asyncio
+    async def test_rejected_credentials_show_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow.hass = MagicMock()
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock()  # type: ignore[method-assign]
+        with patch(_MINT, AsyncMock(side_effect=_CredentialsRejected("invalid_grant"))):
+            result = await config_flow.async_step_service_account(
+                {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+            )
+        assert result["type"] == "form"
+        assert result["step_id"] == "service_account"
+        assert "invalid_grant" in result["errors"][CONF_SERVICE_ACCOUNT]
+        config_flow.async_create_entry.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_transport_error_does_not_block(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """A network/5xx error cannot conclude the creds are bad, so it proceeds."""
+        config_flow.hass = MagicMock()
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        config_flow._notify_installed = AsyncMock()  # type: ignore[method-assign]
+        with patch(_MINT, AsyncMock(side_effect=OSError("network down"))):
+            result = await config_flow.async_step_service_account(
+                {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+            )
+        assert result["type"] == "create_entry"
+
+    @pytest.mark.asyncio
+    async def test_no_hass_skips_validation(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # Bare flow (no hass) cannot verify; it must not block entry creation.
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        result = await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+        )
+        assert result["type"] == "create_entry"
+
+    @pytest.mark.asyncio
+    async def test_migrate_rejected_credentials_shows_sa_form(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # Auto-resolved YAML service account that Google rejects falls back to the
+        # form so the user can paste a working one.
+        config_flow.hass = MagicMock()
+        config_flow._yaml_block = {
+            CONF_PROJECT_ID: "yaml-project-1",
+            CONF_SERVICE_ACCOUNT: _YAML_SA,
+        }
+        config_flow._data[CONF_MIGRATE_YAML] = True
+        config_flow._data[CONF_PROJECT_ID] = "yaml-project-1"
+        with patch(_MINT, AsyncMock(side_effect=_CredentialsRejected("invalid_grant"))):
+            result = await config_flow.async_step_service_account()
+        assert result["type"] == "form"
+        assert result["step_id"] == "service_account"
+        assert "invalid_grant" in result["errors"][CONF_SERVICE_ACCOUNT]

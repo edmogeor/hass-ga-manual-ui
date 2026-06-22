@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import time
 from typing import Any
 
 import voluptuous as vol
@@ -310,6 +311,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         unparseable account).
         """
         errors: dict[str, str] = {}
+        account: dict[str, str] | None = None
 
         if user_input is not None:
             raw = user_input.get(CONF_SERVICE_ACCOUNT, "").strip()
@@ -317,15 +319,19 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors[CONF_SERVICE_ACCOUNT] = "service_account_required"
             else:
                 try:
-                    self._data[CONF_SERVICE_ACCOUNT] = _parse_service_account_json(raw)
+                    account = _parse_service_account_json(raw)
                 except vol.Invalid as exc:
                     errors[CONF_SERVICE_ACCOUNT] = str(exc)
-                else:
-                    return await self._create_entry()
         else:
-            yaml_sa = self._yaml_service_account()
-            if yaml_sa is not None:
-                self._data[CONF_SERVICE_ACCOUNT] = yaml_sa
+            account = self._yaml_service_account()
+
+        # Verify the credentials actually work with Google before committing.
+        if account is not None and not errors:
+            error = await self._validate_service_account(account)
+            if error:
+                errors[CONF_SERVICE_ACCOUNT] = error
+            else:
+                self._data[CONF_SERVICE_ACCOUNT] = account
                 return await self._create_entry()
 
         return self.async_show_form(
@@ -344,6 +350,31 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 "guide_url": _GUIDE_URL,
             },
         )
+
+    async def _validate_service_account(self, account: dict[str, str]) -> str | None:
+        """Return an error message if Google rejects the account, else None.
+
+        Definitive rejections (bad private key, or a 4xx from Google's token
+        endpoint) block the config. Transport failures (offline, 5xx, timeout)
+        return None so a valid config is not blocked when Google is unreachable.
+        """
+        hass = getattr(self, "hass", None)
+        if hass is None:
+            return None
+        try:
+            await _mint_homegraph_token(
+                hass, account[CONF_CLIENT_EMAIL], account[CONF_PRIVATE_KEY]
+            )
+        except _CredentialsRejected as exc:
+            _LOGGER.warning("Service account rejected by Google: %s", exc)
+            return f"Google rejected the service account: {exc}"
+        except Exception as exc:
+            _LOGGER.warning(
+                "Could not verify service account (proceeding without check): %s", exc
+            )
+            return None
+        _LOGGER.debug("Service account verified against Google HomeGraph")
+        return None
 
     async def _create_entry(self) -> ConfigFlowResult:
         """Finalize the flow: notify, then create the config entry."""
@@ -366,3 +397,65 @@ _PROJECT_ID_RE = re.compile(r"[a-z][a-z0-9-]{4,28}[a-z0-9]")
 def _is_valid_project_id(value: str) -> bool:
     """Check if the string looks like a valid GCP project ID."""
     return isinstance(value, str) and _PROJECT_ID_RE.fullmatch(value) is not None
+
+
+# Google HomeGraph OAuth endpoint + scope (mirrors google_assistant/const.py).
+# Hardcoded so we do not import core GA's const module (it pulls heavy optional
+# deps); these are stable Google endpoints.
+_HOMEGRAPH_SCOPE = "https://www.googleapis.com/auth/homegraph"
+_HOMEGRAPH_TOKEN_URL = "https://accounts.google.com/o/oauth2/token"
+
+
+class _CredentialsRejected(Exception):
+    """The service account was definitively rejected (bad key, or Google 4xx)."""
+
+
+async def _mint_homegraph_token(hass: Any, client_email: str, private_key: str) -> None:
+    """Prove a service account works by minting a HomeGraph access token.
+
+    Mirrors core GA's own token flow (sign a JWT with the private key, exchange
+    it at Google's token endpoint). Raises _CredentialsRejected on a bad key or
+    a 4xx response; lets transport/5xx errors propagate so the caller can treat
+    them as 'could not verify' rather than 'invalid'.
+    """
+    import jwt
+    from homeassistant.helpers.aiohttp_client import async_get_clientsession
+
+    now = int(time.time())
+    try:
+        assertion = jwt.encode(
+            {
+                "iss": client_email,
+                "scope": _HOMEGRAPH_SCOPE,
+                "aud": _HOMEGRAPH_TOKEN_URL,
+                "iat": now,
+                "exp": now + 3600,
+            },
+            private_key,
+            algorithm="RS256",
+        )
+    except Exception as exc:
+        raise _CredentialsRejected(f"invalid private key ({exc})") from exc
+
+    session = async_get_clientsession(hass)
+    async with session.post(
+        _HOMEGRAPH_TOKEN_URL,
+        data={
+            "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+            "assertion": assertion,
+        },
+    ) as resp:
+        if 400 <= resp.status < 500:
+            raise _CredentialsRejected(await _google_token_error(resp))
+        resp.raise_for_status()
+
+
+async def _google_token_error(resp: Any) -> str:
+    """Extract a human-readable reason from Google's token error response."""
+    try:
+        body = await resp.json()
+        return (
+            body.get("error_description") or body.get("error") or f"HTTP {resp.status}"
+        )
+    except Exception:
+        return f"HTTP {resp.status}"

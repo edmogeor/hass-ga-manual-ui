@@ -334,15 +334,24 @@ function _banner(message: string): void {
 // User-facing toast notifications (HA-style)
 // ---------------------------------------------------------------------------
 
+// Show a transient HA toast via the bubbling "hass-notification" event HA's
+// notification manager listens for on <home-assistant> (same as its showToast
+// helper). Errors stay until dismissed (duration 0); notices auto-dismiss.
 function _showToast(message: string, isError: boolean): void {
   try {
-    const hass = getHass();
-    if (!hass || !hass.callService) return;
-    hass.callService("persistent_notification", "create", {
-      title: ASSISTANT_NAME + (isError ? " - Error" : " - Notice"),
-      message,
-      notification_id: "hass_ga_manual_ui_notification",
-    });
+    const root = document.querySelector("home-assistant") ?? document.body;
+    root.dispatchEvent(
+      new CustomEvent("hass-notification", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          message,
+          id: "hass_ga_manual_ui_toast",
+          dismissable: true,
+          ...(isError ? { duration: 0 } : {}),
+        },
+      }),
+    );
   } catch (e) {
     _error("Failed to show toast: " + _errorMessage(e));
   }
