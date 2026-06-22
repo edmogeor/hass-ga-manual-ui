@@ -41,9 +41,9 @@ _C_NAME = "name"
 _C_ROOM = "room"
 
 # Permissive schema for IMPORT + MIGRATE input. Everything optional;
-# project_id / service_account are accepted but ignored on apply (credentials are
-# owned by the config flow). ALLOW_EXTRA so a hand-written or older file with
-# deprecated keys still parses.
+# apply_ga_config never touches credentials, but the import handler adopts a
+# complete project_id + service_account via import_credentials(). ALLOW_EXTRA so
+# a hand-written or older file with deprecated keys still parses.
 _ENTITY_CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional(_C_EXPOSE): cv.boolean,
@@ -210,6 +210,47 @@ def apply_ga_config(
 
     _LOGGER.info("Applied GA config: %s", summary)
     return summary
+
+
+def import_credentials(
+    cfg: dict[str, Any], current: dict[str, Any] | None = None
+) -> dict[str, Any] | None:
+    """Pull adoptable credentials out of an imported config block, else None.
+
+    Only returns a value when the file carries a *complete* service account
+    (both ``client_email`` and ``private_key``); ``project_id`` rides along when
+    present. A bare ``project_id`` without a matching key is ignored, the active
+    credentials stay owned by whatever set the entry up.
+
+    When ``current`` (the entry's existing ``data``) is given, returns None if
+    the file's credentials already match it, so an import that only changes
+    settings does not re-verify against Google or trigger a needless reload.
+    """
+    sa = cfg.get(CONF_SERVICE_ACCOUNT)
+    if not isinstance(sa, dict):
+        return None
+    email = sa.get(CONF_CLIENT_EMAIL)
+    key = sa.get(CONF_PRIVATE_KEY)
+    if not email or not key:
+        return None
+    out: dict[str, Any] = {
+        CONF_SERVICE_ACCOUNT: {CONF_CLIENT_EMAIL: email, CONF_PRIVATE_KEY: key}
+    }
+    if cfg.get(CONF_PROJECT_ID):
+        out[CONF_PROJECT_ID] = cfg[CONF_PROJECT_ID]
+    if current is not None:
+        cur_sa = current.get(CONF_SERVICE_ACCOUNT) or {}
+        unchanged = (
+            cur_sa.get(CONF_CLIENT_EMAIL) == email
+            and cur_sa.get(CONF_PRIVATE_KEY) == key
+            and (
+                CONF_PROJECT_ID not in out
+                or out[CONF_PROJECT_ID] == current.get(CONF_PROJECT_ID)
+            )
+        )
+        if unchanged:
+            return None
+    return out
 
 
 def export_filename(entry: Any) -> str:

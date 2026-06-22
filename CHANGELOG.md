@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-06-22
+
+### Changed
+
+- **Importing a YAML config now adopts its credentials.** When an imported file
+  carries a complete service account, it is verified against Google and, if
+  accepted, becomes the entry's credentials (project ID and service account),
+  then the entry reloads. A definitive rejection fails the whole import before
+  anything is changed; transport failures are non-blocking, matching the config
+  flow. Imports whose credentials match the existing ones skip verification and
+  reload. Previously the service account in an imported file was ignored.
+
 ## [0.2.0] - 2026-06-22
 
 ### Added

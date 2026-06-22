@@ -374,3 +374,108 @@ def test_ga_config_schema_permissive() -> None:
         }
     )
     assert cfg["entity_config"]["light.k"]["aliases"] == ["x"]
+
+
+# ---------------------------------------------------------------------------
+# import_credentials
+# ---------------------------------------------------------------------------
+
+
+def test_import_credentials_full_sa_with_project_id() -> None:
+    out = migrate.import_credentials(
+        {
+            CONF_PROJECT_ID: "my-project",
+            CONF_SERVICE_ACCOUNT: {
+                CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+                CONF_PRIVATE_KEY: _PEM,
+            },
+        }
+    )
+    assert out == {
+        CONF_PROJECT_ID: "my-project",
+        CONF_SERVICE_ACCOUNT: {
+            CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: _PEM,
+        },
+    }
+
+
+def test_import_credentials_sa_without_project_id() -> None:
+    out = migrate.import_credentials(
+        {
+            CONF_SERVICE_ACCOUNT: {
+                CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+                CONF_PRIVATE_KEY: _PEM,
+            }
+        }
+    )
+    assert out is not None
+    assert CONF_PROJECT_ID not in out
+
+
+def test_import_credentials_incomplete_sa_returns_none() -> None:
+    # Missing private_key, and a bare project_id, are both not adoptable.
+    assert (
+        migrate.import_credentials(
+            {CONF_SERVICE_ACCOUNT: {CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com"}}
+        )
+        is None
+    )
+    assert migrate.import_credentials({CONF_PROJECT_ID: "my-project"}) is None
+    assert migrate.import_credentials({}) is None
+
+
+def test_import_credentials_unchanged_returns_none() -> None:
+    cfg = {
+        CONF_PROJECT_ID: "my-project",
+        CONF_SERVICE_ACCOUNT: {
+            CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: _PEM,
+        },
+    }
+    current = {
+        CONF_PROJECT_ID: "my-project",
+        CONF_SERVICE_ACCOUNT: {
+            CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: _PEM,
+        },
+    }
+    assert migrate.import_credentials(cfg, current) is None
+
+
+def test_import_credentials_changed_key_is_adopted() -> None:
+    cfg = {
+        CONF_SERVICE_ACCOUNT: {
+            CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: _PEM + "rotated",
+        }
+    }
+    current = {
+        CONF_SERVICE_ACCOUNT: {
+            CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: _PEM,
+        },
+    }
+    out = migrate.import_credentials(cfg, current)
+    assert out is not None
+    assert out[CONF_SERVICE_ACCOUNT][CONF_PRIVATE_KEY] == _PEM + "rotated"
+
+
+def test_import_credentials_same_sa_new_project_id_is_adopted() -> None:
+    cfg = {
+        CONF_PROJECT_ID: "new-project",
+        CONF_SERVICE_ACCOUNT: {
+            CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: _PEM,
+        },
+    }
+    current = {
+        CONF_PROJECT_ID: "old-project",
+        CONF_SERVICE_ACCOUNT: {
+            CONF_CLIENT_EMAIL: "sa@x.iam.gserviceaccount.com",
+            CONF_PRIVATE_KEY: _PEM,
+        },
+    }
+    out = migrate.import_credentials(cfg, current)
+    assert out is not None
+    assert out[CONF_PROJECT_ID] == "new-project"

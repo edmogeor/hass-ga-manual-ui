@@ -1518,7 +1518,6 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.exception("Error exporting config for ws_export_config")
             connection.send_error(msg["id"], "export_failed", str(exc))
 
-    @callback
     @websocket_api.require_admin
     @websocket_api.websocket_command(
         {
@@ -1527,19 +1526,26 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             vol.Required("yaml"): str,
         }
     )
-    def ws_import_config(
+    @websocket_api.async_response
+    async def ws_import_config(
         _hass: HomeAssistant,
         connection: websocket_api.ActiveConnection,
         msg: dict[str, Any],
     ) -> None:
-        """Parse + validate an uploaded YAML file and apply it (settings only)."""
+        """Parse + validate an uploaded YAML file and apply it.
+
+        Settings (exposure, flags, aliases) are always applied. If the file
+        carries a complete service account, it is verified against Google and
+        adopted as the entry's credentials; a definitive rejection fails the
+        whole import before anything is changed.
+        """
         current_entry = _safe_get_entry(_hass, msg["entry_id"], msg["id"], connection)
         if current_entry is None:
             return
         try:
             from homeassistant.util.yaml import parse_yaml
 
-            from .migrate import GA_CONFIG_SCHEMA, apply_ga_config
+            from .migrate import GA_CONFIG_SCHEMA, import_credentials
 
             parsed = parse_yaml(msg["yaml"])
             # Accept either a bare block or a full `google_assistant:` wrapper.
@@ -1553,12 +1559,51 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             _LOGGER.warning("Import: invalid YAML for ws_import_config: %s", exc)
             connection.send_error(msg["id"], "invalid_yaml", str(exc))
             return
+
+        # Verify credentials (if any) before mutating anything. A definitive
+        # rejection blocks the import; transport failures are non-blocking, the
+        # same leniency the config flow uses when Google is unreachable.
+        credentials = import_credentials(cfg, current_entry.data)
+        if credentials is not None:
+            from .config_flow import _CredentialsRejected, _mint_homegraph_token
+
+            sa = credentials[CONF_SERVICE_ACCOUNT]
+            try:
+                await _mint_homegraph_token(
+                    _hass, sa[CONF_CLIENT_EMAIL], sa[CONF_PRIVATE_KEY]
+                )
+            except _CredentialsRejected as exc:
+                _LOGGER.warning("Import: Google rejected the service account: %s", exc)
+                connection.send_error(
+                    msg["id"],
+                    "import_failed",
+                    f"Google rejected the service account: {exc}",
+                )
+                return
+            except Exception as exc:
+                _LOGGER.warning(
+                    "Import: could not verify service account (proceeding): %s", exc
+                )
+
         try:
+            from .migrate import apply_ga_config
+
             summary = apply_ga_config(_hass, current_entry, cfg)
-            connection.send_result(msg["id"], {"summary": summary})
         except Exception as exc:
             _LOGGER.exception("Error applying imported config for ws_import_config")
             connection.send_error(msg["id"], "import_failed", str(exc))
+            return
+
+        # Adopt the verified credentials and reload so they take effect.
+        if credentials is not None:
+            _hass.config_entries.async_update_entry(
+                current_entry,
+                data={**current_entry.data, **credentials},
+                title=credentials.get(CONF_PROJECT_ID, current_entry.title),
+            )
+            await _hass.config_entries.async_reload(current_entry.entry_id)
+
+        connection.send_result(msg["id"], {"summary": summary})
 
     commands = [
         ("ws_get_config", ws_get_config),
