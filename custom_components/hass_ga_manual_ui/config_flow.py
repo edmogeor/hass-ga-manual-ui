@@ -212,7 +212,13 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {vol.Optional(CONF_MIGRATE_YAML, default=True): bool}
             ),
-            description_placeholders={"yaml_notice": await self._yaml_notice()},
+            description_placeholders={
+                "yaml_notice": await self._yaml_notice(),
+                # guide_url is unused by the current en string but kept here so
+                # not-yet-retranslated language files (whose old "user" step still
+                # embeds {guide_url}) don't raise a frontend MISSING_VALUE error.
+                "guide_url": _GUIDE_URL,
+            },
         )
 
     async def async_step_intro(
