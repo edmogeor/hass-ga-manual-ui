@@ -12,6 +12,7 @@ from typing import Any
 
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+import yaml
 from homeassistant.core import HomeAssistant, split_entity_id
 from homeassistant.util import dt as dt_util
 
@@ -28,6 +29,28 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# YAML dumper that uses literal block style (|) for multi-line strings so
+# private keys render cleanly instead of as indented single-quoted blocks.
+try:
+    from yaml import CSafeDumper as _BaseSafeDumper
+except ImportError:
+    from yaml import SafeDumper as _BaseSafeDumper
+
+
+class _ExportDumper(_BaseSafeDumper):
+    """YAML dumper that emits multi-line strings as literal block scalars."""
+
+
+def _str_representer(dumper: yaml.Dumper, data: str) -> Any:
+    """Represent multi-line strings with | (literal block) style."""
+    if "\n" in data:
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_str(data)
+
+
+_ExportDumper.add_representer(str, _str_representer)
+
 
 # Core-GA YAML keys (google_assistant/const.py). These are our import/export wire
 # format and are stable; literals avoid a module-level core-GA import (which pulls
@@ -271,8 +294,6 @@ def export_ga_config(hass: HomeAssistant, entry: Any) -> str:
         async_should_expose,
     )
     from homeassistant.helpers import entity_registry as er
-    from homeassistant.util.yaml import dump
-
     cfg: dict[str, Any] = {CONF_PROJECT_ID: entry.data[CONF_PROJECT_ID]}
 
     # Always include service_account: core GA rejects report_state without it.
@@ -309,4 +330,10 @@ def export_ga_config(hass: HomeAssistant, entry: Any) -> str:
     # Standalone guarantee: must validate against core GA's real schema.
     GOOGLE_ASSISTANT_SCHEMA(cfg)
 
-    return dump({CORE_GA_DOMAIN: cfg})
+    return yaml.dump(
+        {CORE_GA_DOMAIN: cfg},
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+        Dumper=_ExportDumper,
+    ).replace(": null\n", ":\n")

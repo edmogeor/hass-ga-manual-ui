@@ -5,6 +5,18 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-06-22
+
+### Fixed
+
+- **Import failure toasts now show the server's reason** instead of a generic
+  "Import failed" message, and error toasts no longer vanish immediately (HA
+  treats duration 0 as "hide", so errors now use the max visible duration).
+
+- **Exported YAML private keys render cleanly.** Multi-line strings (PEM keys)
+  now use a literal block scalar (`|`) instead of an indented single-quoted
+  format, producing compact, readable YAML exports.
+
 ## [0.2.1] - 2026-06-22
 
 ### Changed
