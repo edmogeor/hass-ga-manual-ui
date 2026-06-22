@@ -12,6 +12,7 @@ from hass_ga_manual_ui.config_flow import (
 )
 from hass_ga_manual_ui.const import (
     CONF_CLIENT_EMAIL,
+    CONF_MIGRATE_YAML,
     CONF_PRIVATE_KEY,
     CONF_PROJECT_ID,
     CONF_SERVICE_ACCOUNT,
@@ -295,6 +296,74 @@ class TestConfigFlowUserStep:
         )
         await config_flow.async_step_user({CONF_PROJECT_ID: "  my-project  "})
         assert config_flow._data[CONF_PROJECT_ID] == "my-project"
+
+
+def _schema_has(result: dict, key: str) -> bool:
+    """Whether a vol marker named ``key`` is present in a form's data_schema."""
+    return any(str(k) == key for k in result["data_schema"].schema)
+
+
+class TestConfigFlowYamlMigration:
+    """The migrate-YAML checkbox appears only when a google_assistant: block exists."""
+
+    @pytest.mark.asyncio
+    async def test_no_checkbox_without_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._read_ga_yaml = AsyncMock(return_value=None)  # type: ignore[method-assign]
+        result = await config_flow.async_step_user()
+        assert not _schema_has(result, CONF_MIGRATE_YAML)
+
+    @pytest.mark.asyncio
+    async def test_checkbox_shown_with_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._read_ga_yaml = AsyncMock(  # type: ignore[method-assign]
+            return_value={CONF_PROJECT_ID: "yaml-project-1"}
+        )
+        config_flow._yaml_notice = AsyncMock(return_value="")  # type: ignore[method-assign]
+        result = await config_flow.async_step_user()
+        assert _schema_has(result, CONF_MIGRATE_YAML)
+
+    @pytest.mark.asyncio
+    async def test_project_id_prefilled_from_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._read_ga_yaml = AsyncMock(  # type: ignore[method-assign]
+            return_value={CONF_PROJECT_ID: "yaml-project-1"}
+        )
+        config_flow._yaml_notice = AsyncMock(return_value="")  # type: ignore[method-assign]
+        result = await config_flow.async_step_user()
+        marker = next(
+            k for k in result["data_schema"].schema if str(k) == CONF_PROJECT_ID
+        )
+        assert marker.default() == "yaml-project-1"
+
+    @pytest.mark.asyncio
+    async def test_migrate_flag_stored_when_yaml_present(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._read_ga_yaml = AsyncMock(  # type: ignore[method-assign]
+            return_value={CONF_PROJECT_ID: "yaml-project-1"}
+        )
+        config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
+            return_value={"type": "form", "step_id": "service_account"}
+        )
+        await config_flow.async_step_user(
+            {CONF_PROJECT_ID: "my-project-123", CONF_MIGRATE_YAML: False}
+        )
+        assert config_flow._data[CONF_MIGRATE_YAML] is False
+
+    @pytest.mark.asyncio
+    async def test_migrate_flag_absent_without_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._read_ga_yaml = AsyncMock(return_value=None)  # type: ignore[method-assign]
+        config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
+            return_value={"type": "form", "step_id": "service_account"}
+        )
+        await config_flow.async_step_user({CONF_PROJECT_ID: "my-project-123"})
+        assert CONF_MIGRATE_YAML not in config_flow._data
 
 
 class TestConfigFlowServiceAccountStep:
