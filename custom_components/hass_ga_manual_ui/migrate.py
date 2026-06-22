@@ -30,6 +30,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+
 # YAML dumper that uses literal block style (|) for multi-line strings so
 # private keys render cleanly instead of as indented single-quoted blocks.
 class _ExportDumper(yaml.SafeDumper):
