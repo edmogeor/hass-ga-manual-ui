@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nVe svém souboru configuration.yaml máte sekci `google_assistant:`. Tato integrace nyní spravuje Google Assistant a přepisuje ji, takže tuto sekci můžete odstranit.",
+  "yaml_notice": "Ve vašem configuration.yaml byla nalezena sekce `google_assistant:`. Tato integrace ji nahrazuje, takže ji můžete odstranit.",
   "install_notice": "Google Assistant (Manual) je nainstalován. Pokud se jeho karta nezobrazí v Nastavení → Hlasoví asistenti, proveďte jednorázové tvrdé obnovení prohlížeče (Ctrl+Shift+R, nebo Cmd+Shift+R na Macu). To je potřeba pouze jednou, po instalaci nebo aktualizaci.",
   "frontend": {
     "yaml_detected": "Sekce <code>google_assistant:</code> byla nalezena ve vašem <code>configuration.yaml</code> a byla deaktivována. Tato integrace nyní spravuje vaši konfiguraci Google Assistant. Sekci <code>google_assistant:</code> lze bezpečně odstranit z konfigurace YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Nepodařilo se aktivovat hlášení stavu. Zkuste integraci vypnout a znovu zapnout nebo zkontrolujte protokoly Home Assistant.",
     "report_state_disable_failed": "Nepodařilo se deaktivovat hlášení stavu. Zkuste integraci vypnout a znovu zapnout nebo zkontrolujte protokoly Home Assistant.",
     "ready_banner": "{name} je připraven, spravujte jej v Nastavení → Hlasoví asistenti.",
-    "update_available": "Je k dispozici nová verze Google Assistant (Manual). Obnovte prohlížeč (Ctrl+Shift+R, nebo Cmd+Shift+R na Macu) a načtěte ji."
+    "update_available": "Je k dispozici nová verze Google Assistant (Manual). Obnovte prohlížeč (Ctrl+Shift+R, nebo Cmd+Shift+R na Macu) a načtěte ji.",
+    "export_yaml": "Exportovat YAML",
+    "import_yaml": "Importovat YAML",
+    "import_confirm_title": "Importovat konfiguraci YAML?",
+    "import_confirm_text": "Tímto se nahradí všechna nastavení Google Assistant (a zpřístupněné entity) obsahem tohoto souboru. Aliasy se přidávají a nikdy neodstraňují.",
+    "import_confirm_warning": "Tuto akci nelze vrátit zpět.",
+    "import_success": "Konfigurace byla úspěšně importována.",
+    "import_failed": "Import konfigurace se nezdařil."
   }
 }

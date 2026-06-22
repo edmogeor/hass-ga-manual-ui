@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Kako ovo funkcioniše",
+        "description": "Ova integracija upravlja Google Assistantom i nadjačava bilo koji `google_assistant:` odeljak u vašem configuration.yaml. Kasnije možete izvesti ili uvesti samostalnu YAML konfiguraciju iz Podešavanja → Glasovni asistenti."
+      },
       "user": {
-        "title": "Google Assistant (Ručno)",
-        "description": "Unesite ID svog Google Cloud projekta.\n\nSledite vodič za podešavanje na {guide_url} (koraci 1–13). U sledećem koraku nalepite JSON ključ servisnog naloga.{yaml_notice}",
+        "title": "Migracija postojeće konfiguracije",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID projekta"
+          "migrate_yaml": "Migriraj moju postojeću YAML konfiguraciju"
         },
         "data_description": {
-          "project_id": "ID vašeg Google Cloud projekta"
+          "migrate_yaml": "Kopira izloženost, izveštavanje o stanju, PIN i aliase. Poništite oznaku da biste počeli iznova."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Ručno)",
+        "description": "Unesite ID svog Google Cloud projekta. Pogledajte vodič za podešavanje na {guide_url} (koraci 1-13).",
+        "data": {
+          "project_id": "ID projekta"
         }
       },
       "service_account": {
         "title": "Servisni nalog",
-        "description": "Nalepite sadržaj JSON ključne datoteke servisnog naloga.\n\nNapravite ga na {docs_url} (korak 12 vodiča na {guide_url}).",
+        "description": "Nalepite JSON ključ servisnog naloga. Napravite ga na {docs_url} (korak 12 vodiča).",
         "data": {
           "service_account": "JSON servisnog naloga"
-        },
-        "data_description": {
-          "service_account": "Nalepite preuzeti JSON ključ servisnog naloga"
         }
       }
     },

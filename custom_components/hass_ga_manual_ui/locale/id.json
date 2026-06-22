@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nAnda memiliki bagian `google_assistant:` di configuration.yaml. Integrasi ini sekarang mengelola Google Assistant dan menggantikannya, sehingga Anda dapat menghapus bagian tersebut.",
+  "yaml_notice": "Bagian `google_assistant:` ditemukan di configuration.yaml Anda. Integrasi ini menggantikannya, sehingga Anda dapat menghapusnya.",
   "install_notice": "Google Assistant (Manual) telah terpasang. Jika kartunya tidak muncul di Pengaturan → Asisten suara, lakukan penyegaran paksa satu kali pada browser Anda (Ctrl+Shift+R, atau Cmd+Shift+R di Mac). Ini hanya diperlukan sekali, setelah pemasangan atau pembaruan.",
   "frontend": {
     "yaml_detected": "Bagian <code>google_assistant:</code> terdeteksi di <code>configuration.yaml</code> Anda dan telah dinonaktifkan. Integrasi ini sekarang mengelola konfigurasi Google Assistant Anda. Anda dapat menghapus bagian <code>google_assistant:</code> dari konfigurasi YAML dengan aman.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Gagal mengaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
     "report_state_disable_failed": "Gagal menonaktifkan pelaporan status. Coba matikan dan nyalakan kembali integrasi, atau periksa log Home Assistant.",
     "ready_banner": "{name} siap, kelola di Pengaturan → Asisten suara.",
-    "update_available": "Versi baru Google Assistant (Manual) tersedia. Segarkan browser Anda (Ctrl+Shift+R, atau Cmd+Shift+R di Mac) untuk memuatnya."
+    "update_available": "Versi baru Google Assistant (Manual) tersedia. Segarkan browser Anda (Ctrl+Shift+R, atau Cmd+Shift+R di Mac) untuk memuatnya.",
+    "export_yaml": "Ekspor YAML",
+    "import_yaml": "Impor YAML",
+    "import_confirm_title": "Impor konfigurasi YAML?",
+    "import_confirm_text": "Ini menggantikan semua pengaturan Google Assistant (dan entitas yang dipaparkan) dengan isi file ini. Alias ditambahkan dan tidak pernah dihapus.",
+    "import_confirm_warning": "Tindakan ini tidak dapat dibatalkan.",
+    "import_success": "Konfigurasi berhasil diimpor.",
+    "import_failed": "Gagal mengimpor konfigurasi."
   }
 }

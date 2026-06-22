@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nDu har et `google_assistant:`-afsnit i din configuration.yaml. Denne integration administrerer nu Google Assistant og tilsidesætter det, så du kan fjerne det afsnit.",
+  "yaml_notice": "Der blev fundet et `google_assistant:`-afsnit i din configuration.yaml. Denne integration erstatter det, så du kan fjerne det.",
   "install_notice": "Google Assistant (Manual) er installeret. Hvis dets kort ikke vises under Indstillinger → Stemmeassistenter, skal du lave en engangs-hård-opdatering af din browser (Ctrl+Shift+R, eller Cmd+Shift+R på Mac). Dette er kun nødvendigt én gang, efter installation eller opdatering.",
   "frontend": {
     "yaml_detected": "Afsnittet <code>google_assistant:</code> blev fundet i din <code>configuration.yaml</code> og er blevet deaktiveret. Denne integration administrerer nu din Google Assistant-konfiguration. Du kan trygt fjerne afsnittet <code>google_assistant:</code> fra din YAML-konfiguration.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Kunne ikke aktivere statusrapportering. Prøv at slå integrationen fra og til igen, eller tjek Home Assistant-logfilerne.",
     "report_state_disable_failed": "Kunne ikke deaktivere statusrapportering. Prøv at slå integrationen fra og til igen, eller tjek Home Assistant-logfilerne.",
     "ready_banner": "{name} er klar, administrer det under Indstillinger → Stemmeassistenter.",
-    "update_available": "En ny version af Google Assistant (Manual) er tilgængelig. Opdater din browser (Ctrl+Shift+R, eller Cmd+Shift+R på Mac) for at indlæse den."
+    "update_available": "En ny version af Google Assistant (Manual) er tilgængelig. Opdater din browser (Ctrl+Shift+R, eller Cmd+Shift+R på Mac) for at indlæse den.",
+    "export_yaml": "Eksportér YAML",
+    "import_yaml": "Importér YAML",
+    "import_confirm_title": "Importér YAML-konfiguration?",
+    "import_confirm_text": "Dette erstatter alle indstillinger for Google Assistant (og eksponerede enheder) med indholdet af denne fil. Aliasser tilføjes og fjernes aldrig.",
+    "import_confirm_warning": "Dette kan ikke fortrydes.",
+    "import_success": "Konfigurationen blev importeret.",
+    "import_failed": "Kunne ikke importere konfigurationen."
   }
 }

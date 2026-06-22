@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nVous avez une section `google_assistant:` dans votre configuration.yaml. Cette intégration gère maintenant Google Assistant et la remplace, vous pouvez donc supprimer cette section.",
+  "yaml_notice": "Une section `google_assistant:` a été trouvée dans votre configuration.yaml. Cette intégration la remplace, vous pouvez donc la supprimer.",
   "install_notice": "Google Assistant (Manuel) est installé. Si sa carte n'apparaît pas dans Paramètres → Assistants vocaux, effectuez un rafraîchissement forcé unique de votre navigateur (Ctrl+Maj+R, ou Cmd+Maj+R sur Mac). Cela n'est nécessaire qu'une fois, après l'installation ou la mise à jour.",
   "frontend": {
     "yaml_detected": "La section <code>google_assistant:</code> a été détectée dans votre <code>configuration.yaml</code> et désactivée. Cette intégration gère maintenant votre configuration Google Assistant. Vous pouvez supprimer en toute sécurité la section <code>google_assistant:</code> de votre configuration YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Impossible d'activer les rapports d'état. Essayez de désactiver puis réactiver l'intégration, ou consultez les journaux de Home Assistant.",
     "report_state_disable_failed": "Impossible de désactiver les rapports d'état. Essayez de désactiver puis réactiver l'intégration, ou consultez les journaux de Home Assistant.",
     "ready_banner": "{name} est prêt – gérez-le dans Paramètres → Assistants vocaux.",
-    "update_available": "Une nouvelle version de Google Assistant (Manuel) est disponible. Rafraîchissez votre navigateur (Ctrl+Maj+R, ou Cmd+Maj+R sur Mac) pour la charger."
+    "update_available": "Une nouvelle version de Google Assistant (Manuel) est disponible. Rafraîchissez votre navigateur (Ctrl+Maj+R, ou Cmd+Maj+R sur Mac) pour la charger.",
+    "export_yaml": "Exporter le YAML",
+    "import_yaml": "Importer le YAML",
+    "import_confirm_title": "Importer la configuration YAML ?",
+    "import_confirm_text": "Cela remplace tous les paramètres de Google Assistant (et les entités exposées) par le contenu de ce fichier. Les alias sont ajoutés et jamais supprimés.",
+    "import_confirm_warning": "Cette action est irréversible.",
+    "import_success": "Configuration importée avec succès.",
+    "import_failed": "Échec de l'importation de la configuration."
   }
 }

@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nلديك قسم `google_assistant:` في ملف configuration.yaml. تتولى هذه التكاملة الآن إدارة مساعد Google وتتجاوز ذلك القسم، لذا يمكنك إزالته.",
+  "yaml_notice": "تم العثور على قسم `google_assistant:` في ملف configuration.yaml. تحل هذه التكاملة محله، لذا يمكنك إزالته.",
   "install_notice": "تم تثبيت Google Assistant (يدوي). إذا لم تظهر بطاقته تحت الإعدادات ← المساعدات الصوتية، قم بتحديث قسري للمتصفح لمرة واحدة (Ctrl+Shift+R، أو Cmd+Shift+R على Mac). هذا مطلوب مرة واحدة فقط، بعد التثبيت أو التحديث.",
   "frontend": {
     "yaml_detected": "تم اكتشاف قسم <code>google_assistant:</code> في ملف <code>configuration.yaml</code> وتعطيله. تتولى هذه التكاملة الآن إدارة إعدادات مساعد Google. يمكنك إزالة قسم <code>google_assistant:</code> بأمان من إعدادات YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "فشل تفعيل الإبلاغ عن الحالة. جرّب إيقاف التكاملة وإعادة تشغيلها، أو تحقق من سجلات Home Assistant.",
     "report_state_disable_failed": "فشل تعطيل الإبلاغ عن الحالة. جرّب إيقاف التكاملة وإعادة تشغيلها، أو تحقق من سجلات Home Assistant.",
     "ready_banner": "{name} جاهز، أديره من الإعدادات ← المساعدات الصوتية.",
-    "update_available": "يتوفر إصدار جديد من Google Assistant (يدوي). قم بتحديث متصفحك (Ctrl+Shift+R، أو Cmd+Shift+R على Mac) لتحميله."
+    "update_available": "يتوفر إصدار جديد من Google Assistant (يدوي). قم بتحديث متصفحك (Ctrl+Shift+R، أو Cmd+Shift+R على Mac) لتحميله.",
+    "export_yaml": "تصدير YAML",
+    "import_yaml": "استيراد YAML",
+    "import_confirm_title": "استيراد إعدادات YAML؟",
+    "import_confirm_text": "يستبدل هذا جميع إعدادات مساعد Google (والكيانات المكشوفة) بمحتوى هذا الملف. تُضاف الأسماء المستعارة ولا تُزال أبدًا.",
+    "import_confirm_warning": "لا يمكن التراجع عن هذا.",
+    "import_success": "تم استيراد الإعدادات بنجاح.",
+    "import_failed": "فشل استيراد الإعدادات."
   }
 }

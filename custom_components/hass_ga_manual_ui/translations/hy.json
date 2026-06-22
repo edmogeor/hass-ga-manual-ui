@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Ինչպես է սա աշխատում",
+        "description": "Այս ինտեգրումը կառավարում է Google Assistant-ը և վերագրում է ձեր configuration.yaml-ի ցանկացած `google_assistant:` բաժին։ Հետագայում կարող եք արտահանել կամ ներմուծել ինքնուրույն YAML կազմաձևում Կարգավորումներ → Ձայնային օգնականներ-ից։"
+      },
       "user": {
-        "title": "Google Assistant (Ձեռքով)",
-        "description": "Մուտքագրեք ձեր Google Cloud նախագծի ID-ն։\n\nHետևեք կարգավորումների ձեռնարկին {guide_url} հասցեում (1–13 քայլեր)։ Հաջորդ քայլում կտեղադրեք ձեր ծառայության հաշվի JSON բանալին։{yaml_notice}",
+        "title": "Տեղափոխել առկա կազմաձևումը",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Նախագծի ID"
+          "migrate_yaml": "Տեղափոխել իմ առկա YAML կազմաձևումը"
         },
         "data_description": {
-          "project_id": "Ձեր Google Cloud նախագծի ID-ն"
+          "migrate_yaml": "Պատճենում է բացահայտումը, վիճակի հաշվետվությունը, PIN-ը և կեղծանունները։ Հանեք նշումը՝ զրոյից սկսելու համար։"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Ձեռքով)",
+        "description": "Մուտքագրեք ձեր Google Cloud նախագծի ID-ն։ Տե՛ս կարգավորումների ձեռնարկը {guide_url} հասցեում (քայլեր 1-13)։",
+        "data": {
+          "project_id": "Նախագծի ID"
         }
       },
       "service_account": {
         "title": "Ծառայության հաշիվ",
-        "description": "Տեղադրեք ձեր ծառայության հաշվի JSON բանալու ֆայլի բովանդակությունը։\n\nՍтvorեք մեկը {docs_url} հասցեում ({guide_url}-ի ձեռնարկի 12-րդ քայլ)։",
+        "description": "Տեղադրեք ձեր ծառայության հաշվի JSON բանալին։ Ստեղծեք մեկը {docs_url} հասցեում (ձեռնարկի 12-րդ քայլ)։",
         "data": {
           "service_account": "Ծառայության հաշվի JSON"
-        },
-        "data_description": {
-          "service_account": "Տեղադրեք ձեր ներբեռնած ծառայության հաշվի JSON բանալին"
         }
       }
     },

@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Hoe dit werk",
+        "description": "Hierdie integrasie bestuur Google Assistant en oorheers enige `google_assistant:`-afdeling in jou configuration.yaml. Jy kan later 'n selfstandige YAML-konfigurasie uitvoer of invoer vanaf Instellings → Stemassistente."
+      },
       "user": {
-        "title": "Google Assistant (Handmatig)",
-        "description": "Voer jou Google Cloud-projek-ID in.\n\nVolg die opstelgids by {guide_url} (stappe 1–13). Jy sal jou diensrekening-JSON-sleutel in die volgende stap plak.{yaml_notice}",
+        "title": "Migreer bestaande konfigurasie",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projek-ID"
+          "migrate_yaml": "Migreer my bestaande YAML-konfigurasie"
         },
         "data_description": {
-          "project_id": "Jou Google Cloud-projek-ID"
+          "migrate_yaml": "Kopieer blootstelling, statusverslaggewing, PIN en aliasse. Ontmerk om vars te begin."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Handmatig)",
+        "description": "Voer jou Google Cloud-projek-ID in. Sien die opstelgids by {guide_url} (stappe 1-13).",
+        "data": {
+          "project_id": "Projek-ID"
         }
       },
       "service_account": {
         "title": "Diensrekening",
-        "description": "Plak die inhoud van jou diensrekening-JSON-sleutellêer.\n\nSkep een by {docs_url} (stap 12 van die gids by {guide_url}).",
+        "description": "Plak jou diensrekening-JSON-sleutel. Skep een by {docs_url} (gidsstap 12).",
         "data": {
           "service_account": "Diensrekening-JSON"
-        },
-        "data_description": {
-          "service_account": "Plak jou afgelaaide diensrekening-JSON-sleutel"
         }
       }
     },

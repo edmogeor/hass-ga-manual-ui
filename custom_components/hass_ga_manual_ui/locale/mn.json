@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nТаны configuration.yaml-д `google_assistant:` хэсэг байна. Энэ интеграци одоо Google Assistant-ийг удирдаж, дарж байна, тиймээс та тэр хэсгийг устгаж болно.",
+  "yaml_notice": "Таны configuration.yaml-аас `google_assistant:` хэсэг олдлоо. Энэ интеграци үүнийг орлуулдаг тул та үүнийг устгаж болно.",
   "install_notice": "Google Assistant (Гараар) суулгагдсан. Хэрэв түүний карт Тохиргоо → Дуут туслахууд хэсэгт харагдахгүй бол хөтчийн нэг удаагийн хатуу шинэчлэлт хийгээрэй (Ctrl+Shift+R, эсвэл Mac дээр Cmd+Shift+R). Энэ нь суулгасны дараа эсвэл шинэчилсний дараа зөвхөн нэг удаа шаардлагатай.",
   "frontend": {
     "yaml_detected": "Таны <code>configuration.yaml</code>-д <code>google_assistant:</code> хэсэг илэрсэн бөгөөд идэвхгүй болгосон. Энэ интеграци одоо таны Google Assistant тохиргоог удирдаж байна. Та YAML тохиргооноосоо <code>google_assistant:</code> хэсгийг аюулгүйгээр устгаж болно.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Төлөвийн тайлагналыг идэвхжүүлж чадсангүй. Интеграцийг унтраагаад дахин асаах эсвэл Home Assistant бүртгэлийг шалгана уу.",
     "report_state_disable_failed": "Төлөвийн тайлагналыг идэвхгүй болгож чадсангүй. Интеграцийг унтраагаад дахин асаах эсвэл Home Assistant бүртгэлийг шалгана уу.",
     "ready_banner": "{name} бэлэн боллоо, Тохиргоо → Дуут туслахуудад удирдана уу.",
-    "update_available": "Google Assistant (Гараар)-ын шинэ хувилбар гарсан. Үүнийг ачаалахын тулд хөтчөө шинэчилнэ үү (Ctrl+Shift+R, эсвэл Mac дээр Cmd+Shift+R)."
+    "update_available": "Google Assistant (Гараар)-ын шинэ хувилбар гарсан. Үүнийг ачаалахын тулд хөтчөө шинэчилнэ үү (Ctrl+Shift+R, эсвэл Mac дээр Cmd+Shift+R).",
+    "export_yaml": "YAML экспортлох",
+    "import_yaml": "YAML импортлох",
+    "import_confirm_title": "YAML тохиргоог импортлох уу?",
+    "import_confirm_text": "Энэ нь Google Assistant-ийн бүх тохиргоог (болон ил гаргасан нэгжүүдийг) энэ файлын агуулгаар орлуулна. Өөр нэрсийг нэмдэг бөгөөд хэзээ ч устгадаггүй.",
+    "import_confirm_warning": "Үүнийг буцаах боломжгүй.",
+    "import_success": "Тохиргоог амжилттай импортлолоо.",
+    "import_failed": "Тохиргоог импортлоход алдаа гарлаа."
   }
 }

@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Jak to funguje",
+        "description": "Tato integrace spravuje Google Assistant a přepisuje jakoukoli sekci `google_assistant:` ve vašem configuration.yaml. Samostatnou konfiguraci YAML můžete později exportovat nebo importovat z Nastavení → Hlasoví asistenti."
+      },
       "user": {
-        "title": "Google Assistant (Ruční nastavení)",
-        "description": "Zadejte ID svého projektu Google Cloud.\n\nŘiďte se průvodcem nastavením na {guide_url} (kroky 1–13). Klíč JSON účtu služby vložíte v dalším kroku.{yaml_notice}",
+        "title": "Migrace stávající konfigurace",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID projektu"
+          "migrate_yaml": "Migrovat moji stávající konfiguraci YAML"
         },
         "data_description": {
-          "project_id": "ID vašeho projektu Google Cloud"
+          "migrate_yaml": "Zkopíruje zpřístupnění, hlášení stavu, PIN a aliasy. Zrušením zaškrtnutí začnete od začátku."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Ruční nastavení)",
+        "description": "Zadejte ID svého projektu Google Cloud. Viz průvodce nastavením na {guide_url} (kroky 1-13).",
+        "data": {
+          "project_id": "ID projektu"
         }
       },
       "service_account": {
         "title": "Účet služby",
-        "description": "Vložte obsah souboru klíče JSON účtu služby.\n\nVytvořte jej na {docs_url} (krok 12 průvodce na {guide_url}).",
+        "description": "Vložte klíč JSON účtu služby. Vytvořte jej na {docs_url} (krok 12 průvodce).",
         "data": {
           "service_account": "JSON účtu služby"
-        },
-        "data_description": {
-          "service_account": "Vložte stažený klíč JSON účtu služby"
         }
       }
     },

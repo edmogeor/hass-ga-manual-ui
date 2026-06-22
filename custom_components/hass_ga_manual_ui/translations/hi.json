@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "यह कैसे काम करता है",
+        "description": "यह इंटीग्रेशन Google Assistant का प्रबंधन करता है और आपके configuration.yaml में किसी भी `google_assistant:` अनुभाग को ओवरराइड करता है। आप बाद में सेटिंग → वॉयस असिस्टेंट से एक स्वतंत्र YAML कॉन्फ़िगरेशन निर्यात या आयात कर सकते हैं।"
+      },
       "user": {
-        "title": "Google Assistant (मैन्युअल)",
-        "description": "अपना Google Cloud प्रोजेक्ट ID दर्ज करें।\n\n{guide_url} पर सेटअप गाइड का पालन करें (चरण 1–13)। आप अगले चरण में अपनी सेवा खाता JSON कुंजी चिपकाएँगे।{yaml_notice}",
+        "title": "मौजूदा कॉन्फ़िगरेशन माइग्रेट करें",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "प्रोजेक्ट ID"
+          "migrate_yaml": "मेरा मौजूदा YAML कॉन्फ़िगरेशन माइग्रेट करें"
         },
         "data_description": {
-          "project_id": "आपका Google Cloud प्रोजेक्ट ID"
+          "migrate_yaml": "एक्सपोज़र, स्टेट रिपोर्टिंग, PIN और उपनाम कॉपी करता है। नए सिरे से शुरू करने के लिए अनचेक करें।"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (मैन्युअल)",
+        "description": "अपना Google Cloud प्रोजेक्ट ID दर्ज करें। {guide_url} पर सेटअप गाइड देखें (चरण 1-13)।",
+        "data": {
+          "project_id": "प्रोजेक्ट ID"
         }
       },
       "service_account": {
         "title": "सेवा खाता",
-        "description": "अपनी सेवा खाता JSON कुंजी फ़ाइल की सामग्री चिपकाएँ।\n\n{docs_url} पर एक बनाएं ({guide_url} पर गाइड का चरण 12)।",
+        "description": "अपनी सेवा खाता JSON कुंजी चिपकाएँ। {docs_url} पर एक बनाएं (गाइड का चरण 12)।",
         "data": {
           "service_account": "सेवा खाता JSON"
-        },
-        "data_description": {
-          "service_account": "अपनी डाउनलोड की गई सेवा खाता JSON कुंजी चिपकाएँ"
         }
       }
     },

@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Cum funcționează",
+        "description": "Această integrare gestionează Google Assistant și suprascrie orice secțiune `google_assistant:` din configuration.yaml. Puteți exporta sau importa ulterior o configurație YAML independentă din Setări → Asistenți vocali."
+      },
       "user": {
-        "title": "Google Assistant (Manual)",
-        "description": "Introduceți ID-ul proiectului dvs. Google Cloud.\n\nUrmați ghidul de configurare de la {guide_url} (pașii 1–13). Veți lipi cheia JSON a contului de serviciu în pasul următor.{yaml_notice}",
+        "title": "Migrarea configurației existente",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID proiect"
+          "migrate_yaml": "Migrează configurația mea YAML existentă"
         },
         "data_description": {
-          "project_id": "ID-ul proiectului dvs. Google Cloud"
+          "migrate_yaml": "Copiază expunerea, raportarea stării, PIN-ul și aliasurile. Debifați pentru a începe de la zero."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manual)",
+        "description": "Introduceți ID-ul proiectului dvs. Google Cloud. Consultați ghidul de configurare la {guide_url} (pașii 1-13).",
+        "data": {
+          "project_id": "ID proiect"
         }
       },
       "service_account": {
         "title": "Cont de serviciu",
-        "description": "Lipiți conținutul fișierului cheie JSON al contului de serviciu.\n\nCreați unul la {docs_url} (pasul 12 din ghidul de la {guide_url}).",
+        "description": "Lipiți cheia JSON a contului de serviciu. Creați unul la {docs_url} (pasul 12 din ghid).",
         "data": {
           "service_account": "JSON cont de serviciu"
-        },
-        "data_description": {
-          "service_account": "Lipiți cheia JSON descărcată a contului de serviciu"
         }
       }
     },

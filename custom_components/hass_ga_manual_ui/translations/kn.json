@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "ಇದು ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ",
+        "description": "ಈ ಸಂಯೋಜನೆ Google Assistant ಅನ್ನು ನಿರ್ವಹಿಸುತ್ತದೆ ಮತ್ತು ನಿಮ್ಮ configuration.yaml ನಲ್ಲಿನ ಯಾವುದೇ `google_assistant:` ವಿಭಾಗವನ್ನು ಅತಿಕ್ರಮಿಸುತ್ತದೆ. ನೀವು ನಂತರ ಸೆಟ್ಟಿಂಗ್‌ಗಳು → ಧ್ವನಿ ಸಹಾಯಕರಿಂದ ಸ್ವತಂತ್ರ YAML ಸಂರಚನೆಯನ್ನು ರಫ್ತು ಅಥವಾ ಆಮದು ಮಾಡಬಹುದು."
+      },
       "user": {
-        "title": "Google Assistant (ಕೈಪಿಡಿ)",
-        "description": "ನಿಮ್ಮ Google Cloud ಯೋಜನೆ ಐಡಿ ನಮೂದಿಸಿ.\n\n{guide_url} ನಲ್ಲಿ ಸೆಟಪ್ ಮಾರ್ಗದರ್ಶಿ ಅನುಸರಿಸಿ (ಹಂತಗಳು 1–13). ಮುಂದಿನ ಹಂತದಲ್ಲಿ ನಿಮ್ಮ ಸೇವಾ ಖಾತೆ JSON ಕೀಲಿಯನ್ನು ಅಂಟಿಸುತ್ತೀರಿ.{yaml_notice}",
+        "title": "ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ ಸಂರಚನೆಯನ್ನು ವರ್ಗಾಯಿಸಿ",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ಯೋಜನೆ ಐಡಿ"
+          "migrate_yaml": "ನನ್ನ ಅಸ್ತಿತ್ವದಲ್ಲಿರುವ YAML ಸಂರಚನೆಯನ್ನು ವರ್ಗಾಯಿಸಿ"
         },
         "data_description": {
-          "project_id": "ನಿಮ್ಮ Google Cloud ಯೋಜನೆ ಐಡಿ"
+          "migrate_yaml": "ಬಹಿರಂಗ, ಸ್ಥಿತಿ ವರದಿ, PIN ಮತ್ತು ಅಲಿಯಾಸ್‌ಗಳನ್ನು ನಕಲಿಸುತ್ತದೆ. ಹೊಸದಾಗಿ ಪ್ರಾರಂಭಿಸಲು ಗುರುತು ತೆಗೆಯಿರಿ."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (ಕೈಪಿಡಿ)",
+        "description": "ನಿಮ್ಮ Google Cloud ಯೋಜನೆ ಐಡಿ ನಮೂದಿಸಿ. {guide_url} ನಲ್ಲಿ ಸೆಟಪ್ ಮಾರ್ಗದರ್ಶಿ ನೋಡಿ (ಹಂತಗಳು 1-13).",
+        "data": {
+          "project_id": "ಯೋಜನೆ ಐಡಿ"
         }
       },
       "service_account": {
         "title": "ಸೇವಾ ಖಾತೆ",
-        "description": "ನಿಮ್ಮ ಸೇವಾ ಖಾತೆ JSON ಕೀಲಿ ಫೈಲ್ ವಿಷಯಗಳನ್ನು ಅಂಟಿಸಿ.\n\n{docs_url} ನಲ್ಲಿ ಒಂದನ್ನು ರಚಿಸಿ ({guide_url} ನಲ್ಲಿ ಮಾರ್ಗದರ್ಶಿಯ ಹಂತ 12).",
+        "description": "ನಿಮ್ಮ ಸೇವಾ ಖಾತೆ JSON ಕೀಲಿಯನ್ನು ಅಂಟಿಸಿ. {docs_url} ನಲ್ಲಿ ಒಂದನ್ನು ರಚಿಸಿ (ಮಾರ್ಗದರ್ಶಿಯ ಹಂತ 12).",
         "data": {
           "service_account": "ಸೇವಾ ಖಾತೆ JSON"
-        },
-        "data_description": {
-          "service_account": "ಡೌನ್‌ಲೋಡ್ ಮಾಡಿದ ಸೇವಾ ಖಾತೆ JSON ಕೀಲಿಯನ್ನು ಅಂಟಿಸಿ"
         }
       }
     },

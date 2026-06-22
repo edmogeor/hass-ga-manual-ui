@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "كيف يعمل هذا",
+        "description": "تتولى هذه التكاملة إدارة مساعد Google وتتجاوز أي قسم `google_assistant:` في ملف configuration.yaml. يمكنك لاحقًا تصدير أو استيراد إعدادات YAML مستقلة من الإعدادات ← المساعدات الصوتية."
+      },
       "user": {
-        "title": "مساعد Google (يدوي)",
-        "description": "أدخل معرّف مشروع Google Cloud الخاص بك.\n\nاتّبع دليل الإعداد على {guide_url} (الخطوات 1–13). ستلصق مفتاح JSON لحساب الخدمة في الخطوة التالية.{yaml_notice}",
+        "title": "ترحيل الإعدادات الحالية",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "معرّف المشروع"
+          "migrate_yaml": "ترحيل إعدادات YAML الحالية الخاصة بي"
         },
         "data_description": {
-          "project_id": "معرّف مشروع Google Cloud الخاص بك"
+          "migrate_yaml": "ينسخ الكشف وإبلاغ الحالة ورمز PIN والأسماء المستعارة. ألغِ التحديد للبدء من جديد."
+        }
+      },
+      "credentials": {
+        "title": "مساعد Google (يدوي)",
+        "description": "أدخل معرّف مشروع Google Cloud الخاص بك. راجع دليل الإعداد على {guide_url} (الخطوات 1-13).",
+        "data": {
+          "project_id": "معرّف المشروع"
         }
       },
       "service_account": {
         "title": "حساب الخدمة",
-        "description": "الصق محتوى ملف مفتاح JSON لحساب الخدمة.\n\nأنشئ واحدًا على {docs_url} (الخطوة 12 من الدليل على {guide_url}).",
+        "description": "الصق مفتاح JSON لحساب الخدمة. أنشئ واحدًا على {docs_url} (الخطوة 12 من الدليل).",
         "data": {
           "service_account": "JSON حساب الخدمة"
-        },
-        "data_description": {
-          "service_account": "الصق مفتاح JSON لحساب الخدمة الذي قمت بتنزيله"
         }
       }
     },

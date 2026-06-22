@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "როგორ მუშაობს",
+        "description": "ეს ინტეგრაცია მართავს Google Assistant-ს და ანაცვლებს ნებისმიერ `google_assistant:` სექციას თქვენს configuration.yaml-ში. მოგვიანებით შეგიძლიათ დამოუკიდებელი YAML კონფიგურაციის ექსპორტი ან იმპორტი პარამეტრები → ხმოვანი ასისტენტები-დან."
+      },
       "user": {
-        "title": "Google Assistant (ხელით)",
-        "description": "შეიყვანეთ თქვენი Google Cloud პროექტის ID.\n\nმიჰყევით დაყენების სახელმძღვანელოს {guide_url}-ზე (ნაბიჯები 1–13). შემდეგ ნაბიჯში ჩასვამთ სერვისული ანგარიშის JSON გასაღებს.{yaml_notice}",
+        "title": "არსებული კონფიგურაციის მიგრაცია",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "პროექტის ID"
+          "migrate_yaml": "ჩემი არსებული YAML კონფიგურაციის მიგრაცია"
         },
         "data_description": {
-          "project_id": "თქვენი Google Cloud პროექტის ID"
+          "migrate_yaml": "აკოპირებს ხილვადობას, მდგომარეობის ანგარიშგებას, PIN-ს და მეტსახელებს. მოხსენით მონიშვნა თავიდან დასაწყებად."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (ხელით)",
+        "description": "შეიყვანეთ თქვენი Google Cloud პროექტის ID. იხილეთ დაყენების სახელმძღვანელო {guide_url}-ზე (ნაბიჯები 1-13).",
+        "data": {
+          "project_id": "პროექტის ID"
         }
       },
       "service_account": {
         "title": "სერვისული ანგარიში",
-        "description": "ჩასვით სერვისული ანგარიშის JSON გასაღების ფაილის შინაარსი.\n\nშექმენით ერთი {docs_url}-ზე ({guide_url}-ის სახელმძღვანელოს 12-ე ნაბიჯი).",
+        "description": "ჩასვით თქვენი სერვისული ანგარიშის JSON გასაღები. შექმენით ერთი {docs_url}-ზე (სახელმძღვანელოს მე-12 ნაბიჯი).",
         "data": {
           "service_account": "სერვისული ანგარიშის JSON"
-        },
-        "data_description": {
-          "service_account": "ჩასვით გადმოწერილი სერვისული ანგარიშის JSON გასაღები"
         }
       }
     },

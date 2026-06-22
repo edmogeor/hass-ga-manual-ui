@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Com funciona",
+        "description": "Aquesta integració gestiona Google Assistant i substitueix qualsevol secció `google_assistant:` del vostre configuration.yaml. Més endavant podeu exportar o importar una configuració YAML independent des de Configuració → Assistents de veu."
+      },
       "user": {
-        "title": "Google Assistant (Manual)",
-        "description": "Introduïu l'ID del vostre projecte de Google Cloud.\n\nSeguiu la guia de configuració a {guide_url} (passos 1–13). Enganxareu la clau JSON del compte de servei al pas següent.{yaml_notice}",
+        "title": "Migra la configuració existent",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID del projecte"
+          "migrate_yaml": "Migra la meva configuració YAML existent"
         },
         "data_description": {
-          "project_id": "L'ID del vostre projecte de Google Cloud"
+          "migrate_yaml": "Copia l'exposició, l'informe d'estat, el PIN i els àlies. Desmarqueu per començar de nou."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manual)",
+        "description": "Introduïu l'ID del vostre projecte de Google Cloud. Consulteu la guia de configuració a {guide_url} (passos 1-13).",
+        "data": {
+          "project_id": "ID del projecte"
         }
       },
       "service_account": {
         "title": "Compte de servei",
-        "description": "Enganxeu el contingut del fitxer de clau JSON del compte de servei.\n\nCreeu-ne un a {docs_url} (pas 12 de la guia a {guide_url}).",
+        "description": "Enganxeu la clau JSON del compte de servei. Creeu-ne un a {docs_url} (pas 12 de la guia).",
         "data": {
           "service_account": "JSON del compte de servei"
-        },
-        "data_description": {
-          "service_account": "Enganxeu la clau JSON del compte de servei baixada"
         }
       }
     },

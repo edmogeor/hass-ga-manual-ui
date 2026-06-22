@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Kā tas darbojas",
+        "description": "Šī integrācija pārvalda Google Assistant un ignorē jebkuru `google_assistant:` sadaļu jūsu configuration.yaml. Vēlāk varat eksportēt vai importēt atsevišķu YAML konfigurāciju no sadaļas Iestatījumi → Balss asistenti."
+      },
       "user": {
-        "title": "Google Assistant (Manuāls)",
-        "description": "Ievadiet sava Google Cloud projekta ID.\n\nIevērojiet iestatīšanas rokasgrāmatu vietnē {guide_url} (1.–13. darbība). Nākamajā darbībā ielīmēsiet sava pakalpojuma konta JSON atslēgu.{yaml_notice}",
+        "title": "Migrēt esošo konfigurāciju",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekta ID"
+          "migrate_yaml": "Migrēt manu esošo YAML konfigurāciju"
         },
         "data_description": {
-          "project_id": "Jūsu Google Cloud projekta ID"
+          "migrate_yaml": "Kopē atklāšanu, stāvokļa ziņošanu, PIN un aizstājvārdus. Noņemiet atzīmi, lai sāktu no jauna."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuāls)",
+        "description": "Ievadiet sava Google Cloud projekta ID. Skatiet iestatīšanas rokasgrāmatu vietnē {guide_url} (1.-13. darbība).",
+        "data": {
+          "project_id": "Projekta ID"
         }
       },
       "service_account": {
         "title": "Pakalpojuma konts",
-        "description": "Ielīmējiet sava pakalpojuma konta JSON atslēgas faila saturu.\n\nIzveido to vietnē {docs_url} ({guide_url} rokasgrāmatas 12. darbība).",
+        "description": "Ielīmējiet sava pakalpojuma konta JSON atslēgu. Izveidojiet to vietnē {docs_url} (rokasgrāmatas 12. darbība).",
         "data": {
           "service_account": "Pakalpojuma konta JSON"
-        },
-        "data_description": {
-          "service_account": "Ielīmējiet lejupielādēto pakalpojuma konta JSON atslēgu"
         }
       }
     },

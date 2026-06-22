@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "این چگونه کار می‌کند",
+        "description": "این یکپارچه‌سازی دستیار Google را مدیریت می‌کند و هر بخش `google_assistant:` در configuration.yaml شما را نادیده می‌گیرد. می‌توانید بعداً یک پیکربندی YAML مستقل را از تنظیمات ← دستیارهای صوتی صادر یا وارد کنید."
+      },
       "user": {
-        "title": "دستیار Google (دستی)",
-        "description": "شناسه پروژه Google Cloud خود را وارد کنید.\n\nراهنمای راه‌اندازی را در {guide_url} دنبال کنید (مراحل ۱–۱۳). کلید JSON حساب سرویس را در مرحله بعد وارد خواهید کرد.{yaml_notice}",
+        "title": "انتقال پیکربندی موجود",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "شناسه پروژه"
+          "migrate_yaml": "انتقال پیکربندی YAML موجود من"
         },
         "data_description": {
-          "project_id": "شناسه پروژه Google Cloud شما"
+          "migrate_yaml": "میزان دسترسی، گزارش وضعیت، پین و نام‌های مستعار را کپی می‌کند. برای شروع از نو، تیک را بردارید."
+        }
+      },
+      "credentials": {
+        "title": "دستیار Google (دستی)",
+        "description": "شناسه پروژه Google Cloud خود را وارد کنید. راهنمای راه‌اندازی را در {guide_url} ببینید (مراحل ۱-۱۳).",
+        "data": {
+          "project_id": "شناسه پروژه"
         }
       },
       "service_account": {
         "title": "حساب سرویس",
-        "description": "محتوای فایل کلید JSON حساب سرویس را وارد کنید.\n\nیکی را در {docs_url} بسازید (مرحله ۱۲ راهنمای {guide_url}).",
+        "description": "کلید JSON حساب سرویس خود را وارد کنید. یکی را در {docs_url} بسازید (مرحله ۱۲ راهنما).",
         "data": {
           "service_account": "JSON حساب سرویس"
-        },
-        "data_description": {
-          "service_account": "کلید JSON حساب سرویس دانلود شده را وارد کنید"
         }
       }
     },

@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nTenés una sección `google_assistant:` en tu configuration.yaml. Esta integración ahora gestiona Google Assistant y la reemplaza, por lo que podés eliminar esa sección.",
+  "yaml_notice": "Se encontró una sección `google_assistant:` en tu configuration.yaml. Esta integración la reemplaza, así que podés eliminarla.",
   "install_notice": "Google Assistant (Manual) está instalado. Si su tarjeta no aparece en Configuración → Asistentes de voz, hacé un refresco forzado único del navegador (Ctrl+Mayús+R, o Cmd+Mayús+R en Mac). Esto solo es necesario una vez, después de instalar o actualizar.",
   "frontend": {
     "yaml_detected": "Se detectó la sección <code>google_assistant:</code> en tu <code>configuration.yaml</code> y se desactivó. Esta integración ahora gestiona tu configuración de Google Assistant. Podés eliminar de forma segura la sección <code>google_assistant:</code> de tu configuración YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Error al activar el reporte de estado. Intentá desactivar y reactivar la integración, o revisá los registros de Home Assistant.",
     "report_state_disable_failed": "Error al desactivar el reporte de estado. Intentá desactivar y reactivar la integración, o revisá los registros de Home Assistant.",
     "ready_banner": "{name} está listo, gestionalo en Configuración → Asistentes de voz.",
-    "update_available": "Hay una nueva versión de Google Assistant (Manual) disponible. Actualizá tu navegador (Ctrl+Mayús+R, o Cmd+Mayús+R en Mac) para cargarla."
+    "update_available": "Hay una nueva versión de Google Assistant (Manual) disponible. Actualizá tu navegador (Ctrl+Mayús+R, o Cmd+Mayús+R en Mac) para cargarla.",
+    "export_yaml": "Exportar YAML",
+    "import_yaml": "Importar YAML",
+    "import_confirm_title": "¿Importar configuración YAML?",
+    "import_confirm_text": "Esto reemplaza todos los ajustes de Google Assistant (y las entidades expuestas) con el contenido de este archivo. Los alias se agregan y nunca se eliminan.",
+    "import_confirm_warning": "Esto no se puede deshacer.",
+    "import_success": "Configuración importada correctamente.",
+    "import_failed": "No se pudo importar la configuración."
   }
 }

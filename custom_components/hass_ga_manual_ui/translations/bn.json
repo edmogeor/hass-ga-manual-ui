@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "এটি কীভাবে কাজ করে",
+        "description": "এই ইন্টিগ্রেশন Google Assistant পরিচালনা করে এবং আপনার configuration.yaml-এর যেকোনো `google_assistant:` বিভাগ ওভাররাইড করে। আপনি পরে সেটিংস → ভয়েস অ্যাসিস্ট্যান্ট থেকে একটি স্বতন্ত্র YAML কনফিগারেশন এক্সপোর্ট বা ইমপোর্ট করতে পারেন।"
+      },
       "user": {
-        "title": "Google Assistant (ম্যানুয়াল)",
-        "description": "আপনার Google Cloud প্রকল্প আইডি লিখুন।\n\n{guide_url}-এ সেটআপ গাইড অনুসরণ করুন (ধাপ ১–১৩)। আপনি পরবর্তী ধাপে আপনার সার্ভিস অ্যাকাউন্ট JSON কী পেস্ট করবেন।{yaml_notice}",
+        "title": "বিদ্যমান কনফিগারেশন মাইগ্রেট করুন",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "প্রকল্প আইডি"
+          "migrate_yaml": "আমার বিদ্যমান YAML কনফিগারেশন মাইগ্রেট করুন"
         },
         "data_description": {
-          "project_id": "আপনার Google Cloud প্রকল্প আইডি"
+          "migrate_yaml": "এক্সপোজার, স্টেট রিপোর্টিং, PIN এবং উপনাম কপি করে। নতুন করে শুরু করতে আনচেক করুন।"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (ম্যানুয়াল)",
+        "description": "আপনার Google Cloud প্রকল্প আইডি লিখুন। {guide_url}-এ সেটআপ গাইড দেখুন (ধাপ ১-১৩)।",
+        "data": {
+          "project_id": "প্রকল্প আইডি"
         }
       },
       "service_account": {
         "title": "সার্ভিস অ্যাকাউন্ট",
-        "description": "আপনার সার্ভিস অ্যাকাউন্ট JSON কী ফাইলের বিষয়বস্তু পেস্ট করুন।\n\n{docs_url}-এ একটি তৈরি করুন ({guide_url}-এ গাইডের ধাপ ১২)।",
+        "description": "আপনার সার্ভিস অ্যাকাউন্ট JSON কী পেস্ট করুন। {docs_url}-এ একটি তৈরি করুন (গাইডের ধাপ ১২)।",
         "data": {
           "service_account": "সার্ভিস অ্যাকাউন্ট JSON"
-        },
-        "data_description": {
-          "service_account": "আপনার ডাউনলোড করা সার্ভিস অ্যাকাউন্ট JSON কী পেস্ট করুন"
         }
       }
     },

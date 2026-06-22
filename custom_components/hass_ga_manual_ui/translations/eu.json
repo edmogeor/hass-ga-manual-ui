@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Nola funtzionatzen duen",
+        "description": "Integrazio honek Google Assistant kudeatzen du eta zure configuration.yaml fitxategiko edozein `google_assistant:` atal gainidazten du. Geroago YAML konfigurazio independente bat esportatu edo inportatu dezakezu Ezarpenak → Ahots-laguntzaileak ataletik."
+      },
       "user": {
-        "title": "Google Assistant (Eskuzkoa)",
-        "description": "Sartu zure Google Cloud proiektuaren IDa.\n\nJarraitu konfigurazio-gida {guide_url} helbidean (1–13 urratsak). Hurrengo urratsean zure zerbitzu-kontuaren JSON gakoa itsatsiko duzu.{yaml_notice}",
+        "title": "Migratu lehendik dagoen konfigurazioa",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Proiektuaren IDa"
+          "migrate_yaml": "Migratu nire lehendik dagoen YAML konfigurazioa"
         },
         "data_description": {
-          "project_id": "Zure Google Cloud proiektuaren IDa"
+          "migrate_yaml": "Esposizioa, egoeraren berri ematea, PINa eta aliasak kopiatzen ditu. Kendu marka hasieratik hasteko."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Eskuzkoa)",
+        "description": "Sartu zure Google Cloud proiektuaren IDa. Ikusi konfigurazio-gida {guide_url} helbidean (1-13 urratsak).",
+        "data": {
+          "project_id": "Proiektuaren IDa"
         }
       },
       "service_account": {
         "title": "Zerbitzu-kontua",
-        "description": "Itsatsi zure zerbitzu-kontuaren JSON gako-fitxategiaren edukia.\n\nSortu bat {docs_url} helbidean ({guide_url} gidako 12. urratsa).",
+        "description": "Itsatsi zure zerbitzu-kontuaren JSON gakoa. Sortu bat {docs_url} helbidean (gidaren 12. urratsa).",
         "data": {
           "service_account": "Zerbitzu-kontuaren JSON"
-        },
-        "data_description": {
-          "service_account": "Itsatsi deskargatutako zerbitzu-kontuaren JSON gakoa"
         }
       }
     },

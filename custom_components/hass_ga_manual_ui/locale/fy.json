@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nJo hawwe in `google_assistant:`-seksje yn jo configuration.yaml. Dizze yntegraasje beheart no Google Assistant en oerskriuwt it, sadat jo dy seksje fuortsmite kinne.",
+  "yaml_notice": "In `google_assistant:`-seksje is fûn yn jo configuration.yaml. Dizze yntegraasje ferfangt it, sadat jo it fuortsmite kinne.",
   "install_notice": "Google Assistant (Manual) is ynstallearre. As syn kaart net ferskynt ûnder Ynstellingen → Spraakadjutanten, doch dan in ienmalige hurde fernijing fan jo blêder (Ctrl+Shift+R, of Cmd+Shift+R op Mac). Dit is mar ien kear nedich, nei ynstallaasje of fernijing.",
   "frontend": {
     "yaml_detected": "De seksje <code>google_assistant:</code> is fûn yn jo <code>configuration.yaml</code> en is útskeakele. Dizze yntegraasje beheard no jo Google Assistant-konfiguraasje. Jo kinne de seksje <code>google_assistant:</code> feilich fuortsmite út jo YAML-konfiguraasje.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Statusrapportaazje ynskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
     "report_state_disable_failed": "Statusrapportaazje útskeakelje mislearre. Besykje de yntegraasje út en wer yn te skeakeljen, of kontrolearje de Home Assistant-logboeken.",
     "ready_banner": "{name} is klear, behearsje it fia Ynstellingen → Spraakadjutanten.",
-    "update_available": "In nije ferzje fan Google Assistant (Manual) is beskikber. Fernij jo blêder (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om it te laden."
+    "update_available": "In nije ferzje fan Google Assistant (Manual) is beskikber. Fernij jo blêder (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om it te laden.",
+    "export_yaml": "YAML eksportearje",
+    "import_yaml": "YAML ymportearje",
+    "import_confirm_title": "YAML-konfiguraasje ymportearje?",
+    "import_confirm_text": "Dit ferfangt alle ynstellingen foar Google Assistant (en bleatstelde entiteiten) troch de ynhâld fan dit bestân. Aliassen wurde tafoege en nea fuortsmiten.",
+    "import_confirm_warning": "Dit kin net ûngedien makke wurde.",
+    "import_success": "Konfiguraasje mei sukses ymportearre.",
+    "import_failed": "Koe konfiguraasje net ymportearje."
   }
 }

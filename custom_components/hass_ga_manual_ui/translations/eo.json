@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Kiel ĉi tio funkcias",
+        "description": "Ĉi tiu integriĝo administras Google Assistant kaj anstataŭas ajnan `google_assistant:`-sekcion en via configuration.yaml. Vi povas poste eksporti aŭ importi memstaran YAML-agordon el Agordoj → Voĉasistantoj."
+      },
       "user": {
-        "title": "Google Assistant (Mana)",
-        "description": "Enigu vian Google Cloud projektan ID-on.\n\nSekvu la agordgvidon ĉe {guide_url} (paŝoj 1–13). Vi algluu vian servo-konton JSON-ŝlosilon en la sekva paŝo.{yaml_notice}",
+        "title": "Migri ekzistantan agordon",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekta ID"
+          "migrate_yaml": "Migri mian ekzistantan YAML-agordon"
         },
         "data_description": {
-          "project_id": "Via Google Cloud projekta ID"
+          "migrate_yaml": "Kopias malkaŝon, statraporton, PIN-on kaj kromnomojn. Malmarku por komenci denove."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Mana)",
+        "description": "Enigu vian Google Cloud projektan ID-on. Vidu la agordgvidon ĉe {guide_url} (paŝoj 1-13).",
+        "data": {
+          "project_id": "Projekta ID"
         }
       },
       "service_account": {
         "title": "Servo-konto",
-        "description": "Algluu la enhavon de via servo-konta JSON-ŝlosila dosiero.\n\nKreu unu ĉe {docs_url} (paŝo 12 de la gvido ĉe {guide_url}).",
+        "description": "Algluu vian servo-konton JSON-ŝlosilon. Kreu unu ĉe {docs_url} (gvida paŝo 12).",
         "data": {
           "service_account": "Servo-konto JSON"
-        },
-        "data_description": {
-          "service_account": "Algluu vian elŝutitan servo-konton JSON-ŝlosilon"
         }
       }
     },

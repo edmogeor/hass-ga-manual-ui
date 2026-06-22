@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nMae gennych adran `google_assistant:` yn eich configuration.yaml. Mae'r integreiddiad hwn bellach yn rheoli Google Assistant ac yn ei ddiystyru, felly gallwch dynnu'r adran honno.",
+  "yaml_notice": "Canfuwyd adran `google_assistant:` yn eich configuration.yaml. Mae'r integreiddiad hwn yn ei disodli, felly gallwch ei thynnu.",
   "install_notice": "Mae Google Assistant (Manual) wedi'i osod. Os nad yw ei gerdyn yn ymddangos o dan Gosodiadau → Cynorthwywyr Llais, gwnewch adnewyddiad caled unwaith yn unig i'ch porwr (Ctrl+Shift+R, neu Cmd+Shift+R ar Mac). Dim ond unwaith y mae angen hyn, ar ôl gosod neu ddiweddaru.",
   "frontend": {
     "yaml_detected": "Canfuwyd yr adran <code>google_assistant:</code> yn eich <code>configuration.yaml</code> ac mae wedi'i analluogi. Mae'r integreiddiad hwn bellach yn rheoli eich ffurfweddiad Google Assistant. Gallwch dynnu'r adran <code>google_assistant:</code> yn ddiogel o'ch ffurfweddiad YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Methodd alluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
     "report_state_disable_failed": "Methodd analluogi adrodd ar gyflwr. Ceisiwch ddiffodd a throi'r integreiddiad ymlaen eto, neu gwiriwch logiau Home Assistant.",
     "ready_banner": "Mae {name} yn barod, rheolwch ef o dan Gosodiadau → Cynorthwywyr Llais.",
-    "update_available": "Mae fersiwn newydd o Google Assistant (Manual) ar gael. Adnewyddwch eich porwr (Ctrl+Shift+R, neu Cmd+Shift+R ar Mac) i'w lwytho."
+    "update_available": "Mae fersiwn newydd o Google Assistant (Manual) ar gael. Adnewyddwch eich porwr (Ctrl+Shift+R, neu Cmd+Shift+R ar Mac) i'w lwytho.",
+    "export_yaml": "Allforio YAML",
+    "import_yaml": "Mewnforio YAML",
+    "import_confirm_title": "Mewnforio ffurfweddiad YAML?",
+    "import_confirm_text": "Mae hyn yn disodli pob gosodiad ar gyfer Google Assistant (a'r endidau a amlygwyd) gyda chynnwys y ffeil hon. Ychwanegir arallenwau ac ni chânt eu tynnu byth.",
+    "import_confirm_warning": "Ni ellir dadwneud hyn.",
+    "import_success": "Mewnforiwyd y ffurfweddiad yn llwyddiannus.",
+    "import_failed": "Methwyd â mewnforio'r ffurfweddiad."
   }
 }

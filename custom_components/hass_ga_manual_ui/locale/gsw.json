@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nDu hesch en `google_assistant:`-Abschnitt in dim configuration.yaml. Die Integration verwaltet jetzt Google Assistant und überschreibt en, so chasch du die Abschnitt entferne.",
+  "yaml_notice": "In dim configuration.yaml isch en `google_assistant:`-Abschnitt gfunde worde. Die Integration ersetzt en, so chasch en entferne.",
   "install_notice": "Google Assistant (Manual) isch installiert. Wänn d'Chartä nöd under Iischtellige → Schpraachassischtänte erschynt, mach än ei-moligä Hart-Neiladä vo dim Browser (Ctrl+Shift+R, odr Cmd+Shift+R uf Mac). Da isch nur ei Mol nötig, noch dä Installation odr Aktualisierig.",
   "frontend": {
     "yaml_detected": "De Abschnitt <code>google_assistant:</code> isch in dim <code>configuration.yaml</code> gfunde worde und isch deaktiviert worde. Die Integration verwaltet jetzt dini Google Assistant-Konfiguration. Du chasch de Abschnitt <code>google_assistant:</code> sicher us dimere YAML-Konfiguration entferne.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Statusmäldig aktiviere isch gscheitert. Versuechi d'Integration uus- und wider iizschalte, oder überprüef d'Home Assistant-Protokolle.",
     "report_state_disable_failed": "Statusmäldig deaktiviere isch gscheitert. Versuechi d'Integration uus- und wider iizschalte, oder überprüef d'Home Assistant-Protokolle.",
     "ready_banner": "{name} isch parat – verwalte s'under Istellunge → Sprachassistente.",
-    "update_available": "Ä nöii Version vo Google Assistant (Manual) isch verfüegbar. Lad dim Browser nöi (Ctrl+Shift+R, odr Cmd+Shift+R uf Mac) zum s'lade."
+    "update_available": "Ä nöii Version vo Google Assistant (Manual) isch verfüegbar. Lad dim Browser nöi (Ctrl+Shift+R, odr Cmd+Shift+R uf Mac) zum s'lade.",
+    "export_yaml": "YAML exportiere",
+    "import_yaml": "YAML importiere",
+    "import_confirm_title": "YAML-Konfiguration importiere?",
+    "import_confirm_text": "Das ersetzt alli Istellunge für Google Assistant (und freigäbeni Entitäte) mit em Inhalt vo dere Datei. Aliase werde hinzuegfüegt und nie entfernt.",
+    "import_confirm_warning": "Das cha nöd rückgängig gmacht werde.",
+    "import_success": "Konfiguration erfolgrich importiert.",
+    "import_failed": "Konfiguration het nöd chönne importiert werde."
   }
 }

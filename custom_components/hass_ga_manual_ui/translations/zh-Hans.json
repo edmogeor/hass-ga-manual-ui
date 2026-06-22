@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "工作原理",
+        "description": "此集成管理 Google Assistant，并覆盖您 configuration.yaml 中的任何 `google_assistant:` 配置节。稍后您可以在设置 → 语音助手中导出或导入独立的 YAML 配置。"
+      },
       "user": {
-        "title": "Google Assistant（手动配置）",
-        "description": "请输入您的 Google Cloud 项目 ID。\n\n请按照 {guide_url} 上的设置指南操作（第 1–13 步）。您将在下一步中粘贴服务账号 JSON 密钥。{yaml_notice}",
+        "title": "迁移现有配置",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "项目 ID"
+          "migrate_yaml": "迁移我现有的 YAML 配置"
         },
         "data_description": {
-          "project_id": "您的 Google Cloud 项目 ID"
+          "migrate_yaml": "复制公开设置、状态上报、PIN 码和别名。取消勾选可重新开始。"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant（手动配置）",
+        "description": "请输入您的 Google Cloud 项目 ID。请参阅 {guide_url} 上的设置指南（第 1-13 步）。",
+        "data": {
+          "project_id": "项目 ID"
         }
       },
       "service_account": {
         "title": "服务账号",
-        "description": "请粘贴服务账号 JSON 密钥文件的内容。\n\n请在 {docs_url} 上创建一个（参照 {guide_url} 指南的第 12 步）。",
+        "description": "请粘贴您的服务账号 JSON 密钥。请在 {docs_url} 上创建一个（指南第 12 步）。",
         "data": {
           "service_account": "服务账号 JSON"
-        },
-        "data_description": {
-          "service_account": "粘贴您下载的服务账号 JSON 密钥"
         }
       }
     },

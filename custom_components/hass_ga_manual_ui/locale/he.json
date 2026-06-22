@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nיש לך קטע `google_assistant:` בקובץ configuration.yaml שלך. האינטגרציה הזו מנהלת כעת את Google Assistant ומחליפה אותו, כך שתוכל להסיר את אותו קטע.",
+  "yaml_notice": "נמצא קטע `google_assistant:` בקובץ configuration.yaml שלך. האינטגרציה הזו מחליפה אותו, כך שתוכל להסיר אותו.",
   "install_notice": "Google Assistant (ידני) מותקן. אם הכרטיס שלו לא מופיע תחת הגדרות ← עוזרים קוליים, בצע רענון קשיח חד-פעמי של הדפדפן (Ctrl+Shift+R, או Cmd+Shift+R ב-Mac). זה נדרש פעם אחת בלבד, לאחר התקנה או עדכון.",
   "frontend": {
     "yaml_detected": "הקטע <code>google_assistant:</code> זוהה בקובץ <code>configuration.yaml</code> שלך והושבת. האינטגרציה הזו מנהלת כעת את תצורת Google Assistant שלך. ניתן להסיר בבטחה את הקטע <code>google_assistant:</code> מתצורת ה-YAML שלך.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "הפעלת דיווח הסטטוס נכשלה. נסה לכבות ולהפעיל מחדש את האינטגרציה, או בדוק את יומני Home Assistant.",
     "report_state_disable_failed": "השבתת דיווח הסטטוס נכשלה. נסה לכבות ולהפעיל מחדש את האינטגרציה, או בדוק את יומני Home Assistant.",
     "ready_banner": "{name} מוכן, נהל אותו בהגדרות ← עוזרים קוליים.",
-    "update_available": "גרסה חדשה של Google Assistant (ידני) זמינה. רענן את הדפדפן (Ctrl+Shift+R, או Cmd+Shift+R ב-Mac) כדי לטעון אותה."
+    "update_available": "גרסה חדשה של Google Assistant (ידני) זמינה. רענן את הדפדפן (Ctrl+Shift+R, או Cmd+Shift+R ב-Mac) כדי לטעון אותה.",
+    "export_yaml": "ייצוא YAML",
+    "import_yaml": "ייבוא YAML",
+    "import_confirm_title": "לייבא תצורת YAML?",
+    "import_confirm_text": "פעולה זו מחליפה את כל ההגדרות של Google Assistant (והישויות החשופות) בתוכן הקובץ הזה. כינויים מתווספים ולעולם אינם מוסרים.",
+    "import_confirm_warning": "לא ניתן לבטל פעולה זו.",
+    "import_success": "התצורה יובאה בהצלחה.",
+    "import_failed": "ייבוא התצורה נכשל."
   }
 }

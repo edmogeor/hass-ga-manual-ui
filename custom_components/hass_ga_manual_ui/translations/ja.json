@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "仕組み",
+        "description": "このインテグレーションは Google Assistant を管理し、configuration.yaml 内のあらゆる `google_assistant:` セクションを上書きします。後で設定 → 音声アシスタントから、単体の YAML 設定をエクスポートまたはインポートできます。"
+      },
       "user": {
-        "title": "Google Assistant（手動設定）",
-        "description": "Google Cloud プロジェクト ID を入力してください。\n\n{guide_url} のセットアップガイドに従ってください（手順 1〜13）。次の手順でサービスアカウントの JSON キーを貼り付けます。{yaml_notice}",
+        "title": "既存の設定を移行",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "プロジェクト ID"
+          "migrate_yaml": "既存の YAML 設定を移行する"
         },
         "data_description": {
-          "project_id": "Google Cloud プロジェクト ID"
+          "migrate_yaml": "公開設定、状態レポート、PIN、エイリアスをコピーします。最初からやり直す場合はチェックを外してください。"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant（手動設定）",
+        "description": "Google Cloud プロジェクト ID を入力してください。{guide_url} のセットアップガイドを参照してください（手順 1〜13）。",
+        "data": {
+          "project_id": "プロジェクト ID"
         }
       },
       "service_account": {
         "title": "サービスアカウント",
-        "description": "サービスアカウントの JSON キーファイルの内容を貼り付けてください。\n\n{docs_url} で作成できます（{guide_url} のガイドの手順 12）。",
+        "description": "サービスアカウントの JSON キーを貼り付けてください。{docs_url} で作成できます（ガイドの手順 12）。",
         "data": {
           "service_account": "サービスアカウント JSON"
-        },
-        "data_description": {
-          "service_account": "ダウンロードしたサービスアカウントの JSON キーを貼り付けてください"
         }
       }
     },

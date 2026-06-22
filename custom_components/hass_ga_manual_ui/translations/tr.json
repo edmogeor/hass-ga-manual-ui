@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Bu nasıl çalışır",
+        "description": "Bu entegrasyon Google Assistant'ı yönetir ve configuration.yaml dosyanızdaki tüm `google_assistant:` bölümlerini geçersiz kılar. Daha sonra Ayarlar → Sesli asistanlar bölümünden bağımsız bir YAML yapılandırmasını dışa veya içe aktarabilirsiniz."
+      },
       "user": {
-        "title": "Google Assistant (Manuel)",
-        "description": "Google Cloud proje kimliğinizi girin.\n\n{guide_url} adresindeki kurulum kılavuzunu takip edin (1–13. adımlar). Hizmet hesabı JSON anahtarınızı bir sonraki adımda yapıştıracaksınız.{yaml_notice}",
+        "title": "Mevcut yapılandırmayı taşı",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Proje Kimliği"
+          "migrate_yaml": "Mevcut YAML yapılandırmamı taşı"
         },
         "data_description": {
-          "project_id": "Google Cloud proje kimliğiniz"
+          "migrate_yaml": "Maruz bırakmayı, durum raporlamasını, PIN'i ve takma adları kopyalar. Sıfırdan başlamak için işareti kaldırın."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuel)",
+        "description": "Google Cloud proje kimliğinizi girin. {guide_url} adresindeki kurulum kılavuzuna bakın (1-13. adımlar).",
+        "data": {
+          "project_id": "Proje Kimliği"
         }
       },
       "service_account": {
         "title": "Hizmet Hesabı",
-        "description": "Hizmet hesabı JSON anahtar dosyanızın içeriğini yapıştırın.\n\n{docs_url} adresinde bir tane oluşturun ({guide_url} adresindeki kılavuzun 12. adımı).",
+        "description": "Hizmet hesabı JSON anahtarınızı yapıştırın. {docs_url} adresinde bir tane oluşturun (kılavuzun 12. adımı).",
         "data": {
           "service_account": "Hizmet hesabı JSON"
-        },
-        "data_description": {
-          "service_account": "İndirdiğiniz hizmet hesabı JSON anahtarını yapıştırın"
         }
       }
     },

@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Så här fungerar det",
+        "description": "Den här integrationen hanterar Google Assistant och åsidosätter alla `google_assistant:`-avsnitt i din configuration.yaml. Du kan senare exportera eller importera en fristående YAML-konfiguration från Inställningar → Röstassistenter."
+      },
       "user": {
-        "title": "Google Assistant (Manuell)",
-        "description": "Ange ditt Google Cloud-projekt-ID.\n\nFollj installationsguiden på {guide_url} (steg 1–13). Du klistrar in din JSON-nyckel för tjänstkontot i nästa steg.{yaml_notice}",
+        "title": "Migrera befintlig konfiguration",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekt-ID"
+          "migrate_yaml": "Migrera min befintliga YAML-konfiguration"
         },
         "data_description": {
-          "project_id": "Ditt Google Cloud-projekt-ID"
+          "migrate_yaml": "Kopierar exponering, statusrapportering, PIN och alias. Avmarkera för att börja om från början."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Ange ditt Google Cloud-projekt-ID. Se installationsguiden på {guide_url} (steg 1-13).",
+        "data": {
+          "project_id": "Projekt-ID"
         }
       },
       "service_account": {
         "title": "Tjänstkonto",
-        "description": "Klistra in innehållet i din JSON-nyckelfil för tjänstkontot.\n\nSkapa en på {docs_url} (steg 12 i guiden på {guide_url}).",
+        "description": "Klistra in din JSON-nyckel för tjänstkontot. Skapa en på {docs_url} (steg 12 i guiden).",
         "data": {
           "service_account": "Tjänstkonto JSON"
-        },
-        "data_description": {
-          "service_account": "Klistra in din nedladdade JSON-nyckel för tjänstkontot"
         }
       }
     },

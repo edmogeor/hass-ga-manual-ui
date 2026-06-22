@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nVocê tem uma seção `google_assistant:` no seu configuration.yaml. Esta integração agora gerencia o Google Assistant e substitui essa seção, então você pode removê-la.",
+  "yaml_notice": "Uma seção `google_assistant:` foi encontrada no seu configuration.yaml. Esta integração a substitui, então você pode removê-la.",
   "install_notice": "O Google Assistant (Manual) está instalado. Se o cartão não aparecer em Configurações → Assistentes de voz, faça uma atualização forçada única do navegador (Ctrl+Shift+R ou Cmd+Shift+R no Mac). Isso só é necessário uma vez, após instalar ou atualizar.",
   "frontend": {
     "yaml_detected": "A seção <code>google_assistant:</code> foi detectada no seu <code>configuration.yaml</code> e foi desativada. Esta integração agora gerencia sua configuração do Google Assistant. Você pode remover com segurança a seção <code>google_assistant:</code> da sua configuração YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Falha ao ativar o relatório de estado. Tente desligar e ligar a integração, ou verifique os logs do Home Assistant.",
     "report_state_disable_failed": "Falha ao desativar o relatório de estado. Tente desligar e ligar a integração, ou verifique os logs do Home Assistant.",
     "ready_banner": "{name} está pronto, gerencie em Configurações → Assistentes de voz.",
-    "update_available": "Está disponível uma nova versão do Google Assistant (Manual). Atualize o navegador (Ctrl+Shift+R ou Cmd+Shift+R no Mac) para carregá-la."
+    "update_available": "Está disponível uma nova versão do Google Assistant (Manual). Atualize o navegador (Ctrl+Shift+R ou Cmd+Shift+R no Mac) para carregá-la.",
+    "export_yaml": "Exportar YAML",
+    "import_yaml": "Importar YAML",
+    "import_confirm_title": "Importar configuração YAML?",
+    "import_confirm_text": "Isto substitui todas as configurações do Google Assistant (e entidades expostas) pelo conteúdo deste arquivo. Os aliases são adicionados e nunca removidos.",
+    "import_confirm_warning": "Isto não pode ser desfeito.",
+    "import_success": "Configuração importada com sucesso.",
+    "import_failed": "Falha ao importar a configuração."
   }
 }

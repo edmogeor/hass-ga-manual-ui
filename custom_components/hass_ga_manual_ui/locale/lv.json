@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nJūsu configuration.yaml failā ir sadaļa `google_assistant:`. Šī integrācija tagad pārvalda Google Assistant un to ignorē, tāpēc varat noņemt šo sadaļu.",
+  "yaml_notice": "Jūsu configuration.yaml tika atrasta `google_assistant:` sadaļa. Šī integrācija to aizstāj, tāpēc varat to noņemt.",
   "install_notice": "Google Assistant (Manual) ir instalēts. Ja tā kartīte neparādās sadaļā Iestatījumi → Balss asistenti, veiciet vienreizēju pārlūka piespiedu atsvaidzināšanu (Ctrl+Shift+R vai Cmd+Shift+R Mac datorā). Tas nepieciešams tikai vienreiz, pēc instalēšanas vai atjaunināšanas.",
   "frontend": {
     "yaml_detected": "Sadaļa <code>google_assistant:</code> tika atrasta jūsu <code>configuration.yaml</code> failā un ir atspējota. Šī integrācija tagad pārvalda jūsu Google Assistant konfigurāciju. Varat droši noņemt sadaļu <code>google_assistant:</code> no YAML konfigurācijas.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Neizdevās iespējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
     "report_state_disable_failed": "Neizdevās atspējot statusa ziņošanu. Mēģiniet izslēgt un ieslēgt integrāciju vai skatiet Home Assistant žurnālus.",
     "ready_banner": "{name} ir gatavs, pārvaldiet to sadaļā Iestatījumi → Balss asistenti.",
-    "update_available": "Ir pieejama jauna Google Assistant (Manual) versija. Atsvaidziniet pārlūku (Ctrl+Shift+R vai Cmd+Shift+R Mac datorā), lai to ielādētu."
+    "update_available": "Ir pieejama jauna Google Assistant (Manual) versija. Atsvaidziniet pārlūku (Ctrl+Shift+R vai Cmd+Shift+R Mac datorā), lai to ielādētu.",
+    "export_yaml": "Eksportēt YAML",
+    "import_yaml": "Importēt YAML",
+    "import_confirm_title": "Importēt YAML konfigurāciju?",
+    "import_confirm_text": "Tas aizstāj visus Google Assistant iestatījumus (un atklātās entītijas) ar šī faila saturu. Aizstājvārdi tiek pievienoti un nekad netiek noņemti.",
+    "import_confirm_warning": "Šo darbību nevar atsaukt.",
+    "import_success": "Konfigurācija veiksmīgi importēta.",
+    "import_failed": "Neizdevās importēt konfigurāciju."
   }
 }

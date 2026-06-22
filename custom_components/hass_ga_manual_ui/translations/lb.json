@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Wéi dat funktionéiert",
+        "description": "Dës Integratioun verwaltet Google Assistant an iwwerschreift all `google_assistant:`-Sektioun an dengem configuration.yaml. Du kanns méi spéit eng eegestänneg YAML-Konfiguratioun ënner Astellungen → Sproochassisteenten exportéieren oder importéieren."
+      },
       "user": {
-        "title": "Google Assistant (Manuell)",
-        "description": "Gitt deng Google Cloud Projet-ID an.\n\nFolleg der Astellungsguide op {guide_url} (Schrëtt 1–13). Du wäerts de JSON-Schlëssel vum Servicekonto am nächste Schrëtt aklappen.{yaml_notice}",
+        "title": "Bestoend Konfiguratioun migréieren",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projet-ID"
+          "migrate_yaml": "Meng bestoend YAML-Konfiguratioun migréieren"
         },
         "data_description": {
-          "project_id": "Deng Google Cloud Projet-ID"
+          "migrate_yaml": "Kopéiert d'Verëffentlechung, d'Statusmeldung, de PIN an d'Aliasen. Ofwielen fir nei unzefänken."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Gitt deng Google Cloud Projet-ID an. Kuck den Astellungsguide op {guide_url} (Schrëtt 1-13).",
+        "data": {
+          "project_id": "Projet-ID"
         }
       },
       "service_account": {
         "title": "Servicekonto",
-        "description": "Klapp den Inhalt vun dengem Servicekonto JSON-Schlësseldatei an.\n\nErstell eng op {docs_url} (Schrëtt 12 vum Guide op {guide_url}).",
+        "description": "Klapp de JSON-Schlëssel vun dengem Servicekonto an. Erstell eng op {docs_url} (Guide-Schrëtt 12).",
         "data": {
           "service_account": "Servicekonto JSON"
-        },
-        "data_description": {
-          "service_account": "Klapp de runnergeluede Servicekonto JSON-Schlëssel an"
         }
       }
     },

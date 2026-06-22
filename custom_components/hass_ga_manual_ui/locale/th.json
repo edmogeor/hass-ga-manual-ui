@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nคุณมีส่วน `google_assistant:` ใน configuration.yaml การรวมระบบนี้จัดการ Google Assistant แล้วและแทนที่มัน คุณสามารถลบส่วนนั้นได้",
+  "yaml_notice": "พบส่วน `google_assistant:` ใน configuration.yaml ของคุณ การรวมระบบนี้แทนที่มัน คุณจึงสามารถลบออกได้",
   "install_notice": "ติดตั้ง Google Assistant (กำหนดเอง) แล้ว หากการ์ดไม่ปรากฏใน การตั้งค่า → ผู้ช่วยเสียง ให้รีเฟรชเบราว์เซอร์แบบฮาร์ดหนึ่งครั้ง (Ctrl+Shift+R หรือ Cmd+Shift+R บน Mac) ซึ่งจำเป็นเพียงครั้งเดียว หลังติดตั้งหรืออัปเดต",
   "frontend": {
     "yaml_detected": "ตรวจพบส่วน <code>google_assistant:</code> ใน <code>configuration.yaml</code> ของคุณและถูกปิดใช้งานแล้ว การรวมระบบนี้จัดการการกำหนดค่า Google Assistant ของคุณแล้ว คุณสามารถลบส่วน <code>google_assistant:</code> ออกจากการกำหนดค่า YAML ได้อย่างปลอดภัย",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "ไม่สามารถเปิดใช้งานการรายงานสถานะ ลองปิดและเปิดการรวมระบบใหม่ หรือตรวจสอบบันทึก Home Assistant",
     "report_state_disable_failed": "ไม่สามารถปิดใช้งานการรายงานสถานะ ลองปิดและเปิดการรวมระบบใหม่ หรือตรวจสอบบันทึก Home Assistant",
     "ready_banner": "{name} พร้อมแล้ว จัดการได้ที่ การตั้งค่า → ผู้ช่วยเสียง",
-    "update_available": "มี Google Assistant (กำหนดเอง) เวอร์ชันใหม่พร้อมใช้งาน รีเฟรชเบราว์เซอร์ของคุณ (Ctrl+Shift+R หรือ Cmd+Shift+R บน Mac) เพื่อโหลด"
+    "update_available": "มี Google Assistant (กำหนดเอง) เวอร์ชันใหม่พร้อมใช้งาน รีเฟรชเบราว์เซอร์ของคุณ (Ctrl+Shift+R หรือ Cmd+Shift+R บน Mac) เพื่อโหลด",
+    "export_yaml": "ส่งออก YAML",
+    "import_yaml": "นำเข้า YAML",
+    "import_confirm_title": "นำเข้าการกำหนดค่า YAML หรือไม่?",
+    "import_confirm_text": "การดำเนินการนี้จะแทนที่การตั้งค่าทั้งหมดของ Google Assistant (และเอนทิตีที่เปิดเผย) ด้วยเนื้อหาของไฟล์นี้ นามแฝงจะถูกเพิ่มและไม่มีการลบออก",
+    "import_confirm_warning": "การดำเนินการนี้ไม่สามารถยกเลิกได้",
+    "import_success": "นำเข้าการกำหนดค่าสำเร็จแล้ว",
+    "import_failed": "นำเข้าการกำหนดค่าไม่สำเร็จ"
   }
 }
