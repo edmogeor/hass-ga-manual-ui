@@ -1697,13 +1697,6 @@ function buildCard(): HTMLElement | null {
     const body = document.createElement("div");
     body.className = "card-content";
 
-    const desc = document.createElement("p");
-    desc.textContent =
-      (hass?.localize("ui.panel.config.cloud.account.google.info") || "")
-        .replace(/\s*Cloud\b/g, "") ||
-      "With the Google Assistant integration for Home Assistant, you'll be able to control all your Home Assistant devices via any Google Assistant-enabled device.";
-    body.appendChild(desc);
-
     const yamlAlert = document.createElement("ha-alert");
     yamlAlert.setAttribute("alert-type", "info");
     yamlAlert.style.display = "none";
@@ -1712,6 +1705,13 @@ function buildCard(): HTMLElement | null {
       yamlAlert.innerHTML = t("yaml_detected");
     });
     body.appendChild(yamlAlert);
+
+    const desc = document.createElement("p");
+    desc.textContent =
+      (hass?.localize("ui.panel.config.cloud.account.google.info") || "")
+        .replace(/\s*Cloud\b/g, "") ||
+      "With the Google Assistant integration for Home Assistant, you'll be able to control all your Home Assistant devices via any Google Assistant-enabled device.";
+    body.appendChild(desc);
 
     const settingsRows: HTMLElement[] = [];
     let reportStateSwitch: HTMLElement | null = null;
