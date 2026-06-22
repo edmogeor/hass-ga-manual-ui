@@ -476,10 +476,11 @@ function _confirmDialog(title: string, text: string): Promise<boolean> {
   });
 }
 
-// Self-rendered confirmation styled with HA theme variables and ha-button (which
-// is always defined - the card uses it). Used when HA's dialog-box is not loaded
-// yet, so we never drop to the browser's native confirm. Resolves true/false;
-// backdrop click, Escape, and Cancel all resolve false.
+// Self-rendered confirmation styled with HA's own dialog theme tokens (surface
+// background, border radius, elevation, scrim, content padding, spacing) and
+// ha-button (always defined - the card uses it). Used when HA's dialog-box is
+// not loaded yet, so we never drop to the browser's native confirm. Resolves
+// true/false; backdrop click, Escape, and Cancel all resolve false.
 function _haThemedConfirm(title: string, text: string): Promise<boolean> {
   const hass = getHass();
   return new Promise<boolean>((resolve) => {
@@ -487,28 +488,41 @@ function _haThemedConfirm(title: string, text: string): Promise<boolean> {
     overlay.setAttribute("data-ga-confirm-overlay", "");
     overlay.style.cssText =
       "position:fixed;inset:0;z-index:1000;display:flex;align-items:center;" +
-      "justify-content:center;background:rgba(0,0,0,0.5)";
+      "justify-content:center;" +
+      "background:var(--mdc-dialog-scrim-color,rgba(0,0,0,0.5))";
 
+    // Same theme tokens HA's ha-dialog surface uses (surface bg, radius,
+    // elevation, content padding) so it tracks the active theme, not hardcoded.
     const surface = document.createElement("div");
     surface.style.cssText =
-      "background:var(--ha-card-background,var(--card-background-color,#fff));" +
+      "background:var(--ha-dialog-surface-background," +
+      "var(--card-background-color,#fff));" +
       "color:var(--primary-text-color,#212121);" +
-      "border-radius:var(--ha-card-border-radius,12px);" +
-      "box-shadow:0 8px 24px rgba(0,0,0,0.4);max-width:400px;width:90%;" +
-      "padding:24px;box-sizing:border-box";
+      "border-radius:var(--ha-dialog-border-radius," +
+      "var(--ha-border-radius-3xl,28px));" +
+      "box-shadow:var(--dialog-box-shadow," +
+      "var(--wa-shadow-l,0 8px 24px rgba(0,0,0,0.4)));" +
+      "max-width:min(var(--ha-dialog-width-sm,320px),90vw);width:100%;" +
+      "padding:var(--dialog-content-padding,var(--ha-space-6,24px));" +
+      "box-sizing:border-box";
 
     const heading = document.createElement("h2");
     heading.textContent = title;
-    heading.style.cssText = "margin:0 0 12px;font-size:1.25rem;font-weight:500";
+    heading.style.cssText =
+      "margin:0 0 var(--ha-space-3,12px);" +
+      "font-size:var(--ha-font-size-2xl,1.5rem);" +
+      "font-weight:var(--ha-font-weight-normal,400);" +
+      "line-height:var(--ha-line-height-condensed,1.2)";
 
     const body = document.createElement("p");
     body.textContent = text;
     body.style.cssText =
-      "margin:0 0 24px;color:var(--secondary-text-color,#727272);line-height:1.5";
+      "margin:0 0 var(--ha-space-6,24px);color:var(--primary-text-color,#212121);" +
+      "line-height:var(--ha-line-height-normal,1.5)";
 
     const buttons = document.createElement("div");
     buttons.style.cssText =
-      "display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap";
+      "display:flex;justify-content:flex-end;gap:var(--ha-space-2,8px);flex-wrap:wrap";
 
     const finish = (result: boolean) => {
       window.removeEventListener("keydown", onKey, true);
