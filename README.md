@@ -109,6 +109,9 @@ section at runtime** so the two never conflict.
 
 Removing the integration also **deletes all Google Assistant configuration** (project ID, service account, PIN, exposure settings, entity aliases, and per-entity 2FA overrides). If you reinstall later, you'll need to reconfigure everything from scratch.
 
+> [!TIP]
+> Before uninstalling, back up your settings: from the Google Assistant card in **Settings → Voice assistants**, use **Export YAML** to save a standalone config file. After reinstalling, you can restore it with **Import YAML**.
+
 ## License
 
 MIT
