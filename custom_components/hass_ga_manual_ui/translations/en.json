@@ -8,27 +8,21 @@
           "migrate_yaml": "Migrate my existing YAML configuration"
         },
         "data_description": {
-          "migrate_yaml": "Copy exposure, state reporting, security PIN, and aliases from your existing google_assistant: YAML into this integration, once, on first start. Leave unchecked to start fresh and ignore the YAML."
+          "migrate_yaml": "Copies exposure, state reporting, PIN, and aliases. Uncheck to start fresh."
         }
       },
       "credentials": {
         "title": "Google Assistant (Manual)",
-        "description": "Enter your Google Cloud project ID.\n\nFollow the setup guide at {guide_url} (steps 1-13). You'll paste your service account JSON key in the next step.",
+        "description": "Enter your Google Cloud project ID. See the setup guide at {guide_url} (steps 1-13).",
         "data": {
           "project_id": "Project ID"
-        },
-        "data_description": {
-          "project_id": "Your Google Cloud project ID"
         }
       },
       "service_account": {
-        "title": "Service Account",
-        "description": "Paste your service account JSON key file contents.\n\nCreate one at {docs_url} (step 12 of the guide at {guide_url}).",
+        "title": "Service account",
+        "description": "Paste your service account JSON key. Create one at {docs_url} (guide step 12).",
         "data": {
           "service_account": "Service account JSON"
-        },
-        "data_description": {
-          "service_account": "Paste your downloaded service account JSON key"
         }
       }
     },
