@@ -137,6 +137,7 @@ interface LocaleTable {
   import_yaml: string;
   import_confirm_title: string;
   import_confirm_text: string;
+  import_confirm_warning: string;
   import_success: string;
   import_failed: string;
 }
@@ -170,7 +171,8 @@ const EN_STRINGS: LocaleTable = {
   import_confirm_title: "Import YAML configuration?",
   import_confirm_text:
     "This replaces the current exposure and settings for Google Assistant (Manual) " +
-    "with the contents of the file. Aliases are added, never removed. This cannot be undone.",
+    "with the contents of the file. Aliases are added, never removed.",
+  import_confirm_warning: "This cannot be undone.",
   import_success: "Configuration imported successfully.",
   import_failed: "Failed to import configuration.",
 };
@@ -421,9 +423,12 @@ function _onImportClick(): void {
       const file = input.files?.[0];
       if (!file) return;
       const yaml = await file.text();
-      if (!(await _confirmDialog(t("import_confirm_title"), t("import_confirm_text")))) {
-        return;
-      }
+      const confirmed = await _confirmDialog(
+        t("import_confirm_title"),
+        t("import_confirm_text"),
+        t("import_confirm_warning"),
+      );
+      if (!confirmed) return;
       const hass = getHass();
       if (!hass?.callWS) return;
       await _withEntryRetry((entryId) =>
@@ -459,7 +464,11 @@ function _ensureConfirmStyle(): void {
 // uses them on this page. One consistent dialog every time, with no dependency
 // on HA's lazy-loaded dialog-box and no native window.confirm fallback. Resolves
 // true on confirm; Escape, backdrop click, and Cancel resolve false.
-function _confirmDialog(title: string, text: string): Promise<boolean> {
+function _confirmDialog(
+  title: string,
+  text: string,
+  warning?: string,
+): Promise<boolean> {
   const hass = getHass();
   _ensureConfirmStyle();
   return new Promise<boolean>((resolve) => {
@@ -484,6 +493,18 @@ function _confirmDialog(title: string, text: string): Promise<boolean> {
     body.textContent = text;
     body.style.cssText =
       "margin:0 0 var(--ha-space-6,24px);line-height:var(--ha-line-height-normal,1.5)";
+
+    // Optional emphasized warning on its own line (HA medium weight).
+    let warningEl: HTMLParagraphElement | null = null;
+    if (warning) {
+      body.style.marginBottom = "var(--ha-space-2,8px)";
+      warningEl = document.createElement("p");
+      warningEl.textContent = warning;
+      warningEl.style.cssText =
+        "margin:0 0 var(--ha-space-6,24px);" +
+        "font-weight:var(--ha-font-weight-medium,500);" +
+        "line-height:var(--ha-line-height-normal,1.5)";
+    }
 
     const actions = document.createElement("div");
     actions.style.cssText =
@@ -516,7 +537,9 @@ function _confirmDialog(title: string, text: string): Promise<boolean> {
     confirmBtn.addEventListener("click", () => finish(true));
 
     actions.append(cancelBtn, confirmBtn);
-    card.append(heading, body, actions);
+    card.append(heading, body);
+    if (warningEl) card.appendChild(warningEl);
+    card.appendChild(actions);
     dlg.appendChild(card);
     // Escape fires "cancel" on a modal dialog; backdrop click targets the dialog.
     dlg.addEventListener("cancel", (e) => {
