@@ -254,6 +254,7 @@ function _wsErrorMessage(err: unknown): string {
 
 let _entryId: string | null = null;
 let _entryIdPromise: Promise<string> | null = null;
+let _entryMissing = false; // true when the server confirms no config entry exists
 let _gaManualEnabled = true;
 // Captured reference to HA's voiceAssistants map (from data/expose.ts) the first
 // time our Object.keys interceptor sees it. Needed so we can resolve our
@@ -724,6 +725,7 @@ function _primeVoiceAssistantsMap(): void {
 function _invalidateEntryId(): void {
   _entryId = null;
   _entryIdPromise = null;
+  _entryMissing = false;
 }
 
 // Run a WS call against the resolved entry_id; on a "config entry not found"
@@ -773,12 +775,9 @@ async function _fetchEntryId(): Promise<string> {
     }
     return result.entry_id;
   } catch (err: unknown) {
-    _error(
-      "Failed to get entry_id from server: " +
-        _wsErrorMessage(err) +
-        ". " +
-        "Add the integration via Settings → Devices & Services → " +
-        "Add Integration → Google Assistant (Manual).",
+    _debug(
+      "No config entry found: " +
+        _wsErrorMessage(err),
     );
     throw err;
   }
@@ -1970,10 +1969,15 @@ async function refreshCardState(
 
 // Inject the card into a ha-config-voice-assistants-assistants element.
 // Idempotent - safe to call at any time (lifecycle hooks, DOM scans, observers).
-function injectCardInto(el: AssistantsPageElement): void {
+async function injectCardInto(el: AssistantsPageElement): Promise<void> {
   if (!el) return;
 
   try {
+    // If no config entry exists, don't inject the card. The flag is set when
+    // getEntryId() fails and cleared when the entry cache is invalidated
+    // (e.g. the user re-adds the integration so we retry on next injection).
+    if (_entryMissing) return;
+
     const root = el.shadowRoot || (el as unknown as HTMLElement);
     const content = root.querySelector<HTMLElement>(".content");
     if (!content) {
@@ -2016,6 +2020,23 @@ function injectCardInto(el: AssistantsPageElement): void {
     }
 
     _info("Injecting card into " + el.nodeName);
+
+    // Resolve the entry before building the card so we don't inject a
+    // card when no config entry exists.
+    if (!_entryId) {
+      try {
+        await getEntryId();
+      } catch {
+        _entryMissing = true;
+        return;
+      }
+    }
+
+    // Re-check after the await: a concurrent call may have inserted the
+    // card while we were resolving the entry.
+    if (content.querySelector("[data-ga-manual-card]")) {
+      return;
+    }
 
     const card = buildCard();
     if (!card) {

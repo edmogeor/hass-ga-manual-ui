@@ -120,19 +120,21 @@ describe("Google Assistant Manual frontend", () => {
   });
 
   describe("card injection", () => {
-    it("injects a card into ha-config-voice-assistants-assistants", () => {
+    it("injects a card into ha-config-voice-assistants-assistants", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       expect(card).not.toBeNull();
     });
 
-    it("card is an ha-card with outlined attribute", () => {
+    it("card is an ha-card with outlined attribute", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       expect(card).not.toBeNull();
@@ -140,10 +142,11 @@ describe("Google Assistant Manual frontend", () => {
       expect(card!.hasAttribute("outlined")).toBe(true);
     });
 
-    it("card contains the assistant name in header", () => {
+    it("card contains the assistant name in header", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       const header = card!.querySelector("h1.card-header");
@@ -151,10 +154,11 @@ describe("Google Assistant Manual frontend", () => {
       expect(header!.textContent).toContain("Google Assistant (Manual)");
     });
 
-    it("card header has our bundled brand icon", () => {
+    it("card header has our bundled brand icon", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       const icon = card!.querySelector<HTMLImageElement>("img[data-ga-manual]");
@@ -163,10 +167,11 @@ describe("Google Assistant Manual frontend", () => {
       expect(icon!.getAttribute("src")).toBe("/hass_ga_manual_ui/brand/icon.png");
     });
 
-    it("card body contains settings rows", () => {
+    it("card body contains settings rows", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       const body = card!.querySelector(".card-content");
@@ -176,20 +181,22 @@ describe("Google Assistant Manual frontend", () => {
       expect(rows.length).toBe(3);
     });
 
-    it("card has an expose new entities switch", () => {
+    it("card has an expose new entities switch", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       const switches = card!.querySelectorAll("ha-md-list-item ha-switch");
       expect(switches.length).toBeGreaterThanOrEqual(1);
     });
 
-    it("card has a description paragraph", () => {
+    it("card has a description paragraph", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       const desc = card!.querySelector(".card-content p");
@@ -197,10 +204,11 @@ describe("Google Assistant Manual frontend", () => {
       expect(desc!.textContent!.length).toBeGreaterThan(0);
     });
 
-    it("card has a PIN input for secure devices", () => {
+    it("card has a PIN input for secure devices", async () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flushMicrotasks();
 
       const card = document.querySelector("[data-ga-manual-card]");
       const inputs = card!.querySelectorAll("ha-input, input");
@@ -459,12 +467,13 @@ describe("Google Assistant Manual frontend", () => {
   });
 
   describe("assistant card idempotency", () => {
-    it("evaluating twice does not inject duplicate cards", () => {
+    it("evaluating twice does not inject duplicate cards", async () => {
       const hass = createMockHass();
       setupDom(hass);
 
       evalFrontend();
       evalFrontend();
+      await flushMicrotasks();
 
       const cards = document.querySelectorAll("[data-ga-manual-card]");
       expect(cards.length).toBe(1);
@@ -866,9 +875,10 @@ describe("Google Assistant Manual frontend", () => {
       };
     }
 
-    it("renders Export and Import buttons in the card actions", () => {
+    it("renders Export and Import buttons in the card actions", async () => {
       setupDom(createMockHass());
       evalFrontend();
+      await flush();
       const { exportBtn, importBtn } = actionButtons();
       expect(exportBtn).toBeTruthy();
       expect(importBtn).toBeTruthy();
@@ -890,6 +900,7 @@ describe("Google Assistant Manual frontend", () => {
       });
       setupDom(hass);
       evalFrontend();
+      await flush();
 
       const createObjectURL = vi.fn(() => "blob:1");
       const revokeObjectURL = vi.fn();
@@ -937,6 +948,7 @@ describe("Google Assistant Manual frontend", () => {
       });
       setupDom(hass);
       evalFrontend();
+      await flush();
 
       const dialog = await pickFileAndOpenDialog();
       expect(dialog).not.toBeNull();
@@ -956,6 +968,7 @@ describe("Google Assistant Manual frontend", () => {
       });
       setupDom(hass);
       evalFrontend();
+      await flush();
 
       const dialog = await pickFileAndOpenDialog();
       dialog.querySelector<HTMLElement>("[data-ga-confirm]")!.dispatchEvent(
@@ -977,6 +990,7 @@ describe("Google Assistant Manual frontend", () => {
       const hass = createMockHass();
       setupDom(hass);
       evalFrontend();
+      await flush();
 
       const dialog = await pickFileAndOpenDialog();
       dialog.querySelector<HTMLElement>("[data-ga-cancel]")!.dispatchEvent(
@@ -1010,6 +1024,7 @@ describe("Google Assistant Manual frontend", () => {
       });
       setupDom(hass);
       evalFrontend();
+      await flush();
 
       const toasts: Record<string, unknown>[] = [];
       document.addEventListener("hass-notification", (e) =>
