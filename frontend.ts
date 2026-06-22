@@ -170,8 +170,8 @@ const EN_STRINGS: LocaleTable = {
   import_yaml: "Import YAML",
   import_confirm_title: "Import YAML configuration?",
   import_confirm_text:
-    "This replaces all settings for Google Assistant with the contents of this file. " +
-    "Aliases are added and never removed.",
+    "This replaces all settings for Google Assistant (and exposed entities) " +
+    "with the contents of this file. Aliases are added and never removed.",
   import_confirm_warning: "This cannot be undone.",
   import_success: "Configuration imported successfully.",
   import_failed: "Failed to import configuration.",
