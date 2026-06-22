@@ -87,6 +87,10 @@ interface WSError extends Error {
   code?: string;
 }
 
+interface CardElement extends HTMLElement {
+  _gaRefreshCardState?: () => void;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -430,6 +434,10 @@ function _onImportClick(): void {
       await _withEntryRetry((entryId) =>
         hass.callWS({ type: WS_IMPORT_CONFIG, entry_id: entryId, yaml }),
       );
+      const card = document.querySelector<CardElement>(
+        "[data-ga-manual-card]",
+      );
+      if (card?._gaRefreshCardState) card._gaRefreshCardState();
       _showToast(t("import_success"), false);
     } catch (e) {
       const detail = _wsErrorMessage(e);
@@ -1806,6 +1814,11 @@ function buildCard(): HTMLElement | null {
     // Hidden until the initial config state is fetched.
     _setRowsVisible(settingsRows, false);
     refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
+
+    // Store a refresh callback so the import handler can refresh card state
+    // after importing settings without needing references to local elements.
+    (card as CardElement)._gaRefreshCardState = () =>
+      refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
 
     return card;
   } catch (e) {

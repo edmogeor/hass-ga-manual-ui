@@ -294,6 +294,7 @@ def export_ga_config(hass: HomeAssistant, entry: Any) -> str:
         async_should_expose,
     )
     from homeassistant.helpers import entity_registry as er
+
     cfg: dict[str, Any] = {CONF_PROJECT_ID: entry.data[CONF_PROJECT_ID]}
 
     # Always include service_account: core GA rejects report_state without it.

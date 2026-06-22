@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now use a literal block scalar (`|`) instead of an indented single-quoted
   format, producing compact, readable YAML exports.
 
+- **The card now refreshes after importing settings.** Entity count, toggles,
+  and the PIN input are updated immediately after a YAML import, rather than
+  staying stale until the next page navigation.
+
 ## [0.2.1] - 2026-06-22
 
 ### Changed
