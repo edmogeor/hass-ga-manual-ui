@@ -20,6 +20,6 @@
     "import_confirm_text": "これにより、Google Assistant（および公開エンティティ）のすべての設定がこのファイルの内容に置き換えられます。エイリアスは追加され、削除されることはありません。",
     "import_confirm_warning": "この操作は取り消せません。",
     "import_success": "設定をインポートしました。",
-    "import_failed": "設定のインポートに失敗しました。"
+    "import_failed": "設定のインポートに失敗しました"
   }
 }

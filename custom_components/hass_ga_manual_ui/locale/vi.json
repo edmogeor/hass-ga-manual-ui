@@ -20,6 +20,6 @@
     "import_confirm_text": "Thao tác này thay thế toàn bộ cài đặt của Google Assistant (và các thực thể được hiển thị) bằng nội dung của tệp này. Bí danh được thêm vào và không bao giờ bị xóa.",
     "import_confirm_warning": "Không thể hoàn tác thao tác này.",
     "import_success": "Đã nhập cấu hình thành công.",
-    "import_failed": "Không thể nhập cấu hình."
+    "import_failed": "Không thể nhập cấu hình"
   }
 }

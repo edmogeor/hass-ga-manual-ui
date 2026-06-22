@@ -20,6 +20,6 @@
     "import_confirm_text": "To nadomesti vse nastavitve za Google Assistant (in izpostavljene entitete) z vsebino te datoteke. Vzdevki se dodajo in nikoli ne odstranijo.",
     "import_confirm_warning": "Tega ni mogoče razveljaviti.",
     "import_success": "Konfiguracija je bila uspešno uvožena.",
-    "import_failed": "Uvoz konfiguracije ni uspel."
+    "import_failed": "Uvoz konfiguracije ni uspel"
   }
 }

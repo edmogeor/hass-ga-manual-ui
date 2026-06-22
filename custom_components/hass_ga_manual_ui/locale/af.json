@@ -20,6 +20,6 @@
     "import_confirm_text": "Dit vervang alle instellings vir Google Assistant (en blootgestelde entiteite) met die inhoud van hierdie lêer. Aliasse word bygevoeg en nooit verwyder nie.",
     "import_confirm_warning": "Dit kan nie ongedaan gemaak word nie.",
     "import_success": "Konfigurasie suksesvol ingevoer.",
-    "import_failed": "Kon nie konfigurasie invoer nie."
+    "import_failed": "Kon nie konfigurasie invoer nie"
   }
 }

@@ -20,6 +20,6 @@
     "import_confirm_text": "Aceasta înlocuiește toate setările pentru Google Assistant (și entitățile expuse) cu conținutul acestui fișier. Aliasurile sunt adăugate și niciodată eliminate.",
     "import_confirm_warning": "Această acțiune nu poate fi anulată.",
     "import_success": "Configurație importată cu succes.",
-    "import_failed": "Importul configurației a eșuat."
+    "import_failed": "Importul configurației a eșuat"
   }
 }

@@ -960,8 +960,11 @@ describe("Google Assistant Manual frontend", () => {
 
     it("import calls the import WS on confirm", async () => {
       const hass = createMockHass();
+      const callOrder: string[] = [];
       hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+        const type = msg.type as string;
+        callOrder.push(type);
+        if (type === "hass_ga_manual_ui/get_entry_id") {
           return Promise.resolve({ entry_id: "e1" });
         }
         return Promise.resolve({ summary: {} });
@@ -984,6 +987,10 @@ describe("Google Assistant Manual frontend", () => {
           entry_id: "e1",
         }),
       );
+      // The card refresh fires after import, which updates the entity count.
+      const importIdx = callOrder.indexOf("hass_ga_manual_ui/import_config");
+      const exposeListIdx = callOrder.lastIndexOf("homeassistant/expose_entity/list");
+      expect(exposeListIdx).toBeGreaterThan(importIdx);
     });
 
     it("import does NOT call the import WS when cancelled", async () => {
@@ -1017,7 +1024,7 @@ describe("Google Assistant Manual frontend", () => {
         if (msg.type === "hass_ga_manual_ui/import_config") {
           return Promise.reject({
             code: "import_failed",
-            message: "Google rejected the service account: Invalid JWT Signature",
+            message: "Invalid JWT Signature",
           });
         }
         return Promise.resolve({});
@@ -1039,6 +1046,7 @@ describe("Google Assistant Manual frontend", () => {
       await flush();
 
       expect(toasts).toHaveLength(1);
+      expect(toasts[0].message).toContain("Failed to import configuration");
       expect(toasts[0].message).toContain("Invalid JWT Signature");
       // HA hides a toast when duration === 0, so an error must use a visible duration.
       expect(toasts[0].duration).not.toBe(0);

@@ -20,6 +20,6 @@
     "import_confirm_text": "Honek Google Assistant-en ezarpen guztiak (eta agerian dauden entitateak) fitxategi honen edukiarekin ordezkatzen ditu. Aliasak gehitu egiten dira eta ez dira inoiz kentzen.",
     "import_confirm_warning": "Hau ezin da desegin.",
     "import_success": "Konfigurazioa ondo inportatu da.",
-    "import_failed": "Ezin izan da konfigurazioa inportatu."
+    "import_failed": "Ezin izan da konfigurazioa inportatu"
   }
 }

@@ -20,6 +20,6 @@
     "import_confirm_text": "Tímto se nahradí všechna nastavení Google Assistant (a zpřístupněné entity) obsahem tohoto souboru. Aliasy se přidávají a nikdy neodstraňují.",
     "import_confirm_warning": "Tuto akci nelze vrátit zpět.",
     "import_success": "Konfigurace byla úspěšně importována.",
-    "import_failed": "Import konfigurace se nezdařil."
+    "import_failed": "Import konfigurace se nezdařil"
   }
 }

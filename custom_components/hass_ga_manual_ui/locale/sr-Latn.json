@@ -20,6 +20,6 @@
     "import_confirm_text": "Ovo zamenjuje sva podešavanja za Google Assistant (i izložene entitete) sadržajem ove datoteke. Aliasi se dodaju i nikada ne uklanjaju.",
     "import_confirm_warning": "Ovo se ne može opozvati.",
     "import_success": "Konfiguracija je uspešno uvezena.",
-    "import_failed": "Uvoz konfiguracije nije uspeo."
+    "import_failed": "Uvoz konfiguracije nije uspeo"
   }
 }

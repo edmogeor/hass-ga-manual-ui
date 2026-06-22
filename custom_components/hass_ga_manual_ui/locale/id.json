@@ -20,6 +20,6 @@
     "import_confirm_text": "Ini menggantikan semua pengaturan Google Assistant (dan entitas yang dipaparkan) dengan isi file ini. Alias ditambahkan dan tidak pernah dihapus.",
     "import_confirm_warning": "Tindakan ini tidak dapat dibatalkan.",
     "import_success": "Konfigurasi berhasil diimpor.",
-    "import_failed": "Gagal mengimpor konfigurasi."
+    "import_failed": "Gagal mengimpor konfigurasi"
   }
 }

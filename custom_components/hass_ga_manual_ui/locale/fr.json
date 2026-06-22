@@ -20,6 +20,6 @@
     "import_confirm_text": "Cela remplace tous les paramètres de Google Assistant (et les entités exposées) par le contenu de ce fichier. Les alias sont ajoutés et jamais supprimés.",
     "import_confirm_warning": "Cette action est irréversible.",
     "import_success": "Configuration importée avec succès.",
-    "import_failed": "Échec de l'importation de la configuration."
+    "import_failed": "Échec de l'importation de la configuration"
   }
 }

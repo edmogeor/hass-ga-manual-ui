@@ -20,6 +20,6 @@
     "import_confirm_text": "Ĉi tio anstataŭas ĉiujn agordojn por Google Assistant (kaj malkaŝitajn entojn) per la enhavo de ĉi tiu dosiero. Kromnomoj estas aldonataj kaj neniam forigataj.",
     "import_confirm_warning": "Ĉi tio ne povas esti malfarita.",
     "import_success": "Agordo sukcese importita.",
-    "import_failed": "Malsukcesis importi agordon."
+    "import_failed": "Malsukcesis importi agordon"
   }
 }

@@ -20,6 +20,6 @@
     "import_confirm_text": "Això substitueix tots els paràmetres de Google Assistant (i les entitats exposades) pel contingut d'aquest fitxer. Els àlies s'afegeixen i no s'eliminen mai.",
     "import_confirm_warning": "Això no es pot desfer.",
     "import_success": "Configuració importada correctament.",
-    "import_failed": "No s'ha pogut importar la configuració."
+    "import_failed": "No s'ha pogut importar la configuració"
   }
 }

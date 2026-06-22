@@ -438,12 +438,12 @@ function _onImportClick(): void {
       const card = document.querySelector<CardElement>(
         "[data-ga-manual-card]",
       );
-      if (card?._gaRefreshCardState) card._gaRefreshCardState();
+      if (card?._gaRefreshCardState) await card._gaRefreshCardState();
       _showToast(t("import_success"), false);
     } catch (e) {
       const detail = _wsErrorMessage(e);
       _error("Import failed: " + detail);
-      _showToast(detail || t("import_failed"), true);
+      _showToast(t("import_failed") + (detail ? ": " + detail : ""), true);
     } finally {
       input.remove();
     }
@@ -773,12 +773,14 @@ async function _fetchEntryId(): Promise<string> {
           "Settings → Devices & Services → Add Integration first.",
       );
     }
+    _entryMissing = false;
     return result.entry_id;
   } catch (err: unknown) {
     _debug(
       "No config entry found: " +
         _wsErrorMessage(err),
     );
+    _entryMissing = true;
     throw err;
   }
 }
@@ -1961,9 +1963,13 @@ async function refreshCardState(
       pinInput.disabled = !config.enabled;
     }
 
-    refreshExposeToggle(card);
+    await refreshExposeToggle(card);
   } catch (err: unknown) {
     _error("Failed to fetch card state: " + _wsErrorMessage(err));
+    if (_entryMissing) {
+      _info("Config entry no longer exists, removing card");
+      card.remove();
+    }
   }
 }
 
@@ -1973,11 +1979,6 @@ async function injectCardInto(el: AssistantsPageElement): Promise<void> {
   if (!el) return;
 
   try {
-    // If no config entry exists, don't inject the card. The flag is set when
-    // getEntryId() fails and cleared when the entry cache is invalidated
-    // (e.g. the user re-adds the integration so we retry on next injection).
-    if (_entryMissing) return;
-
     const root = el.shadowRoot || (el as unknown as HTMLElement);
     const content = root.querySelector<HTMLElement>(".content");
     if (!content) {
@@ -2000,6 +2001,10 @@ async function injectCardInto(el: AssistantsPageElement): Promise<void> {
 
     if (content.querySelector("[data-ga-manual-card]")) {
       _observerActive.delete(el);
+      // Card already injected, but config or exposures may have changed
+      // (e.g. user was on the Expose tab or changed settings elsewhere).
+      const card = content.querySelector<CardElement>("[data-ga-manual-card]");
+      if (card?._gaRefreshCardState) await card._gaRefreshCardState();
       return;
     }
 
@@ -2022,14 +2027,13 @@ async function injectCardInto(el: AssistantsPageElement): Promise<void> {
     _info("Injecting card into " + el.nodeName);
 
     // Resolve the entry before building the card so we don't inject a
-    // card when no config entry exists.
-    if (!_entryId) {
-      try {
-        await getEntryId();
-      } catch {
-        _entryMissing = true;
-        return;
-      }
+    // card when no config entry exists. Always call getEntryId() — even
+    // when _entryId is cached it may be stale (entry deleted elsewhere).
+    try {
+      await getEntryId();
+    } catch {
+      _entryMissing = true;
+      return;
     }
 
     // Re-check after the await: a concurrent call may have inserted the
@@ -2157,16 +2161,13 @@ function _refreshExposePage(): void {
   }
 }
 
-function refreshExposeToggle(card: HTMLElement): void {
+function refreshExposeToggle(card: HTMLElement): Promise<void> {
   const hass = getHass();
-  if (!hass) return;
-  // Scope to .card-content so we never select the global enable/disable
-  // toggle, which lives in the header (.card-header) and would otherwise be
-  // matched as the first ha-switch - clobbering it back to expose_new (false).
+  if (!hass) return Promise.resolve();
   const sw = card.querySelector<HTMLInputElement>(".card-content ha-switch");
   const btn = card.querySelector<HTMLElement>("[data-ga-count]");
 
-  Promise.all([
+  return Promise.all([
     hass.callWS<{ expose_new: boolean }>({
       type: "homeassistant/expose_new_entities/get",
       assistant: ASSISTANT_ID,
@@ -2181,8 +2182,6 @@ function refreshExposeToggle(card: HTMLElement): void {
       const exposedEntities = results[1].exposed_entities || {};
       let count = 0;
       try {
-        // Mirror HA's own count (cloud-google-pref): only entities that still
-        // exist in hass.states, so stale registry records don't inflate it.
         const states = hass.states || {};
         count = Object.entries(exposedEntities).filter(([entityId, s]) => {
           return s && s[ASSISTANT_ID] && entityId in states;

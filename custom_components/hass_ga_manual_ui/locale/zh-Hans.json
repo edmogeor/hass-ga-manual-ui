@@ -20,6 +20,6 @@
     "import_confirm_text": "这将用此文件的内容替换 Google Assistant 的所有设置（以及已公开的实体）。别名只会被添加，永不删除。",
     "import_confirm_warning": "此操作无法撤消。",
     "import_success": "配置导入成功。",
-    "import_failed": "配置导入失败。"
+    "import_failed": "配置导入失败"
   }
 }

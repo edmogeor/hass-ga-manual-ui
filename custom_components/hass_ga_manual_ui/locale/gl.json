@@ -20,6 +20,6 @@
     "import_confirm_text": "Isto substitúe todos os axustes de Google Assistant (e as entidades expostas) polo contido deste ficheiro. Os alias engádense e nunca se eliminan.",
     "import_confirm_warning": "Isto non se pode desfacer.",
     "import_success": "Configuración importada correctamente.",
-    "import_failed": "Non se puido importar a configuración."
+    "import_failed": "Non se puido importar a configuración"
   }
 }

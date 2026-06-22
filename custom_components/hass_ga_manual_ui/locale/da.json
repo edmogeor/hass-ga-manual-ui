@@ -20,6 +20,6 @@
     "import_confirm_text": "Dette erstatter alle indstillinger for Google Assistant (og eksponerede enheder) med indholdet af denne fil. Aliasser tilføjes og fjernes aldrig.",
     "import_confirm_warning": "Dette kan ikke fortrydes.",
     "import_success": "Konfigurationen blev importeret.",
-    "import_failed": "Kunne ikke importere konfigurationen."
+    "import_failed": "Kunne ikke importere konfigurationen"
   }
 }

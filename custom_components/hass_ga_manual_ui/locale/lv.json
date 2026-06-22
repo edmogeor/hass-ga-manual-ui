@@ -20,6 +20,6 @@
     "import_confirm_text": "Tas aizstāj visus Google Assistant iestatījumus (un atklātās entītijas) ar šī faila saturu. Aizstājvārdi tiek pievienoti un nekad netiek noņemti.",
     "import_confirm_warning": "Šo darbību nevar atsaukt.",
     "import_success": "Konfigurācija veiksmīgi importēta.",
-    "import_failed": "Neizdevās importēt konfigurāciju."
+    "import_failed": "Neizdevās importēt konfigurāciju"
   }
 }

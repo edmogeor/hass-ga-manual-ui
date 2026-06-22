@@ -20,6 +20,6 @@
     "import_confirm_text": "See asendab kõik Google Assistanti sätted (ja avalikustatud olemid) selle faili sisuga. Aliased lisatakse ja neid ei eemaldata kunagi.",
     "import_confirm_warning": "Seda ei saa tagasi võtta.",
     "import_success": "Konfiguratsioon imporditi edukalt.",
-    "import_failed": "Konfiguratsiooni importimine ebaõnnestus."
+    "import_failed": "Konfiguratsiooni importimine ebaõnnestus"
   }
 }

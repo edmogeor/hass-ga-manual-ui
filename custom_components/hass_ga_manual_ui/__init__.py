@@ -842,9 +842,7 @@ def _purge_entity_registry_options(hass: HomeAssistant) -> None:
     cleaned = 0
     for entity_id, entry in list(ent_reg.entities.items()):
         if ASSISTANT_ID in entry.options:
-            options = dict(entry.options)
-            del options[ASSISTANT_ID]
-            ent_reg.async_update_entity_options(entity_id, options)
+            ent_reg.async_update_entity_options(entity_id, ASSISTANT_ID, None)
             cleaned += 1
     if cleaned:
         _LOGGER.info(
@@ -1274,6 +1272,11 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                     google_config, data[CONF_REPORT_STATE], project_id
                 )
 
+            # The PIN is sent in the SYNC response for each secure device;
+            # resync so Google picks up the new value immediately.
+            if CONF_SECURE_DEVICES_PIN in data and google_config is not None:
+                google_config.async_schedule_google_sync_all()
+
             connection.send_result(msg["id"])
         except Exception as exc:
             _LOGGER.exception("Error in ws_update_config for project='%s'", project_id)
@@ -1577,7 +1580,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 connection.send_error(
                     msg["id"],
                     "import_failed",
-                    f"Google rejected the service account: {exc}",
+                    str(exc),
                 )
                 return
             except Exception as exc:
@@ -1602,6 +1605,12 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 title=credentials.get(CONF_PROJECT_ID, current_entry.title),
             )
             await _hass.config_entries.async_reload(current_entry.entry_id)
+
+        # Push changes to Google so newly exposed/unexposed devices appear
+        # immediately rather than waiting for the next periodic sync.
+        gc = _our_google_config(_hass)
+        if gc is not None:
+            gc.async_schedule_google_sync_all()
 
         connection.send_result(msg["id"], {"summary": summary})
 

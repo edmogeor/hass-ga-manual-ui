@@ -20,6 +20,6 @@
     "import_confirm_text": "Bu, Google Assistant'ın (ve açığa çıkarılan varlıkların) tüm ayarlarını bu dosyanın içeriğiyle değiştirir. Takma adlar eklenir ve asla kaldırılmaz.",
     "import_confirm_warning": "Bu işlem geri alınamaz.",
     "import_success": "Yapılandırma başarıyla içe aktarıldı.",
-    "import_failed": "Yapılandırma içe aktarılamadı."
+    "import_failed": "Yapılandırma içe aktarılamadı"
   }
 }

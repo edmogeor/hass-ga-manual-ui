@@ -20,6 +20,6 @@
     "import_confirm_text": "Dette erstattar alle innstillingar for Google Assistant (og eksponerte einingar) med innhaldet i denne fila. Alias vert lagde til og aldri fjerna.",
     "import_confirm_warning": "Dette kan ikkje angrast.",
     "import_success": "Konfigurasjonen vart importert.",
-    "import_failed": "Klarte ikkje å importere konfigurasjonen."
+    "import_failed": "Klarte ikkje å importere konfigurasjonen"
   }
 }

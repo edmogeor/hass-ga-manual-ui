@@ -20,6 +20,6 @@
     "import_confirm_text": "Das ersetzt alli Istellunge für Google Assistant (und freigäbeni Entitäte) mit em Inhalt vo dere Datei. Aliase werde hinzuegfüegt und nie entfernt.",
     "import_confirm_warning": "Das cha nöd rückgängig gmacht werde.",
     "import_success": "Konfiguration erfolgrich importiert.",
-    "import_failed": "Konfiguration het nöd chönne importiert werde."
+    "import_failed": "Konfiguration het nöd chönne importiert werde"
   }
 }

@@ -20,6 +20,6 @@
     "import_confirm_text": "Ez a Google Assistant összes beállítását (és a közzétett entitásokat) lecseréli a fájl tartalmával. Az álnevek hozzáadódnak, és soha nem törlődnek.",
     "import_confirm_warning": "Ez a művelet nem vonható vissza.",
     "import_success": "A konfiguráció sikeresen importálva.",
-    "import_failed": "A konfiguráció importálása sikertelen."
+    "import_failed": "A konfiguráció importálása sikertelen"
   }
 }

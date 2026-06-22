@@ -20,6 +20,6 @@
     "import_confirm_text": "Tämä korvaa kaikki Google Assistantin asetukset (ja näkyväksi asetetut entiteetit) tämän tiedoston sisällöllä. Aliakset lisätään eikä niitä koskaan poisteta.",
     "import_confirm_warning": "Tätä ei voi kumota.",
     "import_success": "Määritys tuotiin onnistuneesti.",
-    "import_failed": "Määrityksen tuonti epäonnistui."
+    "import_failed": "Määrityksen tuonti epäonnistui"
   }
 }

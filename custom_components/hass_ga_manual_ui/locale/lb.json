@@ -20,6 +20,6 @@
     "import_confirm_text": "Dëst ersetzt all Astellunge fir Google Assistant (an exposéiert Entitéiten) duerch den Inhalt vun dëser Datei. Aliasen ginn derbäigesat an ni ewechgeholl.",
     "import_confirm_warning": "Dëst kann net réckgängeg gemaach ginn.",
     "import_success": "Konfiguratioun erfollegräich importéiert.",
-    "import_failed": "Konfiguratioun konnt net importéiert ginn."
+    "import_failed": "Konfiguratioun konnt net importéiert ginn"
   }
 }

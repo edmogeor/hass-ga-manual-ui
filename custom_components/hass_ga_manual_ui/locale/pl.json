@@ -20,6 +20,6 @@
     "import_confirm_text": "Spowoduje to zastąpienie wszystkich ustawień Google Assistant (oraz udostępnionych encji) zawartością tego pliku. Aliasy są dodawane i nigdy nie usuwane.",
     "import_confirm_warning": "Tej operacji nie można cofnąć.",
     "import_success": "Konfiguracja zaimportowana pomyślnie.",
-    "import_failed": "Nie udało się zaimportować konfiguracji."
+    "import_failed": "Nie udało się zaimportować konfiguracji"
   }
 }

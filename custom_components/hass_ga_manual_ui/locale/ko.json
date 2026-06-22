@@ -20,6 +20,6 @@
     "import_confirm_text": "이렇게 하면 Google Assistant(및 노출된 엔티티)의 모든 설정이 이 파일의 내용으로 대체됩니다. 별칭은 추가되며 절대 제거되지 않습니다.",
     "import_confirm_warning": "이 작업은 취소할 수 없습니다.",
     "import_success": "구성을 가져왔습니다.",
-    "import_failed": "구성을 가져오지 못했습니다."
+    "import_failed": "구성을 가져오지 못했습니다"
   }
 }

@@ -5,6 +5,41 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-06-22
+
+### Fixed
+
+- **Purging entity registry options on config removal no longer fails.** The
+  `async_update_entity_options` call was missing the required `domain` parameter
+  added in Home Assistant 2025.x, causing a traceback during cleanup.
+
+- **The card now removes itself when the config entry is deleted.** Previously
+  the card would remain visible until a hard browser refresh. Now the entry
+  resolution always runs before card injection (not just when the cache is
+  empty), and a failed state refresh removes the card from the DOM.
+
+- **The card reappears after re-adding the integration** without needing a
+  hard refresh. The missing-entry flag is now cleared on successful entry
+  resolution, and card injection always retries rather than short-circuiting
+  after the first failure.
+
+- **The entity count badge refreshes after changing exposures on the Expose
+  tab** and navigating back to the Assistants tab. Previously the badge
+  stayed stale until a hard refresh. When the card already exists, its full
+  state (toggles, PIN, entity count) is now refreshed rather than skipped.
+
+- **Import failure toasts now include the server reason** (prefixed with the
+  translated "Failed to import configuration" text), and the server no longer
+  redundantly wraps the reason with its own prefix.
+
+- **Importing a YAML file triggers a Google `requestSync`**, so newly
+  exposed (or hidden) devices appear in Google Assistant immediately
+  instead of waiting for the next periodic sync.
+
+- **Changing the security devices PIN now triggers a Google `requestSync`**
+  so the new PIN takes effect immediately for secure device challenges,
+  rather than waiting for the next periodic sync.
+
 ## [0.2.3] - 2026-06-22
 
 ### Fixed

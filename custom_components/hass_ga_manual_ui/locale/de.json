@@ -20,6 +20,6 @@
     "import_confirm_text": "Dies ersetzt alle Einstellungen für Google Assistant (und freigegebene Entitäten) durch den Inhalt dieser Datei. Aliasse werden hinzugefügt und nie entfernt.",
     "import_confirm_warning": "Dies kann nicht rückgängig gemacht werden.",
     "import_success": "Konfiguration erfolgreich importiert.",
-    "import_failed": "Konfiguration konnte nicht importiert werden."
+    "import_failed": "Konfiguration konnte nicht importiert werden"
   }
 }

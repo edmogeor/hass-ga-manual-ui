@@ -20,6 +20,6 @@
     "import_confirm_text": "Þetta kemur í stað allra stillinga fyrir Google Assistant (og birtra eininga) með innihaldi þessarar skráar. Samnefni eru bætt við og aldrei fjarlægð.",
     "import_confirm_warning": "Ekki er hægt að afturkalla þetta.",
     "import_success": "Stillingar fluttar inn.",
-    "import_failed": "Mistókst að flytja inn stillingar."
+    "import_failed": "Mistókst að flytja inn stillingar"
   }
 }

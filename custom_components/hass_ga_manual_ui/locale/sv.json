@@ -20,6 +20,6 @@
     "import_confirm_text": "Detta ersätter alla inställningar för Google Assistant (och exponerade entiteter) med innehållet i den här filen. Alias läggs till och tas aldrig bort.",
     "import_confirm_warning": "Detta kan inte ångras.",
     "import_success": "Konfigurationen importerades.",
-    "import_failed": "Det gick inte att importera konfigurationen."
+    "import_failed": "Det gick inte att importera konfigurationen"
   }
 }
