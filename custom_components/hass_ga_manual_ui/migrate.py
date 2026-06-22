@@ -38,7 +38,7 @@ except ImportError:
     from yaml import SafeDumper as _BaseSafeDumper
 
 
-class _ExportDumper(_BaseSafeDumper):
+class _ExportDumper(_BaseSafeDumper):  # pyrefly: ignore[invalid-inheritance]
     """YAML dumper that emits multi-line strings as literal block scalars."""
 
 
