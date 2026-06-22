@@ -993,5 +993,40 @@ describe("Google Assistant Manual frontend", () => {
       );
       expect(importCalls.length).toBe(0);
     });
+
+    it("import failure shows a visible error toast with the server reason", async () => {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "e1" });
+        }
+        if (msg.type === "hass_ga_manual_ui/import_config") {
+          return Promise.reject({
+            code: "import_failed",
+            message: "Google rejected the service account: Invalid JWT Signature",
+          });
+        }
+        return Promise.resolve({});
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      const toasts: Record<string, unknown>[] = [];
+      document.addEventListener("hass-notification", (e) =>
+        toasts.push((e as CustomEvent).detail),
+      );
+
+      const dialog = await pickFileAndOpenDialog();
+      dialog.querySelector<HTMLElement>("[data-ga-confirm]")!.dispatchEvent(
+        new Event("click"),
+      );
+      await flush();
+      await flush();
+
+      expect(toasts).toHaveLength(1);
+      expect(toasts[0].message).toContain("Invalid JWT Signature");
+      // HA hides a toast when duration === 0, so an error must use a visible duration.
+      expect(toasts[0].duration).not.toBe(0);
+    });
   });
 });

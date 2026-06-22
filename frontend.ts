@@ -348,7 +348,8 @@ function _banner(message: string): void {
 
 // Show a transient HA toast via the bubbling "hass-notification" event HA's
 // notification manager listens for on <home-assistant> (same as its showToast
-// helper). Errors stay until dismissed (duration 0); notices auto-dismiss.
+// helper). HA treats duration 0 as "hide", so errors get the max 10s the
+// notification manager allows (mwc-snackbar caps at 10000ms); notices auto-dismiss.
 function _showToast(message: string, isError: boolean): void {
   try {
     const root = document.querySelector("home-assistant") ?? document.body;
@@ -360,7 +361,7 @@ function _showToast(message: string, isError: boolean): void {
           message,
           id: "hass_ga_manual_ui_toast",
           dismissable: true,
-          ...(isError ? { duration: 0 } : {}),
+          ...(isError ? { duration: 10000 } : {}),
         },
       }),
     );
@@ -431,8 +432,9 @@ function _onImportClick(): void {
       );
       _showToast(t("import_success"), false);
     } catch (e) {
-      _error("Import failed: " + _errorMessage(e));
-      _showToast(t("import_failed"), true);
+      const detail = _wsErrorMessage(e);
+      _error("Import failed: " + detail);
+      _showToast(detail || t("import_failed"), true);
     } finally {
       input.remove();
     }
