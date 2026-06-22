@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nconfiguration.yaml에 `google_assistant:` 섹션이 있습니다. 이 통합이 이제 Google Assistant를 관리하고 해당 섹션을 덮어쓰므로 해당 섹션을 제거할 수 있습니다.",
+  "yaml_notice": "configuration.yaml에서 `google_assistant:` 섹션을 찾았습니다. 이 통합이 이를 대체하므로 제거할 수 있습니다.",
   "install_notice": "Google Assistant(수동)이 설치되었습니다. 설정 → 음성 도우미에 카드가 표시되지 않으면 브라우저를 한 번 강제 새로고침하세요(Ctrl+Shift+R, Mac에서는 Cmd+Shift+R). 설�� 또는 업데이트 후 한 번만 필요합니다.",
   "frontend": {
     "yaml_detected": "<code>configuration.yaml</code>에서 <code>google_assistant:</code> 섹션이 감지되어 비활성화되었습니다. 이 통합이 이제 Google Assistant 구성을 관리합니다. YAML 구성에서 <code>google_assistant:</code> 섹션을 안전하게 제거할 수 있습니다.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "상태 보고 활성화에 실패했습니다. 통합을 끄고 다시 켜거나 Home Assistant 로그를 확인해 보세요.",
     "report_state_disable_failed": "상태 보고 비활성화에 실패했습니다. 통합을 끄고 다시 켜거나 Home Assistant 로그를 확인해 보세요.",
     "ready_banner": "{name}이(가) 준비되었습니다, 설정 → 음성 도우미에서 관리하세요.",
-    "update_available": "Google Assistant(수동)의 새 버전이 있습니다. 브라우저를 새로고침하여(Ctrl+Shift+R, Mac에서는 Cmd+Shift+R) 불러오세요."
+    "update_available": "Google Assistant(수동)의 새 버전이 있습니다. 브라우저를 새로고침하여(Ctrl+Shift+R, Mac에서는 Cmd+Shift+R) 불러오세요.",
+    "export_yaml": "YAML 내보내기",
+    "import_yaml": "YAML 가져오기",
+    "import_confirm_title": "YAML 구성을 가져오시겠습니까?",
+    "import_confirm_text": "이렇게 하면 Google Assistant(및 노출된 엔티티)의 모든 설정이 이 파일의 내용으로 대체됩니다. 별칭은 추가되며 절대 제거되지 않습니다.",
+    "import_confirm_warning": "이 작업은 취소할 수 없습니다.",
+    "import_success": "구성을 가져왔습니다.",
+    "import_failed": "구성을 가져오지 못했습니다."
   }
 }

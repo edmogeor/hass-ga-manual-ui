@@ -48,6 +48,8 @@ It's recommended to have the manual `google_assistant` setup working via YAML fi
 - **Per-entity 2FA control**, PIN prompt toggle for security devices (locks, garage doors)
 - **Auto-resync**, automatically pushes changes to Google when entities or areas change
 - **Report state**, syncs entity states back to Google for faster commands
+- **YAML migration**, import your existing `google_assistant:` configuration during setup
+- **Export / import**, back up your settings to a standalone YAML file or restore them later
 
 ## Requirements
 
@@ -63,9 +65,9 @@ It's recommended to have the manual `google_assistant` setup working via YAML fi
 1. Open HACS in Home Assistant
 2. Click **⋮ (menu)** → **Custom repositories**
 3. Paste the repository URL: `https://github.com/edmogeor/hass-ga-manual-ui`
-6. Search for "Google Assistant (Manual)" and install it
-7. Restart Home Assistant
-8. **Hard refresh your browser** (Ctrl+Shift+R / Cmd+Shift+R) to ensure the frontend loads the new UI components
+4. Search for "Google Assistant (Manual)" and install it
+5. Restart Home Assistant
+6. **Hard refresh your browser** (Ctrl+Shift+R / Cmd+Shift+R) to ensure the frontend loads the new UI components
 
 ### Manual
 
@@ -77,10 +79,31 @@ After installation, add the integration:
 
 1. Go to **Settings → Devices & Services → Add Integration**
 2. Search for "Google Assistant (Manual)"
-3. Enter your **Google Cloud project ID**
-4. Paste your **service account JSON key**
+3. Read the intro page. If you already have a `google_assistant:` section in your
+   `configuration.yaml`, you'll instead be offered to **migrate** it (see below)
+4. Enter your **Google Cloud project ID**
+5. Paste your **service account JSON key**, it's verified against Google before the entry is created
 
 The Google Assistant card will appear in **Settings → Voice assistants** alongside the cloud assistants.
+
+## Migrating from YAML
+
+If you already run the manual `google_assistant:` integration via
+`configuration.yaml`, this integration takes over and **overrides that YAML
+section at runtime** so the two never conflict.
+
+- **During setup**, when a `google_assistant:` block is detected, the first page
+  offers to migrate it. Leave the checkbox ticked to copy your existing
+  **project ID**, **service account**, **exposed entities**, **state reporting**,
+  **security PIN**, and **aliases** into the UI, prefilling the setup steps. Untick
+  it to start fresh.
+- **After migrating**, you can safely remove the `google_assistant:` section from
+  your `configuration.yaml`, the integration no longer reads it.
+- **Export / import**, from the Google Assistant card in **Settings → Voice
+  assistants** you can export your current settings to a standalone
+  `google_assistant:` YAML file (a valid manual config you could paste back into
+  `configuration.yaml`), or import one to restore them. Importing **overwrites**
+  exposure and flags but only **adds** aliases, it never removes existing ones.
 
 ## Uninstalling
 

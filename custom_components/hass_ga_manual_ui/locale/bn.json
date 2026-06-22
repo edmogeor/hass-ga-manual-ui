@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nআপনার configuration.yaml-এ `google_assistant:` বিভাগ আছে। এই ইন্টিগ্রেশন এখন Google Assistant পরিচালনা করে এবং সেটি ওভাররাইড করে, তাই আপনি সেই বিভাগটি সরাতে পারেন।",
+  "yaml_notice": "আপনার configuration.yaml-এ একটি `google_assistant:` বিভাগ পাওয়া গেছে। এই ইন্টিগ্রেশন সেটি প্রতিস্থাপন করে, তাই আপনি সেটি সরাতে পারেন।",
   "install_notice": "Google Assistant (Manual) ইনস্টল করা হয়েছে। সেটিংস → ভয়েস অ্যাসিস্ট্যান্ট-এর অধীনে এর কার্ড না দেখা গেলে, ব্রাউজারের এককালীন হার্ড রিফ্রেশ করুন (Ctrl+Shift+R, অথবা Mac-এ Cmd+Shift+R)। এটি ইনস্টল বা আপডেটের পরে শুধুমাত্র একবার প্রয়োজন।",
   "frontend": {
     "yaml_detected": "আপনার <code>configuration.yaml</code>-এ <code>google_assistant:</code> বিভাগ পাওয়া গেছে এবং নিষ্ক্রিয় করা হয়েছে। এই ইন্টিগ্রেশন এখন আপনার Google Assistant কনফিগারেশন পরিচালনা করে। আপনি নিরাপদে আপনার YAML কনফিগারেশন থেকে <code>google_assistant:</code> বিভাগটি সরাতে পারেন।",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "স্টেটাস রিপোর্টিং সক্রিয় করতে ব্যর্থ হয়েছে। ইন্টিগ্রেশন বন্ধ করে আবার চালু করুন, বা Home Assistant লগ চেক করুন।",
     "report_state_disable_failed": "স্টেটাস রিপোর্টিং নিষ্ক্রিয় করতে ব্যর্থ হয়েছে। ইন্টিগ্রেশন বন্ধ করে আবার চালু করুন, বা Home Assistant লগ চেক করুন।",
     "ready_banner": "{name} প্রস্তুত, সেটিংস → ভয়েস অ্যাসিস্ট্যান্ট-এ পরিচালনা করুন।",
-    "update_available": "Google Assistant (Manual)-এর একটি নতুন সংস্করণ উপলব্ধ। এটি লোড করতে আপনার ব্রাউজার রিফ্রেশ করুন (Ctrl+Shift+R, অথবা Mac-এ Cmd+Shift+R)।"
+    "update_available": "Google Assistant (Manual)-এর একটি নতুন সংস্করণ উপলব্ধ। এটি লোড করতে আপনার ব্রাউজার রিফ্রেশ করুন (Ctrl+Shift+R, অথবা Mac-এ Cmd+Shift+R)।",
+    "export_yaml": "YAML এক্সপোর্ট করুন",
+    "import_yaml": "YAML ইমপোর্ট করুন",
+    "import_confirm_title": "YAML কনফিগারেশন ইমপোর্ট করবেন?",
+    "import_confirm_text": "এটি Google Assistant (এবং প্রকাশিত সত্তা) এর সমস্ত সেটিংস এই ফাইলের বিষয়বস্তু দিয়ে প্রতিস্থাপন করে। উপনাম যোগ করা হয় এবং কখনও সরানো হয় না।",
+    "import_confirm_warning": "এটি পূর্বাবস্থায় ফেরানো যাবে না।",
+    "import_success": "কনফিগারেশন সফলভাবে ইমপোর্ট করা হয়েছে।",
+    "import_failed": "কনফিগারেশন ইমপোর্ট করতে ব্যর্থ হয়েছে।"
   }
 }

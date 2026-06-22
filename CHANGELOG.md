@@ -5,6 +5,39 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-06-22
+
+### Added
+
+- **Migrate an existing `google_assistant:` YAML configuration during setup.**
+  When a `google_assistant:` section is detected in `configuration.yaml`, the
+  config flow now opens with a migrate page offering to import it. Opting in
+  copies your project ID, service account, exposed entities, state reporting,
+  security PIN, and entity aliases into the UI, prefilling (and skipping where
+  possible) the setup steps. Exposure and aliases are applied once Home Assistant
+  has fully started, so entities from late-loading integrations are included, and
+  the migration runs only once. The YAML section can be removed afterward.
+
+- **Export and import settings as a standalone YAML file.** The Google Assistant
+  card in Settings → Voice assistants now has **Export** and **Import** buttons.
+  Export produces a valid manual `google_assistant:` config (validated against
+  core Google Assistant's own schema). Import asks for confirmation, then
+  overwrites exposure and flags while only adding aliases, it never removes
+  existing ones.
+
+- **Service account verification during setup.** The pasted service account is
+  now checked against Google's HomeGraph token endpoint before the config entry
+  is created, so bad keys are caught immediately. Transient/network failures do
+  not block setup.
+
+### Changed
+
+- The config flow is now split into separate pages (intro/migrate → project ID →
+  service account) instead of a single combined step.
+
+- Import/export and related card messages now use Home Assistant's native toast
+  notifications instead of a persistent notification.
+
 ## [0.1.13] - 2026-06-21
 
 ### Changed

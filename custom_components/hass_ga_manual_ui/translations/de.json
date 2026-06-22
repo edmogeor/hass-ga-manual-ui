@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "So funktioniert es",
+        "description": "Diese Integration verwaltet Google Assistant und überschreibt jeden `google_assistant:`-Abschnitt in Ihrer configuration.yaml. Sie können später eine eigenständige YAML-Konfiguration unter Einstellungen → Sprachassistenten exportieren oder importieren."
+      },
       "user": {
-        "title": "Google Assistant (Manuell)",
-        "description": "Geben Sie Ihre Google Cloud-Projekt-ID ein.\n\nFolgen Sie dem Einrichtungsleitfaden unter {guide_url} (Schritte 1–13). Im nächsten Schritt fügen Sie Ihren Dienstkonto-JSON-Schlüssel ein.{yaml_notice}",
+        "title": "Bestehende Konfiguration migrieren",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekt-ID"
+          "migrate_yaml": "Meine bestehende YAML-Konfiguration migrieren"
         },
         "data_description": {
-          "project_id": "Ihre Google Cloud-Projekt-ID"
+          "migrate_yaml": "Kopiert Freigabe, Statusmeldung, PIN und Aliasse. Deaktivieren, um neu zu beginnen."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Geben Sie Ihre Google Cloud-Projekt-ID ein. Siehe den Einrichtungsleitfaden unter {guide_url} (Schritte 1-13).",
+        "data": {
+          "project_id": "Projekt-ID"
         }
       },
       "service_account": {
         "title": "Dienstkonto",
-        "description": "Fügen Sie den Inhalt Ihrer Dienstkonto-JSON-Schlüsseldatei ein.\n\nErstellen Sie eine unter {docs_url} (Schritt 12 des Leitfadens unter {guide_url}).",
+        "description": "Fügen Sie Ihren Dienstkonto-JSON-Schlüssel ein. Erstellen Sie einen unter {docs_url} (Leitfaden-Schritt 12).",
         "data": {
           "service_account": "Dienstkonto-JSON"
-        },
-        "data_description": {
-          "service_account": "Fügen Sie Ihren heruntergeladenen Dienstkonto-JSON-Schlüssel ein"
         }
       }
     },

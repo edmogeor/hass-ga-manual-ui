@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Slik fungerer det",
+        "description": "Denne integrasjonen styrer Google Assistant og overstyrer alle `google_assistant:`-seksjonar i configuration.yaml. Du kan seinare eksportere eller importere ein frittståande YAML-konfigurasjon frå Innstillingar → Stemmassistantar."
+      },
       "user": {
-        "title": "Google Assistant (Manuell)",
-        "description": "Skriv inn Google Cloud-prosjekt-IDen din.\n\nFylg oppsettsrettleiaren på {guide_url} (trinn 1–13). Du limer inn JSON-nøkkelen for tenestekonten i neste trinn.{yaml_notice}",
+        "title": "Migrer eksisterande konfigurasjon",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Prosjekt-ID"
+          "migrate_yaml": "Migrer min eksisterande YAML-konfigurasjon"
         },
         "data_description": {
-          "project_id": "Google Cloud-prosjekt-IDen din"
+          "migrate_yaml": "Kopierer eksponering, statusrapportering, PIN og alias. Fjern avkryssinga for å starte på nytt."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Skriv inn Google Cloud-prosjekt-IDen din. Sjå oppsettsrettleiaren på {guide_url} (trinn 1-13).",
+        "data": {
+          "project_id": "Prosjekt-ID"
         }
       },
       "service_account": {
         "title": "Tenestekonto",
-        "description": "Lim inn innhaldet i JSON-nøkkelfilta for tenestekonten.\n\nLag ein på {docs_url} (trinn 12 i rettleiaren på {guide_url}).",
+        "description": "Lim inn JSON-nøkkelen for tenestekonten. Lag ein på {docs_url} (trinn 12 i rettleiaren).",
         "data": {
           "service_account": "Tenestekonto JSON"
-        },
-        "data_description": {
-          "service_account": "Lim inn den nedlasta JSON-nøkkelen for tenestekonten"
         }
       }
     },

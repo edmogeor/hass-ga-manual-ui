@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "작동 방식",
+        "description": "이 통합은 Google Assistant를 관리하며 configuration.yaml의 모든 `google_assistant:` 섹션을 덮어씁니다. 나중에 설정 → 음성 도우미에서 독립형 YAML 구성을 내보내거나 가져올 수 있습니다."
+      },
       "user": {
-        "title": "Google Assistant (수동 설정)",
-        "description": "Google Cloud 프로젝트 ID를 입력하세요.\n\n{guide_url}의 설정 가이드를 따르세요 (1~13단계). 다음 단계에서 서비스 계정 JSON 키를 붙여넣습니다.{yaml_notice}",
+        "title": "기존 구성 마이그레이션",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "프로젝트 ID"
+          "migrate_yaml": "기존 YAML 구성 마이그레이션"
         },
         "data_description": {
-          "project_id": "Google Cloud 프로젝트 ID"
+          "migrate_yaml": "노출, 상태 보고, PIN 및 별칭을 복사합니다. 새로 시작하려면 선택을 해제하세요."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (수동 설정)",
+        "description": "Google Cloud 프로젝트 ID를 입력하세요. {guide_url}의 설정 가이드를 참조하세요 (1-13단계).",
+        "data": {
+          "project_id": "프로젝트 ID"
         }
       },
       "service_account": {
         "title": "서비스 계정",
-        "description": "서비스 계정 JSON 키 파일의 내용을 붙여넣으세요.\n\n{docs_url}에서 생성하세요 ({guide_url} 가이드의 12단계).",
+        "description": "서비스 계정 JSON 키를 붙여넣으세요. {docs_url}에서 생성하세요 (가이드 12단계).",
         "data": {
           "service_account": "서비스 계정 JSON"
-        },
-        "data_description": {
-          "service_account": "다운로드한 서비스 계정 JSON 키를 붙여넣으세요"
         }
       }
     },

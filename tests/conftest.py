@@ -9,6 +9,11 @@ import pytest
 from homeassistant.components import websocket_api
 from homeassistant.config_entries import ConfigEntry
 
+# Importing core GA (for GOOGLE_ASSISTANT_SCHEMA) pulls in the camera component,
+# which imports the optional native `turbojpeg` lib. Stub it so the export
+# self-check test can import the schema without the binary dependency.
+sys.modules.setdefault("turbojpeg", MagicMock())
+
 # Ensure our integration is importable
 sys.path.insert(0, str(Path(__file__).parent.parent / "custom_components"))
 sys.path.insert(0, str(Path(__file__).parent.parent))

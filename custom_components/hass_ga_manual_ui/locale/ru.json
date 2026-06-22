@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nВ вашем файле configuration.yaml есть раздел `google_assistant:`. Эта интеграция теперь управляет Google Assistant и переопределяет его, поэтому вы можете удалить этот раздел.",
+  "yaml_notice": "В вашем файле configuration.yaml найден раздел `google_assistant:`. Эта интеграция заменяет его, поэтому вы можете его удалить.",
   "install_notice": "Google Assistant (Вручную) установлен. Если его карточка не отображается в Настройки → Голосовые помощники, выполните однократную жесткую перезагрузку браузера (Ctrl+Shift+R или Cmd+Shift+R на Mac). Это нужно сделать только один раз, после установки или обновления.",
   "frontend": {
     "yaml_detected": "Раздел <code>google_assistant:</code> обнаружен в вашем файле <code>configuration.yaml</code> и был отключён. Эта интеграция теперь управляет конфигурацией Google Assistant. Вы можете безопасно удалить раздел <code>google_assistant:</code> из конфигурации YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Не удалось включить отчёты о состоянии. Попробуйте выключить и снова включить интеграцию или проверьте журналы Home Assistant.",
     "report_state_disable_failed": "Не удалось отключить отчёты о состоянии. Попробуйте выключить и снова включить интеграцию или проверьте журналы Home Assistant.",
     "ready_banner": "{name} готов, управляйте им в Настройки → Голосовые помощники.",
-    "update_available": "Доступна новая версия Google Assistant (Вручную). Обновите браузер (Ctrl+Shift+R или Cmd+Shift+R на Mac), чтобы загрузить её."
+    "update_available": "Доступна новая версия Google Assistant (Вручную). Обновите браузер (Ctrl+Shift+R или Cmd+Shift+R на Mac), чтобы загрузить её.",
+    "export_yaml": "Экспорт YAML",
+    "import_yaml": "Импорт YAML",
+    "import_confirm_title": "Импортировать конфигурацию YAML?",
+    "import_confirm_text": "Это заменит все настройки Google Assistant (и открытые объекты) содержимым этого файла. Псевдонимы добавляются и никогда не удаляются.",
+    "import_confirm_warning": "Это действие нельзя отменить.",
+    "import_success": "Конфигурация успешно импортирована.",
+    "import_failed": "Не удалось импортировать конфигурацию."
   }
 }

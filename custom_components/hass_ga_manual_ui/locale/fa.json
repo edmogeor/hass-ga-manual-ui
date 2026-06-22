@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nشما یک بخش `google_assistant:` در configuration.yaml خود دارید. این یکپارچه‌سازی اکنون دستیار Google را مدیریت می‌کند و آن بخش را نادیده می‌گیرد، بنابراین می‌توانید آن بخش را حذف کنید.",
+  "yaml_notice": "یک بخش `google_assistant:` در configuration.yaml شما پیدا شد. این یکپارچه‌سازی جایگزین آن می‌شود، بنابراین می‌توانید آن را حذف کنید.",
   "install_notice": "Google Assistant (دستی) نصب شد. اگر کارت آن در تنظیمات ← دستیارهای صوتی ظاهر نشد، یک بار مرورگر خود را به‌سختی بازنشانی کنید (Ctrl+Shift+R یا Cmd+Shift+R در Mac). این کار فقط یک بار، پس از نصب یا به‌روزرسانی لازم است.",
   "frontend": {
     "yaml_detected": "بخش <code>google_assistant:</code> در <code>configuration.yaml</code> شما شناسایی شد و غیرفعال گردید. این یکپارچه‌سازی اکنون پیکربندی دستیار Google شما را مدیریت می‌کند. می‌توانید بخش <code>google_assistant:</code> را با خیال راحت از پیکربندی YAML حذف کنید.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "فعال کردن گزارش وضعیت ناموفق بود. سعی کنید یکپارچه‌سازی را خاموش و دوباره روشن کنید، یا گزارش‌های Home Assistant را بررسی کنید.",
     "report_state_disable_failed": "غیرفعال کردن گزارش وضعیت ناموفق بود. سعی کنید یکپارچه‌سازی را خاموش و دوباره روشن کنید، یا گزارش‌های Home Assistant را بررسی کنید.",
     "ready_banner": "{name} آماده است، آن را در تنظیمات ← دستیارهای صوتی مدیریت کنید.",
-    "update_available": "نسخه جدید Google Assistant (دستی) در دسترس است. مرورگر خود را بازنشانی کنید (Ctrl+Shift+R یا Cmd+Shift+R در Mac) تا بارگیری شود."
+    "update_available": "نسخه جدید Google Assistant (دستی) در دسترس است. مرورگر خود را بازنشانی کنید (Ctrl+Shift+R یا Cmd+Shift+R در Mac) تا بارگیری شود.",
+    "export_yaml": "صدور YAML",
+    "import_yaml": "ورود YAML",
+    "import_confirm_title": "پیکربندی YAML وارد شود؟",
+    "import_confirm_text": "این کار تمام تنظیمات دستیار Google (و موجودیت‌های نمایش‌داده‌شده) را با محتوای این فایل جایگزین می‌کند. نام‌های مستعار افزوده می‌شوند و هرگز حذف نمی‌شوند.",
+    "import_confirm_warning": "این کار قابل بازگشت نیست.",
+    "import_success": "پیکربندی با موفقیت وارد شد.",
+    "import_failed": "ورود پیکربندی ناموفق بود."
   }
 }

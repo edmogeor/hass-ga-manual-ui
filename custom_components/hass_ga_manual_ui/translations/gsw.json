@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "So funktioniert's",
+        "description": "Die Integration verwaltet Google Assistant und überschreibt jede `google_assistant:`-Abschnitt in dim configuration.yaml. Du chasch spöter e eigenständigi YAML-Konfiguration under Istellunge → Sprachassistente exportiere oder importiere."
+      },
       "user": {
-        "title": "Google Assistant (Manuell)",
-        "description": "Gib dini Google Cloud Projekt-ID ii.\n\nFolg em Iirrichtigsleitfade uf {guide_url} (Schritt 1–13). Im nächste Schritt chasch du dini Dienstkonto JSON-Schlüssel ychlege.{yaml_notice}",
+        "title": "Bestehendi Konfiguration migriere",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekt-ID"
+          "migrate_yaml": "Mini bestehendi YAML-Konfiguration migriere"
         },
         "data_description": {
-          "project_id": "Dini Google Cloud Projekt-ID"
+          "migrate_yaml": "Kopiert Freigab, Statusmäldig, PIN und Aliase. Abwähle, zum vo vorne afange."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuell)",
+        "description": "Gib dini Google Cloud Projekt-ID ii. Lueg de Iirrichtigsleitfade uf {guide_url} (Schritt 1-13).",
+        "data": {
+          "project_id": "Projekt-ID"
         }
       },
       "service_account": {
         "title": "Dienstkonto",
-        "description": "Chlege de Inhalt vo dim Dienstkonto JSON-Schlüsseldatei ii.\n\nErstell eis uf {docs_url} (Schritt 12 vom Leitfade uf {guide_url}).",
+        "description": "Chlege dim Dienstkonto JSON-Schlüssel ii. Erstell eis uf {docs_url} (Leitfade-Schritt 12).",
         "data": {
           "service_account": "Dienstkonto JSON"
-        },
-        "data_description": {
-          "service_account": "Chlege dine rundergelade Dienstkonto JSON-Schlüssel ii"
         }
       }
     },

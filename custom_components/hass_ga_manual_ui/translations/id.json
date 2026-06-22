@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Cara kerjanya",
+        "description": "Integrasi ini mengelola Google Assistant dan menggantikan bagian `google_assistant:` mana pun di configuration.yaml Anda. Anda dapat mengekspor atau mengimpor konfigurasi YAML mandiri nanti dari Pengaturan → Asisten suara."
+      },
       "user": {
-        "title": "Google Assistant (Manual)",
-        "description": "Masukkan ID proyek Google Cloud Anda.\n\nIkuti panduan penyiapan di {guide_url} (langkah 1–13). Anda akan menempelkan kunci JSON akun layanan di langkah berikutnya.{yaml_notice}",
+        "title": "Migrasikan konfigurasi yang ada",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID Proyek"
+          "migrate_yaml": "Migrasikan konfigurasi YAML saya yang ada"
         },
         "data_description": {
-          "project_id": "ID proyek Google Cloud Anda"
+          "migrate_yaml": "Menyalin paparan, pelaporan status, PIN, dan alias. Hapus centang untuk memulai dari awal."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manual)",
+        "description": "Masukkan ID proyek Google Cloud Anda. Lihat panduan penyiapan di {guide_url} (langkah 1-13).",
+        "data": {
+          "project_id": "ID Proyek"
         }
       },
       "service_account": {
         "title": "Akun Layanan",
-        "description": "Tempelkan isi file kunci JSON akun layanan Anda.\n\nBuat satu di {docs_url} (langkah 12 panduan di {guide_url}).",
+        "description": "Tempelkan kunci JSON akun layanan Anda. Buat satu di {docs_url} (langkah 12 panduan).",
         "data": {
           "service_account": "JSON akun layanan"
-        },
-        "data_description": {
-          "service_account": "Tempelkan kunci JSON akun layanan yang telah diunduh"
         }
       }
     },

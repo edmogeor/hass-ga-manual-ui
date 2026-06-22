@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\n您的 configuration.yaml 中存在 `google_assistant:` 配置节。此集成现已接管 Google Assistant 的管理并覆盖该配置，您可以将其删除。",
+  "yaml_notice": "在您的 configuration.yaml 中找到了 `google_assistant:` 配置节。此集成会将其替换，您可以将其删除。",
   "install_notice": "Google Assistant（手动）已安装。如果其卡片未出现在设置 → 语音助手下，请对浏览器进行一次硬刷新（Ctrl+Shift+R，Mac 上为 Cmd+Shift+R）。此操作仅在安装或更新后需要执行一次。",
   "frontend": {
     "yaml_detected": "在您的 <code>configuration.yaml</code> 中检测到 <code>google_assistant:</code> 配置节，已将其禁用。此集成现已接管您的 Google Assistant 配置。您可以安全地从 YAML 配置中删除 <code>google_assistant:</code> 配置节。",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "启用状态上报失败。请尝试关闭并重新开启集成，或查看 Home Assistant 日志。",
     "report_state_disable_failed": "禁用状态上报失败。请尝试关闭并重新开启集成，或查看 Home Assistant 日志。",
     "ready_banner": "{name} 已就绪，请在设置 → 语音助手中进行管理。",
-    "update_available": "Google Assistant（手动）有新版本可用。请刷新浏览器（Ctrl+Shift+R，Mac 上为 Cmd+Shift+R）以加载新版本。"
+    "update_available": "Google Assistant（手动）有新版本可用。请刷新浏览器（Ctrl+Shift+R，Mac 上为 Cmd+Shift+R）以加载新版本。",
+    "export_yaml": "导出 YAML",
+    "import_yaml": "导入 YAML",
+    "import_confirm_title": "导入 YAML 配置？",
+    "import_confirm_text": "这将用此文件的内容替换 Google Assistant 的所有设置（以及已公开的实体）。别名只会被添加，永不删除。",
+    "import_confirm_warning": "此操作无法撤消。",
+    "import_success": "配置导入成功。",
+    "import_failed": "配置导入失败。"
   }
 }

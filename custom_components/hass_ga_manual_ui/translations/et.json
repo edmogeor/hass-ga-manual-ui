@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Kuidas see toimib",
+        "description": "See integratsioon haldab Google Assistanti ja alistab kõik `google_assistant:` jaotised teie configuration.yaml-is. Hiljem saate eraldiseisva YAML-konfiguratsiooni eksportida või importida menüüst Seaded → Häälassistendid."
+      },
       "user": {
-        "title": "Google Assistant (Käsitsi)",
-        "description": "Sisestage oma Google Cloud projekti ID.\n\nJärgige seadistusjuhendit aadressil {guide_url} (sammud 1–13). Järgmises sammus kleepite oma teenusekonto JSON-võtme.{yaml_notice}",
+        "title": "Olemasoleva konfiguratsiooni migreerimine",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekti ID"
+          "migrate_yaml": "Migreeri minu olemasolev YAML-konfiguratsioon"
         },
         "data_description": {
-          "project_id": "Teie Google Cloud projekti ID"
+          "migrate_yaml": "Kopeerib avalikustamise, oleku aruandluse, PIN-koodi ja aliased. Tühjenda märkeruut, et alustada nullist."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Käsitsi)",
+        "description": "Sisestage oma Google Cloud projekti ID. Vaadake seadistusjuhendit aadressil {guide_url} (sammud 1-13).",
+        "data": {
+          "project_id": "Projekti ID"
         }
       },
       "service_account": {
         "title": "Teenusekonto",
-        "description": "Kleepige oma teenusekonto JSON-võtmefaili sisu.\n\nLooge see aadressil {docs_url} ({guide_url} juhendi samm 12).",
+        "description": "Kleepige oma teenusekonto JSON-võti. Looge see aadressil {docs_url} (juhendi samm 12).",
         "data": {
           "service_account": "Teenusekonto JSON"
-        },
-        "data_description": {
-          "service_account": "Kleepige allalaaditud teenusekonto JSON-võti"
         }
       }
     },

@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nDu har ein `google_assistant:`-seksjon i configuration.yaml. Denne integrasjonen styrer no Google Assistant og overstyrer han, så du kan fjerne den seksjonen.",
+  "yaml_notice": "Det vart funne ein `google_assistant:`-seksjon i configuration.yaml. Denne integrasjonen erstattar han, så du kan fjerne han.",
   "install_notice": "Google Assistant (Manual) er installert. Viss kortet ikkje visest under Innstillingar → Stemmassistantar, gjer ei eingongs hard oppdatering av nettlesaren din (Ctrl+Shift+R, eller Cmd+Shift+R på Mac). Dette trengst berre éin gong, etter installasjon eller oppdatering.",
   "frontend": {
     "yaml_detected": "Seksjonen <code>google_assistant:</code> vart funnen i <code>configuration.yaml</code> og er vorte deaktivert. Denne integrasjonen styrer no Google Assistant-konfigurasjonen din. Du kan trygt fjerne <code>google_assistant:</code>-seksjonen frå YAML-konfigurasjonen din.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Klarte ikkje å aktivere statusrapportering. Prøv å slå av og på integrasjonen, eller sjekk Home Assistant-loggane.",
     "report_state_disable_failed": "Klarte ikkje å deaktivere statusrapportering. Prøv å slå av og på integrasjonen, eller sjekk Home Assistant-loggane.",
     "ready_banner": "{name} er klar, administrer det under Innstillingar → Stemmassistantar.",
-    "update_available": "Ein ny versjon av Google Assistant (Manual) er tilgjengeleg. Oppdater nettlesaren din (Ctrl+Shift+R, eller Cmd+Shift+R på Mac) for å laste han inn."
+    "update_available": "Ein ny versjon av Google Assistant (Manual) er tilgjengeleg. Oppdater nettlesaren din (Ctrl+Shift+R, eller Cmd+Shift+R på Mac) for å laste han inn.",
+    "export_yaml": "Eksporter YAML",
+    "import_yaml": "Importer YAML",
+    "import_confirm_title": "Importere YAML-konfigurasjon?",
+    "import_confirm_text": "Dette erstattar alle innstillingar for Google Assistant (og eksponerte einingar) med innhaldet i denne fila. Alias vert lagde til og aldri fjerna.",
+    "import_confirm_warning": "Dette kan ikkje angrast.",
+    "import_success": "Konfigurasjonen vart importert.",
+    "import_failed": "Klarte ikkje å importere konfigurasjonen."
   }
 }

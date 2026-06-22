@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "איך זה עובד",
+        "description": "האינטגרציה הזו מנהלת את Google Assistant ומחליפה כל קטע `google_assistant:` בקובץ configuration.yaml שלך. תוכל מאוחר יותר לייצא או לייבא תצורת YAML עצמאית מתוך הגדרות ← עוזרים קוליים."
+      },
       "user": {
-        "title": "Google Assistant (הגדרה ידנית)",
-        "description": "הזן את מזהה הפרויקט שלך ב-Google Cloud.\n\nעקוב אחר מדריך ההגדרה בכתובת {guide_url} (שלבים 1–13). תדביק את מפתח ה-JSON של חשבון השירות בשלב הבא.{yaml_notice}",
+        "title": "העברת תצורה קיימת",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "מזהה פרויקט"
+          "migrate_yaml": "העבר את תצורת ה-YAML הקיימת שלי"
         },
         "data_description": {
-          "project_id": "מזהה הפרויקט שלך ב-Google Cloud"
+          "migrate_yaml": "מעתיק חשיפה, דיווח מצב, קוד PIN וכינויים. בטל את הסימון כדי להתחיל מחדש."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (הגדרה ידנית)",
+        "description": "הזן את מזהה הפרויקט שלך ב-Google Cloud. ראה את מדריך ההגדרה בכתובת {guide_url} (שלבים 1-13).",
+        "data": {
+          "project_id": "מזהה פרויקט"
         }
       },
       "service_account": {
         "title": "חשבון שירות",
-        "description": "הדבק את תוכן קובץ מפתח ה-JSON של חשבון השירות.\n\nצור אחד בכתובת {docs_url} (שלב 12 במדריך בכתובת {guide_url}).",
+        "description": "הדבק את מפתח ה-JSON של חשבון השירות. צור אחד בכתובת {docs_url} (שלב 12 במדריך).",
         "data": {
           "service_account": "JSON של חשבון שירות"
-        },
-        "data_description": {
-          "service_account": "הדבק את מפתח ה-JSON של חשבון השירות שהורדת"
         }
       }
     },

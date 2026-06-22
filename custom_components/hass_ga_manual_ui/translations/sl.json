@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Kako deluje",
+        "description": "Ta integracija upravlja Google Assistant in nadomesti vsak razdelek `google_assistant:` v vašem configuration.yaml. Pozneje lahko izvozite ali uvozite samostojno konfiguracijo YAML iz Nastavitve → Glasovni asistenti."
+      },
       "user": {
-        "title": "Google Assistant (Ročno)",
-        "description": "Vnesite ID svojega projekta Google Cloud.\n\nSledite vodniku za nastavitev na {guide_url} (koraki 1–13). V naslednjem koraku boste prilepili ključ JSON računa storitve.{yaml_notice}",
+        "title": "Selitev obstoječe konfiguracije",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID projekta"
+          "migrate_yaml": "Preseli mojo obstoječo konfiguracijo YAML"
         },
         "data_description": {
-          "project_id": "ID vašega projekta Google Cloud"
+          "migrate_yaml": "Kopira izpostavljenost, poročanje o stanju, PIN in vzdevke. Počistite, če želite začeti znova."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Ročno)",
+        "description": "Vnesite ID svojega projekta Google Cloud. Glejte vodnik za nastavitev na {guide_url} (koraki 1-13).",
+        "data": {
+          "project_id": "ID projekta"
         }
       },
       "service_account": {
         "title": "Račun storitve",
-        "description": "Prilepite vsebino datoteke ključa JSON računa storitve.\n\nUstvarite ga na {docs_url} (korak 12 vodnika na {guide_url}).",
+        "description": "Prilepite ključ JSON računa storitve. Ustvarite ga na {docs_url} (korak 12 vodnika).",
         "data": {
           "service_account": "JSON računa storitve"
-        },
-        "data_description": {
-          "service_account": "Prilepite preneseni ključ JSON računa storitve"
         }
       }
     },

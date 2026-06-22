@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nZure configuration.yaml fitxategian `google_assistant:` atala daukazu. Integrazio honek orain Google Assistant kudeatzen du eta gainidazten du, beraz atal hori ken dezakezu.",
+  "yaml_notice": "`google_assistant:` atala aurkitu da zure configuration.yaml fitxategian. Integrazio honek ordezkatzen du, beraz ken dezakezu.",
   "install_notice": "Google Assistant (Manual) instalatuta dago. Bere txartela Ezarpenak → Ahots-laguntzaileak atalean agertzen ez bada, egin nabigatzailearen behin-behineko freskatze gogorra (Ctrl+Shift+R, edo Mac-en Cmd+Shift+R). Behin bakarrik behar da, instalatu edo eguneratu ondoren.",
   "frontend": {
     "yaml_detected": "<code>google_assistant:</code> atala aurkitu da zure <code>configuration.yaml</code> fitxategian eta desgaitu da. Integrazio honek orain zure Google Assistant konfigurazioa kudeatzen du. <code>google_assistant:</code> atala YAML konfigurazio fitxategitik modu seguruan ken dezakezu.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Ezin izan da egoera-txostena gaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
     "report_state_disable_failed": "Ezin izan da egoera-txostena desgaitu. Saiatu integrazioa itzali eta berriro pizten, edo begiratu Home Assistant erregistroak.",
     "ready_banner": "{name} prest dago, kudeatu Ezarpenak → Ahots-laguntzaileak atalean.",
-    "update_available": "Google Assistant (Manual)-ren bertsio berri bat dago eskuragarri. Freskatu nabigatzailea (Ctrl+Shift+R, edo Mac-en Cmd+Shift+R) kargatzeko."
+    "update_available": "Google Assistant (Manual)-ren bertsio berri bat dago eskuragarri. Freskatu nabigatzailea (Ctrl+Shift+R, edo Mac-en Cmd+Shift+R) kargatzeko.",
+    "export_yaml": "Esportatu YAML",
+    "import_yaml": "Inportatu YAML",
+    "import_confirm_title": "YAML konfigurazioa inportatu?",
+    "import_confirm_text": "Honek Google Assistant-en ezarpen guztiak (eta agerian dauden entitateak) fitxategi honen edukiarekin ordezkatzen ditu. Aliasak gehitu egiten dira eta ez dira inoiz kentzen.",
+    "import_confirm_warning": "Hau ezin da desegin.",
+    "import_success": "Konfigurazioa ondo inportatu da.",
+    "import_failed": "Ezin izan da konfigurazioa inportatu."
   }
 }

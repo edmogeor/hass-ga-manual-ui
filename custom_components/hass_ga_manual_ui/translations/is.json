@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Hvernig þetta virkar",
+        "description": "Þessi samþætting sér um Google Assistant og hnekkir öllum `google_assistant:` hlutum í configuration.yaml þínu. Þú getur síðar flutt út eða inn sjálfstæða YAML-stillingu úr Stillingar → Raddaðstoðarmenn."
+      },
       "user": {
-        "title": "Google Assistant (Handvirkt)",
-        "description": "Sláðu inn verkefnis-ID þitt í Google Cloud.\n\nFylgdu uppsetningarleiðbeiningum á {guide_url} (skref 1–13). Þú límir þjónustureikningslykilinn JSON inn í næsta skrefi.{yaml_notice}",
+        "title": "Flytja núverandi stillingar",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Verkefnis-ID"
+          "migrate_yaml": "Flytja núverandi YAML-stillingar mínar"
         },
         "data_description": {
-          "project_id": "Verkefnis-ID þitt í Google Cloud"
+          "migrate_yaml": "Afritar birtingu, stöðuskýrslu, PIN og samnefni. Taktu hakið af til að byrja upp á nýtt."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Handvirkt)",
+        "description": "Sláðu inn verkefnis-ID þitt í Google Cloud. Sjá uppsetningarleiðbeiningar á {guide_url} (skref 1-13).",
+        "data": {
+          "project_id": "Verkefnis-ID"
         }
       },
       "service_account": {
         "title": "Þjónustureikningur",
-        "description": "Límdu innihald JSON-lykilskrárinnar þjónustureiknings.\n\nBúðu til einn á {docs_url} (skref 12 í leiðbeiningum á {guide_url}).",
+        "description": "Límdu inn JSON-lykil þjónustureikningsins. Búðu til einn á {docs_url} (skref 12 í leiðbeiningum).",
         "data": {
           "service_account": "Þjónustureikningur JSON"
-        },
-        "data_description": {
-          "service_account": "Límdu niðurhalsta JSON-lykil þjónustureiknings"
         }
       }
     },

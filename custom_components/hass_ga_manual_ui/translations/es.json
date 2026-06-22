@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Cómo funciona",
+        "description": "Esta integración gestiona Google Assistant y reemplaza cualquier sección `google_assistant:` en su configuration.yaml. Más adelante puede exportar o importar una configuración YAML independiente desde Configuración → Asistentes de voz."
+      },
       "user": {
-        "title": "Google Assistant (Manual)",
-        "description": "Ingrese el ID de su proyecto de Google Cloud.\n\nSiga la guía de configuración en {guide_url} (pasos 1–13). Pegará su clave JSON de cuenta de servicio en el siguiente paso.{yaml_notice}",
+        "title": "Migrar configuración existente",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID del proyecto"
+          "migrate_yaml": "Migrar mi configuración YAML existente"
         },
         "data_description": {
-          "project_id": "El ID de su proyecto de Google Cloud"
+          "migrate_yaml": "Copia la exposición, el informe de estado, el PIN y los alias. Desmarque para empezar de cero."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manual)",
+        "description": "Ingrese el ID de su proyecto de Google Cloud. Consulte la guía de configuración en {guide_url} (pasos 1-13).",
+        "data": {
+          "project_id": "ID del proyecto"
         }
       },
       "service_account": {
         "title": "Cuenta de servicio",
-        "description": "Pegue el contenido de su archivo de clave JSON de cuenta de servicio.\n\nCree uno en {docs_url} (paso 12 de la guía en {guide_url}).",
+        "description": "Pegue su clave JSON de cuenta de servicio. Cree una en {docs_url} (paso 12 de la guía).",
         "data": {
           "service_account": "JSON de cuenta de servicio"
-        },
-        "data_description": {
-          "service_account": "Pegue su clave JSON de cuenta de servicio descargada"
         }
       }
     },

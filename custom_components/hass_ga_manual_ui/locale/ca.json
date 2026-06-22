@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nTeniu una secció `google_assistant:` al configuration.yaml. Aquesta integració ara gestiona Google Assistant i la substitueix, de manera que podeu eliminar aquella secció.",
+  "yaml_notice": "S'ha trobat una secció `google_assistant:` al vostre configuration.yaml. Aquesta integració la substitueix, de manera que la podeu eliminar.",
   "install_notice": "Google Assistant (Manual) està instal·lat. Si la seva targeta no apareix a Configuració → Assistents de veu, feu una actualització forçada única del navegador (Ctrl+Maj+R, o Cmd+Maj+R al Mac). Només cal fer-ho un cop, després d'instal·lar o actualitzar.",
   "frontend": {
     "yaml_detected": "S'ha detectat la secció <code>google_assistant:</code> al <code>configuration.yaml</code> i s'ha desactivat. Aquesta integració ara gestiona la vostra configuració de Google Assistant. Podeu eliminar de forma segura la secció <code>google_assistant:</code> de la vostra configuració YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "No s'ha pogut activar l'informe d'estat. Proveu de desactivar i tornar a activar la integració, o consulteu els registres de Home Assistant.",
     "report_state_disable_failed": "No s'ha pogut desactivar l'informe d'estat. Proveu de desactivar i tornar a activar la integració, o consulteu els registres de Home Assistant.",
     "ready_banner": "{name} està llest, gestioneu-lo a Configuració → Assistents de veu.",
-    "update_available": "Hi ha una nova versió de Google Assistant (Manual) disponible. Actualitzeu el navegador (Ctrl+Maj+R, o Cmd+Maj+R al Mac) per carregar-la."
+    "update_available": "Hi ha una nova versió de Google Assistant (Manual) disponible. Actualitzeu el navegador (Ctrl+Maj+R, o Cmd+Maj+R al Mac) per carregar-la.",
+    "export_yaml": "Exporta YAML",
+    "import_yaml": "Importa YAML",
+    "import_confirm_title": "Voleu importar la configuració YAML?",
+    "import_confirm_text": "Això substitueix tots els paràmetres de Google Assistant (i les entitats exposades) pel contingut d'aquest fitxer. Els àlies s'afegeixen i no s'eliminen mai.",
+    "import_confirm_warning": "Això no es pot desfer.",
+    "import_success": "Configuració importada correctament.",
+    "import_failed": "No s'ha pogut importar la configuració."
   }
 }

@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Kaip tai veikia",
+        "description": "Ši integracija valdo Google Assistant ir pakeičia bet kurią `google_assistant:` skiltį jūsų configuration.yaml faile. Vėliau galite eksportuoti arba importuoti atskirą YAML konfigūraciją iš Nustatymai → Balso asistentai."
+      },
       "user": {
-        "title": "Google Assistant (Rankinis)",
-        "description": "Įveskite savo Google Cloud projekto ID.\n\nVadovaukitės sąrankos vadovu {guide_url} (1–13 veiksmai). Kitame veiksme įklijuosite savo paslaugos paskyros JSON raktą.{yaml_notice}",
+        "title": "Migruoti esamą konfigūraciją",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekto ID"
+          "migrate_yaml": "Migruoti mano esamą YAML konfigūraciją"
         },
         "data_description": {
-          "project_id": "Jūsų Google Cloud projekto ID"
+          "migrate_yaml": "Nukopijuoja atskleidimą, būsenos ataskaitas, PIN ir slapyvardžius. Atžymėkite, kad pradėtumėte iš naujo."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Rankinis)",
+        "description": "Įveskite savo Google Cloud projekto ID. Žiūrėkite sąrankos vadovą {guide_url} (1-13 veiksmai).",
+        "data": {
+          "project_id": "Projekto ID"
         }
       },
       "service_account": {
         "title": "Paslaugos paskyra",
-        "description": "Įklijuokite savo paslaugos paskyros JSON rakto failo turinį.\n\nSukurkite jį {docs_url} ({guide_url} vadovo 12 veiksmas).",
+        "description": "Įklijuokite savo paslaugos paskyros JSON raktą. Sukurkite jį {docs_url} (vadovo 12 veiksmas).",
         "data": {
           "service_account": "Paslaugos paskyros JSON"
-        },
-        "data_description": {
-          "service_account": "Įklijuokite atsisiųstą paslaugos paskyros JSON raktą"
         }
       }
     },

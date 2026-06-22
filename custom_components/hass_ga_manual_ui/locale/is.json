@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nÞú ert með `google_assistant:` hluta í configuration.yaml. Þessi samþætting sér nú um Google Assistant og hnekkir honum, svo þú getur fjarlægt þann hluta.",
+  "yaml_notice": "`google_assistant:` hluti fannst í configuration.yaml þínu. Þessi samþætting kemur í staðinn fyrir hann, svo þú getur fjarlægt hann.",
   "install_notice": "Google Assistant (Manual) er uppsett. Ef spjaldið birtist ekki undir Stillingar → Raddaðstoðarmenn, gerðu einu sinni harða endurhleðslu á vafranum (Ctrl+Shift+R, eða Cmd+Shift+R á Mac). Þetta er aðeins þörf einu sinni, eftir uppsetningu eða uppfærslu.",
   "frontend": {
     "yaml_detected": "Hlutinn <code>google_assistant:</code> fannst í <code>configuration.yaml</code> og hefur verið gerður óvirkur. Þessi samþætting sér nú um Google Assistant stillingar þínar. Þú getur fjarlægt <code>google_assistant:</code> hlutann örugglega úr YAML-stillingum þínum.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Tókst ekki að virkja stöðuskýrslugjöf. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
     "report_state_disable_failed": "Tókst ekki að gera stöðuskýrslugjöf óvirka. Reyndu að slökkva og kveikja á samþættingunni, eða athugaðu Home Assistant kladdana.",
     "ready_banner": "{name} er tilbúið, sjáðu um það undir Stillingar → Raddaðstoðarmenn.",
-    "update_available": "Ný útgáfa af Google Assistant (Manual) er tiltæk. Endurhladdu vafranum (Ctrl+Shift+R, eða Cmd+Shift+R á Mac) til að hlaða henni."
+    "update_available": "Ný útgáfa af Google Assistant (Manual) er tiltæk. Endurhladdu vafranum (Ctrl+Shift+R, eða Cmd+Shift+R á Mac) til að hlaða henni.",
+    "export_yaml": "Flytja út YAML",
+    "import_yaml": "Flytja inn YAML",
+    "import_confirm_title": "Flytja inn YAML-stillingar?",
+    "import_confirm_text": "Þetta kemur í stað allra stillinga fyrir Google Assistant (og birtra eininga) með innihaldi þessarar skráar. Samnefni eru bætt við og aldrei fjarlægð.",
+    "import_confirm_warning": "Ekki er hægt að afturkalla þetta.",
+    "import_success": "Stillingar fluttar inn.",
+    "import_failed": "Mistókst að flytja inn stillingar."
   }
 }

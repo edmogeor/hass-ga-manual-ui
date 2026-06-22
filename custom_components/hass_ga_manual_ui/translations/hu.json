@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Hogyan működik",
+        "description": "Ez az integráció kezeli a Google Assistantt, és felülír minden `google_assistant:` szakaszt a configuration.yaml fájlban. Később exportálhat vagy importálhat egy önálló YAML-konfigurációt a Beállítások → Hangalapú asszisztensek menüből."
+      },
       "user": {
-        "title": "Google Assistant (Manuális)",
-        "description": "Adja meg a Google Cloud projektazonosítóját.\n\nKövesse a beállítási útmutatót a következő helyen: {guide_url} (1–13. lépések). A következő lépésben illessze be a szolgáltatásfiók JSON-kulcsát.{yaml_notice}",
+        "title": "Meglévő konfiguráció migrálása",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projektazonosító"
+          "migrate_yaml": "A meglévő YAML-konfigurációm migrálása"
         },
         "data_description": {
-          "project_id": "Google Cloud projektazonosítója"
+          "migrate_yaml": "Másolja a hozzáférést, az állapotjelentést, a PIN-kódot és az álneveket. Törölje a jelölést a tiszta lappal való kezdéshez."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuális)",
+        "description": "Adja meg a Google Cloud projektazonosítóját. Lásd a beállítási útmutatót itt: {guide_url} (1-13. lépések).",
+        "data": {
+          "project_id": "Projektazonosító"
         }
       },
       "service_account": {
         "title": "Szolgáltatásfiók",
-        "description": "Illessze be a szolgáltatásfiók JSON-kulcsfájljának tartalmát.\n\nHozzon létre egyet a következő helyen: {docs_url} ({guide_url} útmutató 12. lépése).",
+        "description": "Illessze be a szolgáltatásfiók JSON-kulcsát. Hozzon létre egyet itt: {docs_url} (az útmutató 12. lépése).",
         "data": {
           "service_account": "Szolgáltatásfiók JSON"
-        },
-        "data_description": {
-          "service_account": "Illessze be a letöltött szolgáltatásfiók JSON-kulcsát"
         }
       }
     },

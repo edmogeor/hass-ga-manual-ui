@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nU heeft een `google_assistant:`-sectie in uw configuration.yaml. Deze integratie beheert nu Google Assistant en overschrijft die sectie, zodat u die kunt verwijderen.",
+  "yaml_notice": "Er is een `google_assistant:`-sectie gevonden in uw configuration.yaml. Deze integratie vervangt die, zodat u hem kunt verwijderen.",
   "install_notice": "Google Assistant (Handmatig) is geïnstalleerd. Als de kaart niet verschijnt onder Instellingen → Spraakassistenten, voer dan een eenmalige harde vernieuwing van uw browser uit (Ctrl+Shift+R, of Cmd+Shift+R op Mac). Dit is slechts één keer nodig, na installatie of bijwerken.",
   "frontend": {
     "yaml_detected": "De sectie <code>google_assistant:</code> is gedetecteerd in uw <code>configuration.yaml</code> en is uitgeschakeld. Deze integratie beheert nu uw Google Assistant-configuratie. U kunt de sectie <code>google_assistant:</code> veilig verwijderen uit uw YAML-configuratie.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Statusrapportage inschakelen mislukt. Probeer de integratie uit en weer in te schakelen, of bekijk de Home Assistant-logboeken.",
     "report_state_disable_failed": "Statusrapportage uitschakelen mislukt. Probeer de integratie uit en weer in te schakelen, of bekijk de Home Assistant-logboeken.",
     "ready_banner": "{name} is gereed, beheer het via Instellingen → Spraakassistenten.",
-    "update_available": "Er is een nieuwe versie van Google Assistant (Handmatig) beschikbaar. Vernieuw uw browser (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om deze te laden."
+    "update_available": "Er is een nieuwe versie van Google Assistant (Handmatig) beschikbaar. Vernieuw uw browser (Ctrl+Shift+R, of Cmd+Shift+R op Mac) om deze te laden.",
+    "export_yaml": "YAML exporteren",
+    "import_yaml": "YAML importeren",
+    "import_confirm_title": "YAML-configuratie importeren?",
+    "import_confirm_text": "Dit vervangt alle instellingen voor Google Assistant (en blootgestelde entiteiten) door de inhoud van dit bestand. Aliassen worden toegevoegd en nooit verwijderd.",
+    "import_confirm_warning": "Dit kan niet ongedaan worden gemaakt.",
+    "import_success": "Configuratie succesvol geïmporteerd.",
+    "import_failed": "Kon configuratie niet importeren."
   }
 }

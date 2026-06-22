@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "วิธีการทำงาน",
+        "description": "การรวมระบบนี้จัดการ Google Assistant และแทนที่ส่วน `google_assistant:` ใดๆ ใน configuration.yaml ของคุณ คุณสามารถส่งออกหรือนำเข้าการกำหนดค่า YAML แบบสแตนด์อโลนได้ในภายหลังจาก การตั้งค่า → ผู้ช่วยเสียง"
+      },
       "user": {
-        "title": "Google Assistant (ตั้งค่าเอง)",
-        "description": "ป้อนรหัสโปรเจกต์ Google Cloud ของคุณ\n\nทำตามคู่มือการตั้งค่าที่ {guide_url} (ขั้นตอนที่ 1–13) คุณจะวางคีย์ JSON ของบัญชีบริการในขั้นตอนถัดไป{yaml_notice}",
+        "title": "ย้ายการกำหนดค่าที่มีอยู่",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "รหัสโปรเจกต์"
+          "migrate_yaml": "ย้ายการกำหนดค่า YAML ที่มีอยู่ของฉัน"
         },
         "data_description": {
-          "project_id": "รหัสโปรเจกต์ Google Cloud ของคุณ"
+          "migrate_yaml": "คัดลอกการเปิดเผย การรายงานสถานะ PIN และนามแฝง ยกเลิกการเลือกเพื่อเริ่มต้นใหม่"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (ตั้งค่าเอง)",
+        "description": "ป้อนรหัสโปรเจกต์ Google Cloud ของคุณ ดูคู่มือการตั้งค่าที่ {guide_url} (ขั้นตอนที่ 1-13)",
+        "data": {
+          "project_id": "รหัสโปรเจกต์"
         }
       },
       "service_account": {
         "title": "บัญชีบริการ",
-        "description": "วางเนื้อหาของไฟล์คีย์ JSON ของบัญชีบริการ\n\nสร้างที่ {docs_url} (ขั้นตอนที่ 12 ของคู่มือที่ {guide_url})",
+        "description": "วางคีย์ JSON ของบัญชีบริการ สร้างที่ {docs_url} (ขั้นตอนที่ 12 ของคู่มือ)",
         "data": {
           "service_account": "JSON บัญชีบริการ"
-        },
-        "data_description": {
-          "service_account": "วางคีย์ JSON ของบัญชีบริการที่ดาวน์โหลด"
         }
       }
     },

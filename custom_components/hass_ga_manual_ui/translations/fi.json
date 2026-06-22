@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Näin se toimii",
+        "description": "Tämä integraatio hallitsee Google Assistantia ja ohittaa kaikki `google_assistant:`-osiot configuration.yaml-tiedostossasi. Voit myöhemmin viedä tai tuoda erillisen YAML-määrityksen kohdasta Asetukset → Ääniavustajat."
+      },
       "user": {
-        "title": "Google Assistant (Manuaalinen)",
-        "description": "Anna Google Cloud -projektisi tunnus.\n\nSeuraa asennusopasta osoitteessa {guide_url} (vaiheet 1–13). Liität palvelutilin JSON-avaimen seuraavassa vaiheessa.{yaml_notice}",
+        "title": "Siirrä olemassa oleva määritys",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projektin tunnus"
+          "migrate_yaml": "Siirrä olemassa oleva YAML-määritykseni"
         },
         "data_description": {
-          "project_id": "Google Cloud -projektisi tunnus"
+          "migrate_yaml": "Kopioi näkyvyyden, tilaraportoinnin, PIN-koodin ja aliakset. Poista valinta aloittaaksesi alusta."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuaalinen)",
+        "description": "Anna Google Cloud -projektisi tunnus. Katso asennusopas osoitteessa {guide_url} (vaiheet 1-13).",
+        "data": {
+          "project_id": "Projektin tunnus"
         }
       },
       "service_account": {
         "title": "Palvelutili",
-        "description": "Liitä palvelutilisi JSON-avaintiedoston sisältö.\n\nLuo sellainen osoitteessa {docs_url} (opas {guide_url} vaihe 12).",
+        "description": "Liitä palvelutilisi JSON-avain. Luo sellainen osoitteessa {docs_url} (oppaan vaihe 12).",
         "data": {
           "service_account": "Palvelutilin JSON"
-        },
-        "data_description": {
-          "service_account": "Liitä ladattu palvelutilin JSON-avain"
         }
       }
     },

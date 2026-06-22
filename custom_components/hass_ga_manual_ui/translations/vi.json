@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Cách hoạt động",
+        "description": "Tích hợp này quản lý Google Assistant và ghi đè mọi mục `google_assistant:` trong configuration.yaml của bạn. Bạn có thể xuất hoặc nhập một cấu hình YAML độc lập sau này từ Cài đặt → Trợ lý giọng nói."
+      },
       "user": {
-        "title": "Google Assistant (Thủ công)",
-        "description": "Nhập ID dự án Google Cloud của bạn.\n\nTheo dõi hướng dẫn thiết lập tại {guide_url} (bước 1–13). Bạn sẽ dán khóa JSON tài khoản dịch vụ ở bước tiếp theo.{yaml_notice}",
+        "title": "Di chuyển cấu hình hiện có",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID dự án"
+          "migrate_yaml": "Di chuyển cấu hình YAML hiện có của tôi"
         },
         "data_description": {
-          "project_id": "ID dự án Google Cloud của bạn"
+          "migrate_yaml": "Sao chép việc hiển thị, báo cáo trạng thái, mã PIN và bí danh. Bỏ chọn để bắt đầu lại từ đầu."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Thủ công)",
+        "description": "Nhập ID dự án Google Cloud của bạn. Xem hướng dẫn thiết lập tại {guide_url} (bước 1-13).",
+        "data": {
+          "project_id": "ID dự án"
         }
       },
       "service_account": {
         "title": "Tài khoản dịch vụ",
-        "description": "Dán nội dung tệp khóa JSON tài khoản dịch vụ của bạn.\n\nTạo một tài khoản tại {docs_url} (bước 12 trong hướng dẫn tại {guide_url}).",
+        "description": "Dán khóa JSON tài khoản dịch vụ của bạn. Tạo một tài khoản tại {docs_url} (bước 12 trong hướng dẫn).",
         "data": {
           "service_account": "JSON tài khoản dịch vụ"
-        },
-        "data_description": {
-          "service_account": "Dán khóa JSON tài khoản dịch vụ đã tải xuống"
         }
       }
     },

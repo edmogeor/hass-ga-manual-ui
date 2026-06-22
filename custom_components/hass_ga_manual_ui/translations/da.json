@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Sådan fungerer det",
+        "description": "Denne integration administrerer Google Assistant og tilsidesætter ethvert `google_assistant:`-afsnit i din configuration.yaml. Du kan senere eksportere eller importere en selvstændig YAML-konfiguration fra Indstillinger → Stemmeassistenter."
+      },
       "user": {
-        "title": "Google Assistant (Manuel)",
-        "description": "Indtast dit Google Cloud-projekt-ID.\n\nFølg opsætningsguiden på {guide_url} (trin 1–13). Du indsætter din tjenestekonto JSON-nøgle i næste trin.{yaml_notice}",
+        "title": "Migrer eksisterende konfiguration",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekt-ID"
+          "migrate_yaml": "Migrer min eksisterende YAML-konfiguration"
         },
         "data_description": {
-          "project_id": "Dit Google Cloud-projekt-ID"
+          "migrate_yaml": "Kopierer eksponering, statusrapportering, PIN og aliasser. Fjern markeringen for at starte forfra."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuel)",
+        "description": "Indtast dit Google Cloud-projekt-ID. Se opsætningsguiden på {guide_url} (trin 1-13).",
+        "data": {
+          "project_id": "Projekt-ID"
         }
       },
       "service_account": {
         "title": "Tjenestekonto",
-        "description": "Indsæt indholdet af din tjenestekonto JSON-nøglefil.\n\nOpret en på {docs_url} (trin 12 i guiden på {guide_url}).",
+        "description": "Indsæt din tjenestekonto JSON-nøgle. Opret en på {docs_url} (trin 12 i guiden).",
         "data": {
           "service_account": "Tjenestekonto JSON"
-        },
-        "data_description": {
-          "service_account": "Indsæt din downloadede tjenestekonto JSON-nøgle"
         }
       }
     },

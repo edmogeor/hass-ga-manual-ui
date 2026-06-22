@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Sut mae hyn yn gweithio",
+        "description": "Mae'r integreiddiad hwn yn rheoli Google Assistant ac yn diystyru unrhyw adran `google_assistant:` yn eich configuration.yaml. Gallwch allforio neu fewnforio ffurfweddiad YAML annibynnol yn ddiweddarach o Gosodiadau → Cynorthwywyr Llais."
+      },
       "user": {
-        "title": "Google Assistant (Llawlyfr)",
-        "description": "Rhowch ID eich prosiect Google Cloud.\n\nDilynwch y canllaw gosod ar {guide_url} (camau 1–13). Byddwch yn gludo eich allwedd JSON cyfrif gwasanaeth yn y cam nesaf.{yaml_notice}",
+        "title": "Mudo'r ffurfweddiad presennol",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ID Prosiect"
+          "migrate_yaml": "Mudo fy ffurfweddiad YAML presennol"
         },
         "data_description": {
-          "project_id": "ID eich prosiect Google Cloud"
+          "migrate_yaml": "Yn copïo amlygiad, adrodd cyflwr, PIN ac arallenwau. Dad-diciwch i ddechrau o'r newydd."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Llawlyfr)",
+        "description": "Rhowch ID eich prosiect Google Cloud. Gweler y canllaw gosod ar {guide_url} (camau 1-13).",
+        "data": {
+          "project_id": "ID Prosiect"
         }
       },
       "service_account": {
         "title": "Cyfrif Gwasanaeth",
-        "description": "Gludwch gynnwys eich ffeil allwedd JSON cyfrif gwasanaeth.\n\nCrëwch un ar {docs_url} (cam 12 o'r canllaw ar {guide_url}).",
+        "description": "Gludwch allwedd JSON eich cyfrif gwasanaeth. Crëwch un ar {docs_url} (cam 12 y canllaw).",
         "data": {
           "service_account": "JSON Cyfrif Gwasanaeth"
-        },
-        "data_description": {
-          "service_account": "Gludwch eich allwedd JSON cyfrif gwasanaeth a lawrlwythwyd"
         }
       }
     },

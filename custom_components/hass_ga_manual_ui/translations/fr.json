@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Comment ça fonctionne",
+        "description": "Cette intégration gère Google Assistant et remplace toute section `google_assistant:` dans votre configuration.yaml. Vous pourrez plus tard exporter ou importer une configuration YAML autonome depuis Paramètres → Assistants vocaux."
+      },
       "user": {
-        "title": "Google Assistant (Manuel)",
-        "description": "Entrez l'identifiant de votre projet Google Cloud.\n\nSuivez le guide de configuration sur {guide_url} (étapes 1 à 13). Vous collerez votre clé JSON de compte de service à l'étape suivante.{yaml_notice}",
+        "title": "Migrer la configuration existante",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Identifiant du projet"
+          "migrate_yaml": "Migrer ma configuration YAML existante"
         },
         "data_description": {
-          "project_id": "L'identifiant de votre projet Google Cloud"
+          "migrate_yaml": "Copie l'exposition, le rapport d'état, le code PIN et les alias. Décochez pour repartir de zéro."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manuel)",
+        "description": "Entrez l'identifiant de votre projet Google Cloud. Consultez le guide de configuration sur {guide_url} (étapes 1-13).",
+        "data": {
+          "project_id": "Identifiant du projet"
         }
       },
       "service_account": {
         "title": "Compte de service",
-        "description": "Collez le contenu de votre fichier de clé JSON de compte de service.\n\nCréez-en un sur {docs_url} (étape 12 du guide sur {guide_url}).",
+        "description": "Collez la clé JSON de votre compte de service. Créez-en un sur {docs_url} (étape 12 du guide).",
         "data": {
           "service_account": "JSON du compte de service"
-        },
-        "data_description": {
-          "service_account": "Collez votre clé JSON de compte de service téléchargée"
         }
       }
     },

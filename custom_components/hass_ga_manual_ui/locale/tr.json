@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nconfiguration.yaml dosyanızda `google_assistant:` bölümü var. Bu entegrasyon artık Google Assistant'ı yönetiyor ve bu bölümü geçersiz kılıyor; bu nedenle o bölümü kaldırabilirsiniz.",
+  "yaml_notice": "configuration.yaml dosyanızda bir `google_assistant:` bölümü bulundu. Bu entegrasyon onun yerini alır, bu nedenle onu kaldırabilirsiniz.",
   "install_notice": "Google Assistant (Manuel) kuruldu. Kartı Ayarlar → Sesli asistanlar altında görünmüyorsa, tarayıcınızın bir kerelik sert yenilemesini yapın (Ctrl+Shift+R veya Mac'te Cmd+Shift+R). Bu, yükleme veya güncellemeden sonra yalnızca bir kez gereklidir.",
   "frontend": {
     "yaml_detected": "<code>configuration.yaml</code> dosyanızda <code>google_assistant:</code> bölümü tespit edildi ve devre dışı bırakıldı. Bu entegrasyon artık Google Assistant yapılandırmanızı yönetiyor. <code>google_assistant:</code> bölümünü YAML yapılandırmanızdan güvenle kaldırabilirsiniz.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Durum raporlama etkinleştirilemedi. Entegrasyonu kapatıp açmayı deneyin veya Home Assistant günlüklerini kontrol edin.",
     "report_state_disable_failed": "Durum raporlama devre dışı bırakılamadı. Entegrasyonu kapatıp açmayı deneyin veya Home Assistant günlüklerini kontrol edin.",
     "ready_banner": "{name} hazır, Ayarlar → Sesli asistanlar altında yönetin.",
-    "update_available": "Google Assistant (Manuel) için yeni bir sürüm mevcut. Yüklemek için tarayıcınızı yenileyin (Ctrl+Shift+R veya Mac'te Cmd+Shift+R)."
+    "update_available": "Google Assistant (Manuel) için yeni bir sürüm mevcut. Yüklemek için tarayıcınızı yenileyin (Ctrl+Shift+R veya Mac'te Cmd+Shift+R).",
+    "export_yaml": "YAML'yi dışa aktar",
+    "import_yaml": "YAML'yi içe aktar",
+    "import_confirm_title": "YAML yapılandırması içe aktarılsın mı?",
+    "import_confirm_text": "Bu, Google Assistant'ın (ve açığa çıkarılan varlıkların) tüm ayarlarını bu dosyanın içeriğiyle değiştirir. Takma adlar eklenir ve asla kaldırılmaz.",
+    "import_confirm_warning": "Bu işlem geri alınamaz.",
+    "import_success": "Yapılandırma başarıyla içe aktarıldı.",
+    "import_failed": "Yapılandırma içe aktarılamadı."
   }
 }

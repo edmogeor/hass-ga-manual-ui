@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nVi havas `google_assistant:`-sekcion en via configuration.yaml. Ĉi tiu integriĝo nun administras Google Assistant kaj anstataŭas ĝin, do vi povas forigi tiun sekcion.",
+  "yaml_notice": "`google_assistant:`-sekcio estis trovita en via configuration.yaml. Ĉi tiu integriĝo anstataŭas ĝin, do vi povas forigi ĝin.",
   "install_notice": "Google Assistant (Manual) estas instalita. Se ĝia karto ne aperas sub Agordoj → Voĉasistantoj, faru unufojan devigan reŝargon de via retumilo (Ctrl+Shift+R, aŭ Cmd+Shift+R ĉe Mac). Tio necesas nur unufoje, post instalado aŭ ĝisdatigo.",
   "frontend": {
     "yaml_detected": "La sekcio <code>google_assistant:</code> estis trovita en via <code>configuration.yaml</code> kaj estis malaktivigita. Ĉi tiu integriĝo nun administras vian Google Assistant agordon. Vi povas sekure forigi la sekcion <code>google_assistant:</code> el via YAML-agordaro.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Malsukcesis aktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
     "report_state_disable_failed": "Malsukcesis malaktivigi statusa raportado. Provu malŝalti kaj ŝalti la integriĝon, aŭ kontrolu la protokolojn de Home Assistant.",
     "ready_banner": "{name} estas preta, administru ĝin sub Agordoj → Voĉasistantoj.",
-    "update_available": "Nova versio de Google Assistant (Manual) disponeblas. Reŝargu vian retumilon (Ctrl+Shift+R, aŭ Cmd+Shift+R ĉe Mac) por ŝargi ĝin."
+    "update_available": "Nova versio de Google Assistant (Manual) disponeblas. Reŝargu vian retumilon (Ctrl+Shift+R, aŭ Cmd+Shift+R ĉe Mac) por ŝargi ĝin.",
+    "export_yaml": "Eksporti YAML",
+    "import_yaml": "Importi YAML",
+    "import_confirm_title": "Ĉu importi YAML-agordon?",
+    "import_confirm_text": "Ĉi tio anstataŭas ĉiujn agordojn por Google Assistant (kaj malkaŝitajn entojn) per la enhavo de ĉi tiu dosiero. Kromnomoj estas aldonataj kaj neniam forigataj.",
+    "import_confirm_warning": "Ĉi tio ne povas esti malfarita.",
+    "import_success": "Agordo sukcese importita.",
+    "import_failed": "Malsukcesis importi agordon."
   }
 }

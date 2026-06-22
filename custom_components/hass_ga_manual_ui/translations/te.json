@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "ఇది ఎలా పనిచేస్తుంది",
+        "description": "ఈ ఇంటిగ్రేషన్ Google Assistant ని నిర్వహిస్తుంది మరియు మీ configuration.yaml లోని ఏదైనా `google_assistant:` విభాగాన్ని భర్తీ చేస్తుంది. మీరు తర్వాత సెట్టింగ్‌లు → వాయిస్ అసిస్టెంట్‌ల నుండి స్వతంత్ర YAML కాన్ఫిగరేషన్‌ను ఎగుమతి లేదా దిగుమతి చేయవచ్చు."
+      },
       "user": {
-        "title": "Google Assistant (మాన్యువల్)",
-        "description": "మీ Google Cloud ప్రాజెక్ట్ ID నమోదు చేయండి.\n\n{guide_url}లో సెటప్ గైడ్ అనుసరించండి (దశలు 1–13). తదుపరి దశలో మీ సర్వీస్ అకౌంట్ JSON కీని పేస్ట్ చేస్తారు.{yaml_notice}",
+        "title": "ప్రస్తుత కాన్ఫిగరేషన్‌ను మైగ్రేట్ చేయండి",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "ప్రాజెక్ట్ ID"
+          "migrate_yaml": "నా ప్రస్తుత YAML కాన్ఫిగరేషన్‌ను మైగ్రేట్ చేయండి"
         },
         "data_description": {
-          "project_id": "మీ Google Cloud ప్రాజెక్ట్ ID"
+          "migrate_yaml": "ఎక్స్‌పోజర్, స్థితి నివేదన, PIN మరియు అలియాస్‌లను కాపీ చేస్తుంది. కొత్తగా ప్రారంభించడానికి ఎంపికను తీసివేయండి."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (మాన్యువల్)",
+        "description": "మీ Google Cloud ప్రాజెక్ట్ ID నమోదు చేయండి. {guide_url}లో సెటప్ గైడ్ చూడండి (దశలు 1-13).",
+        "data": {
+          "project_id": "ప్రాజెక్ట్ ID"
         }
       },
       "service_account": {
         "title": "సర్వీస్ అకౌంట్",
-        "description": "మీ సర్వీస్ అకౌంట్ JSON కీ ఫైల్ విషయాలను పేస్ట్ చేయండి.\n\n{docs_url}లో ఒకటి సృష్టించండి ({guide_url}లో గైడ్ యొక్క దశ 12).",
+        "description": "మీ సర్వీస్ అకౌంట్ JSON కీని పేస్ట్ చేయండి. {docs_url}లో ఒకటి సృష్టించండి (గైడ్ దశ 12).",
         "data": {
           "service_account": "సర్వీస్ అకౌంట్ JSON"
-        },
-        "data_description": {
-          "service_account": "డౌన్‌లోడ్ చేసిన సర్వీస్ అకౌంట్ JSON కీని పేస్ట్ చేయండి"
         }
       }
     },

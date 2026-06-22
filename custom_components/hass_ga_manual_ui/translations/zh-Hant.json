@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "運作方式",
+        "description": "此整合會管理 Google Assistant，並覆寫您 configuration.yaml 中的任何 `google_assistant:` 區段。稍後您可以在設定 → 語音助理中匯出或匯入獨立的 YAML 設定。"
+      },
       "user": {
-        "title": "Google Assistant（手動設定）",
-        "description": "請輸入您的 Google Cloud 專案 ID。\n\n請依照 {guide_url} 上的設定指南操作（第 1–13 步）。您將在下一步中貼上服務帳戶 JSON 金鑰。{yaml_notice}",
+        "title": "移轉現有設定",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "專案 ID"
+          "migrate_yaml": "移轉我現有的 YAML 設定"
         },
         "data_description": {
-          "project_id": "您的 Google Cloud 專案 ID"
+          "migrate_yaml": "複製公開設定、狀態回報、PIN 碼和別名。取消勾選可重新開始。"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant（手動設定）",
+        "description": "請輸入您的 Google Cloud 專案 ID。請參閱 {guide_url} 上的設定指南（第 1-13 步）。",
+        "data": {
+          "project_id": "專案 ID"
         }
       },
       "service_account": {
         "title": "服務帳戶",
-        "description": "請貼上服務帳戶 JSON 金鑰檔案的內容。\n\n請在 {docs_url} 上建立一個（參照 {guide_url} 指南的第 12 步）。",
+        "description": "請貼上您的服務帳戶 JSON 金鑰。請在 {docs_url} 上建立一個（指南第 12 步）。",
         "data": {
           "service_account": "服務帳戶 JSON"
-        },
-        "data_description": {
-          "service_account": "貼上您下載的服務帳戶 JSON 金鑰"
         }
       }
     },

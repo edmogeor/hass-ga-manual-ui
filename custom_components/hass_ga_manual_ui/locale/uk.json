@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nУ вашому файлі configuration.yaml є розділ `google_assistant:`. Ця інтеграція тепер керує Google Assistant і замінює його, тому ви можете видалити цей розділ.",
+  "yaml_notice": "У вашому файлі configuration.yaml знайдено розділ `google_assistant:`. Ця інтеграція замінює його, тому ви можете його видалити.",
   "install_notice": "Google Assistant (Вручну) встановлено. Якщо його картка не відображається в Налаштування → Голосові помічники, виконайте одноразове жорстке перезавантаження браузера (Ctrl+Shift+R або Cmd+Shift+R на Mac). Це потрібно лише один раз, після встановлення або оновлення.",
   "frontend": {
     "yaml_detected": "Розділ <code>google_assistant:</code> виявлено у вашому файлі <code>configuration.yaml</code> і було вимкнено. Ця інтеграція тепер керує конфігурацією Google Assistant. Ви можете безпечно видалити розділ <code>google_assistant:</code> із конфігурації YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Не вдалося ввімкнути звітування про стан. Спробуйте вимкнути та знову ввімкнути інтеграцію або перевірте журнали Home Assistant.",
     "report_state_disable_failed": "Не вдалося вимкнути звітування про стан. Спробуйте вимкнути та знову ввімкнути інтеграцію або перевірте журнали Home Assistant.",
     "ready_banner": "{name} готовий, керуйте ним у Налаштування → Голосові помічники.",
-    "update_available": "Доступна нова версія Google Assistant (Вручну). Оновіть браузер (Ctrl+Shift+R або Cmd+Shift+R на Mac), щоб завантажити її."
+    "update_available": "Доступна нова версія Google Assistant (Вручну). Оновіть браузер (Ctrl+Shift+R або Cmd+Shift+R на Mac), щоб завантажити її.",
+    "export_yaml": "Експортувати YAML",
+    "import_yaml": "Імпортувати YAML",
+    "import_confirm_title": "Імпортувати конфігурацію YAML?",
+    "import_confirm_text": "Це замінює всі налаштування Google Assistant (і відкриті сутності) вмістом цього файлу. Псевдоніми додаються й ніколи не видаляються.",
+    "import_confirm_warning": "Цю дію не можна скасувати.",
+    "import_success": "Конфігурацію успішно імпортовано.",
+    "import_failed": "Не вдалося імпортувати конфігурацію."
   }
 }

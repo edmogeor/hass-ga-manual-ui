@@ -4,6 +4,11 @@
  * voice assistants UI alongside the built-in cloud assistants.
  */
 
+// English card strings live in locale/en.json (single source of truth). esbuild
+// inlines its "frontend" block here at build time as the synchronous fallback;
+// other languages are fetched over HTTP at runtime.
+import EN_LOCALE from "./custom_components/hass_ga_manual_ui/locale/en.json";
+
 // ---------------------------------------------------------------------------
 // Home Assistant frontend type declarations
 // ---------------------------------------------------------------------------
@@ -105,6 +110,8 @@ const WS_ENABLE = `${ASSISTANT_ID}/enable`;
 const WS_DISABLE = `${ASSISTANT_ID}/disable`;
 const WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
 const WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
+const WS_EXPORT_CONFIG = `${ASSISTANT_ID}/export_config`;
+const WS_IMPORT_CONFIG = `${ASSISTANT_ID}/import_config`;
 
 // Injected at build time via esbuild --define (see package.json). Compared to
 // the server-reported version to detect a stale (cached) bundle; "" disables it.
@@ -116,7 +123,9 @@ const BUILD_VERSION: string =
 // Localization (see AGENTS.md "Frontend localization")
 // ---------------------------------------------------------------------------
 // Card strings live in locale/<lang>.json under "frontend" and are fetched over
-// HTTP for the user's language at runtime; EN_STRINGS is the synchronous fallback.
+// HTTP for the user's language at runtime; EN_STRINGS (derived from en.json at
+// build time) is the synchronous fallback. LocaleTable pins the key set so a
+// missing key in en.json is a compile error.
 
 interface LocaleTable {
   yaml_detected: string;
@@ -131,33 +140,16 @@ interface LocaleTable {
   report_state_disable_failed: string;
   ready_banner: string;
   update_available: string;
+  export_yaml: string;
+  import_yaml: string;
+  import_confirm_title: string;
+  import_confirm_text: string;
+  import_confirm_warning: string;
+  import_success: string;
+  import_failed: string;
 }
 
-const EN_STRINGS: LocaleTable = {
-  yaml_detected:
-    "The <code>google_assistant:</code> section was detected in your " +
-    "<code>configuration.yaml</code> and has been disabled. " +
-    "This integration now manages your Google Assistant configuration. " +
-    "You can safely remove the <code>google_assistant:</code> section " +
-    "from your YAML configuration.",
-  enable_success: "Google Assistant enabled successfully",
-  enable_failed: "Failed to enable Google Assistant.",
-  enable_fail_hint: "Try reloading the integration from Settings → Devices & Services.",
-  disable_success: "Google Assistant disabled successfully",
-  disable_failed: "Failed to disable Google Assistant.",
-  disable_fail_hint: "Try removing the integration from Settings → Devices & Services.",
-  check_logs: "Check Home Assistant logs for details.",
-  report_state_enable_failed:
-    "Failed to enable state reporting. " +
-    "Try toggling the integration off and on, or check Home Assistant logs.",
-  report_state_disable_failed:
-    "Failed to disable state reporting. " +
-    "Try toggling the integration off and on, or check Home Assistant logs.",
-  ready_banner: "{name} is ready - manage it under Settings → Voice assistants.",
-  update_available:
-    "A new version of Google Assistant (Manual) is available. " +
-    "Refresh your browser (Ctrl+Shift+R, or Cmd+Shift+R on Mac) to load it.",
-};
+const EN_STRINGS: LocaleTable = EN_LOCALE.frontend;
 
 type StringKey = keyof LocaleTable;
 
@@ -175,6 +167,18 @@ function t(key: StringKey, args?: Record<string, string | number>): string {
     }
   }
   return str;
+}
+
+// A translated `ha-button` whose label re-resolves on language change.
+function _actionButton(key: StringKey, onClick: () => void): HTMLElement {
+  const btn = document.createElement("ha-button");
+  btn.setAttribute("appearance", "plain");
+  btn.textContent = t(key);
+  btn.addEventListener("click", onClick);
+  _retranslate.push(() => {
+    btn.textContent = t(key);
+  });
+  return btn;
 }
 
 // Fetch the localized card strings once (memoized on the first call) from the
@@ -342,18 +346,212 @@ function _banner(message: string): void {
 // User-facing toast notifications (HA-style)
 // ---------------------------------------------------------------------------
 
+// Show a transient HA toast via the bubbling "hass-notification" event HA's
+// notification manager listens for on <home-assistant> (same as its showToast
+// helper). Errors stay until dismissed (duration 0); notices auto-dismiss.
 function _showToast(message: string, isError: boolean): void {
   try {
-    const hass = getHass();
-    if (!hass || !hass.callService) return;
-    hass.callService("persistent_notification", "create", {
-      title: ASSISTANT_NAME + (isError ? " - Error" : " - Notice"),
-      message,
-      notification_id: "hass_ga_manual_ui_notification",
-    });
+    const root = document.querySelector("home-assistant") ?? document.body;
+    root.dispatchEvent(
+      new CustomEvent("hass-notification", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          message,
+          id: "hass_ga_manual_ui_toast",
+          dismissable: true,
+          ...(isError ? { duration: 0 } : {}),
+        },
+      }),
+    );
   } catch (e) {
     _error("Failed to show toast: " + _errorMessage(e));
   }
+}
+
+// ---------------------------------------------------------------------------
+// Export / import YAML config
+// ---------------------------------------------------------------------------
+
+// Download text as a file via a throwaway anchor (no dep). The <a> is appended
+// to document.body to satisfy user-gesture rules and removed straight after.
+function _downloadText(text: string, filename: string): void {
+  const url = URL.createObjectURL(new Blob([text], { type: "text/yaml" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// Export: ask the backend for the standalone YAML + filename, then download it.
+async function _onExportClick(): Promise<void> {
+  const hass = getHass();
+  if (!hass?.callWS) return;
+  try {
+    const res = await _withEntryRetry((entryId) =>
+      hass.callWS<{ yaml: string; filename: string }>({
+        type: WS_EXPORT_CONFIG,
+        entry_id: entryId,
+      }),
+    );
+    _downloadText(res.yaml, res.filename);
+  } catch (e) {
+    _error("Export failed: " + _errorMessage(e));
+    _showToast(t("check_logs"), true);
+  }
+}
+
+// Import: pick a file, confirm (import overwrites exposure + flags), then apply.
+// The confirm fires after a file is chosen and before the WS call, so cancelling
+// at either point leaves everything untouched.
+function _onImportClick(): void {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = ".yaml,.yml";
+  input.style.display = "none";
+  document.body.appendChild(input);
+  input.addEventListener("change", async () => {
+    try {
+      const file = input.files?.[0];
+      if (!file) return;
+      const yaml = await file.text();
+      const confirmed = await _confirmDialog(
+        t("import_confirm_title"),
+        t("import_confirm_text"),
+        t("import_confirm_warning"),
+      );
+      if (!confirmed) return;
+      const hass = getHass();
+      if (!hass?.callWS) return;
+      await _withEntryRetry((entryId) =>
+        hass.callWS({ type: WS_IMPORT_CONFIG, entry_id: entryId, yaml }),
+      );
+      _showToast(t("import_success"), false);
+    } catch (e) {
+      _error("Import failed: " + _errorMessage(e));
+      _showToast(t("import_failed"), true);
+    } finally {
+      input.remove();
+    }
+  });
+  input.click();
+}
+
+// Inject the ::backdrop scrim style once (can't be set inline). Uses HA's scrim
+// token so the dimming matches HA's own dialogs.
+let _confirmStyleInjected = false;
+function _ensureConfirmStyle(): void {
+  if (_confirmStyleInjected) return;
+  _confirmStyleInjected = true;
+  const style = document.createElement("style");
+  style.textContent =
+    "dialog[data-ga-confirm-dialog]::backdrop{" +
+    "background:var(--mdc-dialog-scrim-color,rgba(0,0,0,0.32))}";
+  document.head.appendChild(style);
+}
+
+// Confirmation modal built from the native <dialog> element (top-layer, focus
+// trap, Escape, and ::backdrop scrim handled by the browser) wrapping a real HA
+// ha-card surface and ha-button actions - both already loaded, since our card
+// uses them on this page. One consistent dialog every time, with no dependency
+// on HA's lazy-loaded dialog-box and no native window.confirm fallback. Resolves
+// true on confirm; Escape, backdrop click, and Cancel resolve false.
+function _confirmDialog(
+  title: string,
+  text: string,
+  warning?: string,
+): Promise<boolean> {
+  const hass = getHass();
+  _ensureConfirmStyle();
+  return new Promise<boolean>((resolve) => {
+    const dlg = document.createElement("dialog");
+    dlg.setAttribute("data-ga-confirm-dialog", "");
+    dlg.style.cssText =
+      "padding:0;border:none;background:transparent;overflow:visible;" +
+      "max-width:min(90vw,400px);color:var(--primary-text-color,#212121)";
+
+    const card = document.createElement("ha-card");
+    card.style.cssText =
+      "padding:var(--dialog-content-padding,var(--ha-space-6,24px));box-sizing:border-box";
+
+    const heading = document.createElement("h2");
+    heading.textContent = title;
+    heading.style.cssText =
+      "margin:0 0 var(--ha-space-3,12px);font-size:var(--ha-font-size-2xl,1.5rem);" +
+      "font-weight:var(--ha-font-weight-normal,400);" +
+      "line-height:var(--ha-line-height-condensed,1.2)";
+
+    const body = document.createElement("p");
+    body.textContent = text;
+    body.style.cssText =
+      "margin:0 0 var(--ha-space-6,24px);line-height:var(--ha-line-height-normal,1.5)";
+
+    // Optional emphasized warning on its own line (HA medium weight).
+    let warningEl: HTMLParagraphElement | null = null;
+    if (warning) {
+      body.style.marginBottom = "var(--ha-space-2,8px)";
+      warningEl = document.createElement("p");
+      warningEl.textContent = warning;
+      warningEl.style.cssText =
+        "margin:0 0 var(--ha-space-6,24px);" +
+        "font-weight:var(--ha-font-weight-medium,500);" +
+        "line-height:var(--ha-line-height-normal,1.5)";
+    }
+
+    const actions = document.createElement("div");
+    actions.style.cssText =
+      "display:flex;justify-content:flex-end;gap:var(--ha-space-2,8px);flex-wrap:wrap";
+
+    let done = false;
+    const finish = (result: boolean) => {
+      if (done) return;
+      done = true;
+      try {
+        dlg.close();
+      } catch {
+        // jsdom / browsers without showModal: nothing to close.
+      }
+      dlg.remove();
+      resolve(result);
+    };
+
+    const cancelBtn = document.createElement("ha-button");
+    cancelBtn.setAttribute("appearance", "plain");
+    cancelBtn.setAttribute("data-ga-cancel", "");
+    cancelBtn.textContent = hass?.localize("ui.dialogs.generic.cancel") || "Cancel";
+    cancelBtn.addEventListener("click", () => finish(false));
+
+    const confirmBtn = document.createElement("ha-button");
+    confirmBtn.setAttribute("appearance", "accent");
+    confirmBtn.setAttribute("variant", "danger");
+    confirmBtn.setAttribute("data-ga-confirm", "");
+    confirmBtn.textContent = hass?.localize("ui.common.yes") || "Yes";
+    confirmBtn.addEventListener("click", () => finish(true));
+
+    actions.append(cancelBtn, confirmBtn);
+    card.append(heading, body);
+    if (warningEl) card.appendChild(warningEl);
+    card.appendChild(actions);
+    dlg.appendChild(card);
+    // Escape fires "cancel" on a modal dialog; backdrop click targets the dialog.
+    dlg.addEventListener("cancel", (e) => {
+      e.preventDefault();
+      finish(false);
+    });
+    dlg.addEventListener("click", (e) => {
+      if (e.target === dlg) finish(false);
+    });
+
+    document.body.appendChild(dlg);
+    if (typeof dlg.showModal === "function") {
+      dlg.showModal();
+    } else {
+      dlg.setAttribute("open", ""); // jsdom / very old browsers
+    }
+  });
 }
 
 let _updatePromptShown = false;
@@ -1583,6 +1781,13 @@ function buildCard(): HTMLElement | null {
     exposeBtn.setAttribute("data-ga-count", "");
     exposeLink.appendChild(exposeBtn);
     actions.appendChild(exposeLink);
+
+    actions.appendChild(
+      _actionButton("export_yaml", () => void _onExportClick()),
+    );
+    actions.appendChild(
+      _actionButton("import_yaml", () => void _onImportClick()),
+    );
 
     card.appendChild(actions);
 

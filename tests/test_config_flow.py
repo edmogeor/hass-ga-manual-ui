@@ -7,11 +7,13 @@ import pytest
 import voluptuous as vol
 from hass_ga_manual_ui.config_flow import (
     GoogleAssistantManualConfigFlow,
+    _CredentialsRejected,
     _is_valid_project_id,
     _parse_service_account_json,
 )
 from hass_ga_manual_ui.const import (
     CONF_CLIENT_EMAIL,
+    CONF_MIGRATE_YAML,
     CONF_PRIVATE_KEY,
     CONF_PROJECT_ID,
     CONF_SERVICE_ACCOUNT,
@@ -228,22 +230,43 @@ def config_flow() -> GoogleAssistantManualConfigFlow:
 
 
 class TestConfigFlowUserStep:
-    """Test the initial 'user' step of the config flow."""
+    """Test the entry point: with no YAML it opens the from-scratch intro page."""
+
+    @pytest.mark.asyncio
+    async def test_no_yaml_shows_intro_page(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # No hass -> _read_ga_yaml returns None -> from-scratch intro page.
+        result = await config_flow.async_step_user()
+        assert result["type"] == "form"
+        assert result["step_id"] == "intro"
+        assert not _schema_has(result, CONF_MIGRATE_YAML)
+
+    @pytest.mark.asyncio
+    async def test_intro_advances_to_credentials(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_intro({})
+        assert result["step_id"] == "credentials"
+
+
+class TestConfigFlowCredentialsStep:
+    """Test the project_id ('credentials') step."""
 
     @pytest.mark.asyncio
     async def test_shows_form_on_first_load(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        result = await config_flow.async_step_user()
+        result = await config_flow.async_step_credentials()
         assert result["type"] == "form"
-        assert result["step_id"] == "user"
+        assert result["step_id"] == "credentials"
         assert "project_id" in result["data_schema"].schema
 
     @pytest.mark.asyncio
     async def test_empty_project_id_shows_error(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        result = await config_flow.async_step_user({CONF_PROJECT_ID: ""})
+        result = await config_flow.async_step_credentials({CONF_PROJECT_ID: ""})
         assert result["type"] == "form"
         assert result["errors"] == {CONF_PROJECT_ID: "project_id_required"}
 
@@ -251,7 +274,7 @@ class TestConfigFlowUserStep:
     async def test_whitespace_only_project_id_shows_error(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        result = await config_flow.async_step_user({CONF_PROJECT_ID: "   "})
+        result = await config_flow.async_step_credentials({CONF_PROJECT_ID: "   "})
         assert result["type"] == "form"
         assert result["errors"] == {CONF_PROJECT_ID: "project_id_required"}
 
@@ -259,7 +282,7 @@ class TestConfigFlowUserStep:
     async def test_invalid_project_id_shows_error(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        result = await config_flow.async_step_user({CONF_PROJECT_ID: "Ab"})
+        result = await config_flow.async_step_credentials({CONF_PROJECT_ID: "Ab"})
         assert result["type"] == "form"
         assert result["errors"] == {CONF_PROJECT_ID: "invalid_project_id"}
 
@@ -267,12 +290,12 @@ class TestConfigFlowUserStep:
     async def test_valid_project_id_advances_to_service_account(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        # Override async_step_service_account to return a form
         config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
             return_value={"type": "form", "step_id": "service_account"}
         )
-        result = await config_flow.async_step_user({CONF_PROJECT_ID: "my-project-123"})
-        # Should call async_step_service_account
+        result = await config_flow.async_step_credentials(
+            {CONF_PROJECT_ID: "my-project-123"}
+        )
         config_flow.async_step_service_account.assert_awaited_once()
         assert result["step_id"] == "service_account"
 
@@ -283,7 +306,7 @@ class TestConfigFlowUserStep:
         config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
             return_value={"type": "form", "step_id": "service_account"}
         )
-        await config_flow.async_step_user({CONF_PROJECT_ID: "my-test-project"})
+        await config_flow.async_step_credentials({CONF_PROJECT_ID: "my-test-project"})
         assert config_flow._data[CONF_PROJECT_ID] == "my-test-project"
 
     @pytest.mark.asyncio
@@ -293,8 +316,135 @@ class TestConfigFlowUserStep:
         config_flow.async_step_service_account = AsyncMock(  # type: ignore[method-assign]
             return_value={"type": "form", "step_id": "service_account"}
         )
-        await config_flow.async_step_user({CONF_PROJECT_ID: "  my-project  "})
+        await config_flow.async_step_credentials({CONF_PROJECT_ID: "  my-project  "})
         assert config_flow._data[CONF_PROJECT_ID] == "my-project"
+
+
+def _schema_has(result: dict, key: str) -> bool:
+    """Whether a vol marker named ``key`` is present in a form's data_schema."""
+    return any(str(k) == key for k in result["data_schema"].schema)
+
+
+# A complete service account as it would appear in a parsed YAML block.
+_YAML_SA = {
+    CONF_CLIENT_EMAIL: "yaml@proj.iam.gserviceaccount.com",
+    CONF_PRIVATE_KEY: "-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----\n",
+}
+
+
+def _with_yaml(
+    config_flow: GoogleAssistantManualConfigFlow, block: dict | None
+) -> None:
+    """Stub the YAML read + notice so the flow runs without a real hass."""
+    config_flow._read_ga_yaml = AsyncMock(return_value=block)  # type: ignore[method-assign]
+    config_flow._yaml_notice = AsyncMock(return_value="")  # type: ignore[method-assign]
+
+
+class TestConfigFlowYamlMigration:
+    """The migrate page appears only with YAML, and supplies credentials when it can."""
+
+    @pytest.mark.asyncio
+    async def test_no_migrate_page_without_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        _with_yaml(config_flow, None)
+        result = await config_flow.async_step_user()
+        # From-scratch: intro page, no migrate checkbox.
+        assert result["step_id"] == "intro"
+        assert not _schema_has(result, CONF_MIGRATE_YAML)
+
+    @pytest.mark.asyncio
+    async def test_migrate_page_shown_with_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        _with_yaml(config_flow, {CONF_PROJECT_ID: "yaml-project-1"})
+        result = await config_flow.async_step_user()
+        assert result["step_id"] == "user"
+        assert _schema_has(result, CONF_MIGRATE_YAML)
+        # The migrate page carries only the checkbox, not the project_id field.
+        assert not _schema_has(result, CONF_PROJECT_ID)
+
+    @pytest.mark.asyncio
+    async def test_full_yaml_migrate_skips_both_steps(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        _with_yaml(
+            config_flow,
+            {CONF_PROJECT_ID: "yaml-project-1", CONF_SERVICE_ACCOUNT: _YAML_SA},
+        )
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        result = await config_flow.async_step_user({CONF_MIGRATE_YAML: True})
+        assert result["type"] == "create_entry"
+        assert config_flow._data[CONF_PROJECT_ID] == "yaml-project-1"
+        assert config_flow._data[CONF_SERVICE_ACCOUNT] == _YAML_SA
+
+    @pytest.mark.asyncio
+    async def test_migrate_without_project_id_shows_credentials(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # YAML has a service account but no project_id -> still ask for the id.
+        _with_yaml(config_flow, {CONF_SERVICE_ACCOUNT: _YAML_SA})
+        result = await config_flow.async_step_user({CONF_MIGRATE_YAML: True})
+        assert result["step_id"] == "credentials"
+
+    @pytest.mark.asyncio
+    async def test_migrate_invalid_project_id_prefills_credentials(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # An invalid YAML project_id is offered for correction, not auto-used.
+        _with_yaml(config_flow, {CONF_PROJECT_ID: "Bad_ID"})
+        result = await config_flow.async_step_user({CONF_MIGRATE_YAML: True})
+        assert result["step_id"] == "credentials"
+        marker = next(
+            k for k in result["data_schema"].schema if str(k) == CONF_PROJECT_ID
+        )
+        assert marker.default() == "Bad_ID"
+
+    @pytest.mark.asyncio
+    async def test_migrate_unparseable_sa_shows_service_account(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # Valid project_id auto-used, but the SA can't be parsed -> ask for it.
+        _with_yaml(
+            config_flow,
+            {CONF_PROJECT_ID: "yaml-project-1", CONF_SERVICE_ACCOUNT: "garbage"},
+        )
+        result = await config_flow.async_step_user({CONF_MIGRATE_YAML: True})
+        assert result["step_id"] == "service_account"
+
+    @pytest.mark.asyncio
+    async def test_unchecked_pulls_nothing_from_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        _with_yaml(
+            config_flow,
+            {CONF_PROJECT_ID: "yaml-project-1", CONF_SERVICE_ACCOUNT: _YAML_SA},
+        )
+        result = await config_flow.async_step_user({CONF_MIGRATE_YAML: False})
+        assert result["step_id"] == "credentials"
+        marker = next(
+            k for k in result["data_schema"].schema if str(k) == CONF_PROJECT_ID
+        )
+        assert marker.default() == ""  # no prefill when not migrating
+        assert config_flow._yaml_service_account() is None
+
+    @pytest.mark.asyncio
+    async def test_migrate_flag_stored_from_checkbox(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        _with_yaml(config_flow, {CONF_PROJECT_ID: "yaml-project-1"})
+        await config_flow.async_step_user({CONF_MIGRATE_YAML: False})
+        assert config_flow._data[CONF_MIGRATE_YAML] is False
+
+    @pytest.mark.asyncio
+    async def test_migrate_flag_absent_without_yaml(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        _with_yaml(config_flow, None)
+        await config_flow.async_step_user()
+        assert CONF_MIGRATE_YAML not in config_flow._data
 
 
 class TestConfigFlowServiceAccountStep:
@@ -394,20 +544,20 @@ class TestConfigFlowServiceAccountStep:
         flow1.async_step_service_account = AsyncMock(return_value={"type": "form"})  # type: ignore[method-assign]
         flow2.async_step_service_account = AsyncMock(return_value={"type": "form"})  # type: ignore[method-assign]
 
-        await flow1.async_step_user({CONF_PROJECT_ID: "project-one"})
-        await flow2.async_step_user({CONF_PROJECT_ID: "project-two"})
+        await flow1.async_step_credentials({CONF_PROJECT_ID: "project-one"})
+        await flow2.async_step_credentials({CONF_PROJECT_ID: "project-two"})
 
         assert flow1._data[CONF_PROJECT_ID] == "project-one"
         assert flow2._data[CONF_PROJECT_ID] == "project-two"
 
     @pytest.mark.asyncio
-    async def test_description_placeholders_in_user_step(
+    async def test_description_placeholders_in_credentials_step(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        result = await config_flow.async_step_user()
-        assert "description_placeholders" in result
+        result = await config_flow.async_step_credentials()
         assert "guide_url" in result["description_placeholders"]
-        assert "yaml_notice" in result["description_placeholders"]
+        # The project_id page carries no YAML notice (that lives on the migrate page).
+        assert "yaml_notice" not in result["description_placeholders"]
 
     @pytest.mark.asyncio
     async def test_yaml_notice_shown_when_yaml_present(
@@ -430,10 +580,10 @@ class TestConfigFlowServiceAccountStep:
         assert result["description_placeholders"]["yaml_notice"] == "REMOVE IT"
 
     @pytest.mark.asyncio
-    async def test_yaml_notice_empty_when_absent(
+    async def test_no_migrate_page_when_section_absent(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        """No google_assistant: section => empty notice (no translation lookup)."""
+        """No google_assistant: section => from-scratch intro page, no locale lookup."""
         config_flow.hass = MagicMock()
         with (
             patch(
@@ -446,21 +596,21 @@ class TestConfigFlowServiceAccountStep:
             ) as mock_locale,
         ):
             result = await config_flow.async_step_user()
-        assert result["description_placeholders"]["yaml_notice"] == ""
+        assert result["step_id"] == "intro"
         mock_locale.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_yaml_notice_empty_when_yaml_unreadable(
+    async def test_no_migrate_page_when_yaml_unreadable(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
-        """A malformed/unreadable configuration.yaml degrades to an empty notice."""
+        """A malformed/unreadable configuration.yaml => from-scratch intro page."""
         config_flow.hass = MagicMock()
         with patch(
             "hass_ga_manual_ui.config_flow.async_hass_config_yaml",
             AsyncMock(side_effect=OSError("boom")),
         ):
             result = await config_flow.async_step_user()
-        assert result["description_placeholders"]["yaml_notice"] == ""
+        assert result["step_id"] == "intro"
 
     @pytest.mark.asyncio
     async def test_yaml_notice_detects_suffixed_domain_key(
@@ -594,3 +744,92 @@ class TestNotifyInstalled:
         ) as mock_create:
             await config_flow._notify_installed()
         mock_create.assert_not_called()
+
+
+_MINT = "hass_ga_manual_ui.config_flow._mint_homegraph_token"
+
+
+class TestConfigFlowCredentialValidation:
+    """The service account is verified against Google before the entry is created."""
+
+    @pytest.mark.asyncio
+    async def test_valid_credentials_create_entry(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow.hass = MagicMock()
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        config_flow._notify_installed = AsyncMock()  # type: ignore[method-assign]
+        with patch(_MINT, AsyncMock()):
+            result = await config_flow.async_step_service_account(
+                {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+            )
+        assert result["type"] == "create_entry"
+
+    @pytest.mark.asyncio
+    async def test_rejected_credentials_show_error(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow.hass = MagicMock()
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock()  # type: ignore[method-assign]
+        with patch(_MINT, AsyncMock(side_effect=_CredentialsRejected("invalid_grant"))):
+            result = await config_flow.async_step_service_account(
+                {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+            )
+        assert result["type"] == "form"
+        assert result["step_id"] == "service_account"
+        assert "invalid_grant" in result["errors"][CONF_SERVICE_ACCOUNT]
+        config_flow.async_create_entry.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_transport_error_does_not_block(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """A network/5xx error cannot conclude the creds are bad, so it proceeds."""
+        config_flow.hass = MagicMock()
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        config_flow._notify_installed = AsyncMock()  # type: ignore[method-assign]
+        with patch(_MINT, AsyncMock(side_effect=OSError("network down"))):
+            result = await config_flow.async_step_service_account(
+                {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+            )
+        assert result["type"] == "create_entry"
+
+    @pytest.mark.asyncio
+    async def test_no_hass_skips_validation(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # Bare flow (no hass) cannot verify; it must not block entry creation.
+        config_flow._data[CONF_PROJECT_ID] = "test-project"
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        result = await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
+        )
+        assert result["type"] == "create_entry"
+
+    @pytest.mark.asyncio
+    async def test_migrate_rejected_credentials_shows_sa_form(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        # Auto-resolved YAML service account that Google rejects falls back to the
+        # form so the user can paste a working one.
+        config_flow.hass = MagicMock()
+        config_flow._yaml_block = {
+            CONF_PROJECT_ID: "yaml-project-1",
+            CONF_SERVICE_ACCOUNT: _YAML_SA,
+        }
+        config_flow._data[CONF_MIGRATE_YAML] = True
+        config_flow._data[CONF_PROJECT_ID] = "yaml-project-1"
+        with patch(_MINT, AsyncMock(side_effect=_CredentialsRejected("invalid_grant"))):
+            result = await config_flow.async_step_service_account()
+        assert result["type"] == "form"
+        assert result["step_id"] == "service_account"
+        assert "invalid_grant" in result["errors"][CONF_SERVICE_ACCOUNT]

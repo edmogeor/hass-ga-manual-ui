@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nИмате одељак `google_assistant:` у configuration.yaml. Ова интеграција сада управља Google Assistant-ом и надјачава га, па можете уклонити тај одељак.",
+  "yaml_notice": "У вашем configuration.yaml пронађен је `google_assistant:` одељак. Ова интеграција га замењује, па га можете уклонити.",
   "install_notice": "Google Assistant (Ручно) је инсталиран. Ако се његова картица не појави у Подешавања → Гласовни асистенти, урадите једнократно тврдо освежавање прегледача (Ctrl+Shift+R или Cmd+Shift+R на Mac-у). Ово је потребно само једном, након инсталације или ажурирања.",
   "frontend": {
     "yaml_detected": "Одељак <code>google_assistant:</code> откривен је у <code>configuration.yaml</code> и онемогућен је. Ова интеграција сада управља конфигурацијом Google Assistant-а. Можете безбедно уклонити одељак <code>google_assistant:</code> из YAML конфигурације.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Омогућавање извештавања о стању није успело. Покушајте да искључите и укључите интеграцију или проверите дневнике Home Assistant-а.",
     "report_state_disable_failed": "Онемогућавање извештавања о стању није успело. Покушајте да искључите и укључите интеграцију или проверите дневнике Home Assistant-а.",
     "ready_banner": "{name} је спреман, управљајте њиме у Подешавања → Гласовни асистенти.",
-    "update_available": "Доступна је нова верзија Google Assistant (Ручно). Освежите прегледач (Ctrl+Shift+R или Cmd+Shift+R на Mac-у) да бисте је учитали."
+    "update_available": "Доступна је нова верзија Google Assistant (Ручно). Освежите прегледач (Ctrl+Shift+R или Cmd+Shift+R на Mac-у) да бисте је учитали.",
+    "export_yaml": "Извези YAML",
+    "import_yaml": "Увези YAML",
+    "import_confirm_title": "Увести YAML конфигурацију?",
+    "import_confirm_text": "Ово замењује сва подешавања за Google Assistant (и изложене ентитете) садржајем ове датотеке. Алиаси се додају и никада не уклањају.",
+    "import_confirm_warning": "Ово се не може опозвати.",
+    "import_success": "Конфигурација је успешно увезена.",
+    "import_failed": "Увоз конфигурације није успео."
   }
 }

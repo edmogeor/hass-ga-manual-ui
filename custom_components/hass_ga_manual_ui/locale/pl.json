@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nMasz sekcję `google_assistant:` w pliku configuration.yaml. Ta integracja zarządza teraz Google Assistant i nadpisuje tę sekcję, więc możesz ją usunąć.",
+  "yaml_notice": "W pliku configuration.yaml znaleziono sekcję `google_assistant:`. Ta integracja ją zastępuje, więc możesz ją usunąć.",
   "install_notice": "Google Assistant (Ręczny) jest zainstalowany. Jeśli jego karta nie pojawia się w Ustawienia → Asystenci głosowi, wykonaj jednorazowe twarde odświeżenie przeglądarki (Ctrl+Shift+R lub Cmd+Shift+R na Macu). Jest to potrzebne tylko raz, po instalacji lub aktualizacji.",
   "frontend": {
     "yaml_detected": "Sekcja <code>google_assistant:</code> została wykryta w pliku <code>configuration.yaml</code> i została wyłączona. Ta integracja zarządza teraz konfiguracją Google Assistant. Możesz bezpiecznie usunąć sekcję <code>google_assistant:</code> z konfiguracji YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Nie udało się włączyć raportowania stanu. Spróbuj wyłączyć i ponownie włączyć integrację lub sprawdź logi Home Assistant.",
     "report_state_disable_failed": "Nie udało się wyłączyć raportowania stanu. Spróbuj wyłączyć i ponownie włączyć integrację lub sprawdź logi Home Assistant.",
     "ready_banner": "{name} jest gotowy, zarządzaj nim w Ustawienia → Asystenci głosowi.",
-    "update_available": "Dostępna jest nowa wersja Google Assistant (Ręczny). Odśwież przeglądarkę (Ctrl+Shift+R lub Cmd+Shift+R na Macu), aby ją załadować."
+    "update_available": "Dostępna jest nowa wersja Google Assistant (Ręczny). Odśwież przeglądarkę (Ctrl+Shift+R lub Cmd+Shift+R na Macu), aby ją załadować.",
+    "export_yaml": "Eksportuj YAML",
+    "import_yaml": "Importuj YAML",
+    "import_confirm_title": "Zaimportować konfigurację YAML?",
+    "import_confirm_text": "Spowoduje to zastąpienie wszystkich ustawień Google Assistant (oraz udostępnionych encji) zawartością tego pliku. Aliasy są dodawane i nigdy nie usuwane.",
+    "import_confirm_warning": "Tej operacji nie można cofnąć.",
+    "import_success": "Konfiguracja zaimportowana pomyślnie.",
+    "import_failed": "Nie udało się zaimportować konfiguracji."
   }
 }

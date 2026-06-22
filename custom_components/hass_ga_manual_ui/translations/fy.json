@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Hoe't dit wurket",
+        "description": "Dizze yntegraasje beheart Google Assistant en oerskriuwt elke `google_assistant:`-seksje yn jo configuration.yaml. Jo kinne letter in selsstannige YAML-konfiguraasje eksportearje of ymportearje fia Ynstellingen → Spraakadjutanten."
+      },
       "user": {
-        "title": "Google Assistant (Handmatig)",
-        "description": "Fier jo Google Cloud-projekt-ID yn.\n\nFolgje de ynstallaasjehandlieding op {guide_url} (stappen 1–13). Jo plakke jo tsjinsteaccount JSON-kaai yn de folgjende stap.{yaml_notice}",
+        "title": "Besteande konfiguraasje migrearje",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Projekt-ID"
+          "migrate_yaml": "Myn besteande YAML-konfiguraasje migrearje"
         },
         "data_description": {
-          "project_id": "Jo Google Cloud-projekt-ID"
+          "migrate_yaml": "Kopiearret bleatstelling, tastânrapportaazje, PIN en aliassen. Untheakje om op 'e nij te begjinnen."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Handmatig)",
+        "description": "Fier jo Google Cloud-projekt-ID yn. Sjoch de ynstallaasjehandlieding op {guide_url} (stappen 1-13).",
+        "data": {
+          "project_id": "Projekt-ID"
         }
       },
       "service_account": {
         "title": "Tsjinsteaccount",
-        "description": "Plakje de ynhâld fan jo tsjinsteaccount JSON-kaaibstân.\n\nMeitsje ien oan op {docs_url} (stap 12 fan de hantlieding op {guide_url}).",
+        "description": "Plak jo tsjinsteaccount JSON-kaai. Meitsje ien oan op {docs_url} (stap 12 fan de hantlieding).",
         "data": {
           "service_account": "Tsjinsteaccount JSON"
-        },
-        "data_description": {
-          "service_account": "Plakje jo delleade tsjinsteaccount JSON-kaai"
         }
       }
     },

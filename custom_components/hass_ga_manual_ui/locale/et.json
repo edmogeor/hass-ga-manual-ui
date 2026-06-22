@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nTeie configuration.yaml-is on jaotis `google_assistant:`. See integratsioon haldab nüüd Google Assistanti ja alistab selle, nii et saate selle jaotise eemaldada.",
+  "yaml_notice": "Teie configuration.yaml-ist leiti `google_assistant:` jaotis. See integratsioon asendab selle, nii et saate selle eemaldada.",
   "install_notice": "Google Assistant (Manual) on paigaldatud. Kui selle kaart ei ilmu jaotises Seaded → Häälassistendid, tehke brauseri ühekordne kõva värskendus (Ctrl+Shift+R või Macis Cmd+Shift+R). Seda on vaja ainult üks kord, pärast paigaldamist või uuendamist.",
   "frontend": {
     "yaml_detected": "Jaotis <code>google_assistant:</code> leiti teie <code>configuration.yaml</code>-ist ja keelati. See integratsioon haldab nüüd teie Google Assistanti konfiguratsiooni. Saate <code>google_assistant:</code> jaotise YAML-konfiguratsioonist turvaliselt eemaldada.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Oleku aruandluse lubamine ebaõnnestus. Proovige integratsioon välja ja uuesti sisse lülitada või kontrollige Home Assistanti logisid.",
     "report_state_disable_failed": "Oleku aruandluse keelamine ebaõnnestus. Proovige integratsioon välja ja uuesti sisse lülitada või kontrollige Home Assistanti logisid.",
     "ready_banner": "{name} on valmis, hallake seda jaotises Seaded → Häälassistendid.",
-    "update_available": "Google Assistant (Manual) uus versioon on saadaval. Värskendage brauserit (Ctrl+Shift+R või Macis Cmd+Shift+R), et see laadida."
+    "update_available": "Google Assistant (Manual) uus versioon on saadaval. Värskendage brauserit (Ctrl+Shift+R või Macis Cmd+Shift+R), et see laadida.",
+    "export_yaml": "Ekspordi YAML",
+    "import_yaml": "Impordi YAML",
+    "import_confirm_title": "Kas importida YAML-konfiguratsioon?",
+    "import_confirm_text": "See asendab kõik Google Assistanti sätted (ja avalikustatud olemid) selle faili sisuga. Aliased lisatakse ja neid ei eemaldata kunagi.",
+    "import_confirm_warning": "Seda ei saa tagasi võtta.",
+    "import_success": "Konfiguratsioon imporditi edukalt.",
+    "import_failed": "Konfiguratsiooni importimine ebaõnnestus."
   }
 }

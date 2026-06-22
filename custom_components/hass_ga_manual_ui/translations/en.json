@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "How this works",
+        "description": "This integration manages Google Assistant and overrides any `google_assistant:` section in your configuration.yaml. You can export or import a standalone YAML config later from Settings → Voice assistants."
+      },
       "user": {
-        "title": "Google Assistant (Manual)",
-        "description": "Enter your Google Cloud project ID.\n\nFollow the setup guide at {guide_url} (steps 1–13). You'll paste your service account JSON key in the next step.{yaml_notice}",
+        "title": "Migrate existing configuration",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Project ID"
+          "migrate_yaml": "Migrate my existing YAML configuration"
         },
         "data_description": {
-          "project_id": "Your Google Cloud project ID"
+          "migrate_yaml": "Copies exposure, state reporting, PIN, and aliases. Uncheck to start fresh."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Manual)",
+        "description": "Enter your Google Cloud project ID. See the setup guide at {guide_url} (steps 1-13).",
+        "data": {
+          "project_id": "Project ID"
         }
       },
       "service_account": {
-        "title": "Service Account",
-        "description": "Paste your service account JSON key file contents.\n\nCreate one at {docs_url} (step 12 of the guide at {guide_url}).",
+        "title": "Service account",
+        "description": "Paste your service account JSON key. Create one at {docs_url} (guide step 12).",
         "data": {
           "service_account": "Service account JSON"
-        },
-        "data_description": {
-          "service_account": "Paste your downloaded service account JSON key"
         }
       }
     },

@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nآپ کے configuration.yaml میں `google_assistant:` سیکشن موجود ہے۔ یہ انٹیگریشن اب Google Assistant کا انتظام کرتی ہے اور اسے اوور رائیڈ کرتی ہے، اس لیے آپ وہ سیکشن ہٹا سکتے ہیں۔",
+  "yaml_notice": "آپ کے configuration.yaml میں ایک `google_assistant:` سیکشن ملا۔ یہ انٹیگریشن اسے بدل دیتی ہے، اس لیے آپ اسے ہٹا سکتے ہیں۔",
   "install_notice": "Google Assistant (دستی) انسٹال ہو گیا ہے۔ اگر اس کا کارڈ ترتیبات ← آواز کے معاونین کے تحت ظاہر نہیں ہوتا ہے، تو اپنے براؤزر کا ایک بار ہارڈ ریفریش کریں (Ctrl+Shift+R، یا Mac پر Cmd+Shift+R)۔ یہ صرف ایک بار ضروری ہے، انسٹال کرنے یا اپ ڈیٹ کرنے کے بعد۔",
   "frontend": {
     "yaml_detected": "آپ کے <code>configuration.yaml</code> میں <code>google_assistant:</code> سیکشن پایا گیا اور اسے غیر فعال کر دیا گیا ہے۔ یہ انٹیگریشن اب آپ کی Google Assistant کنفیگریشن کا انتظام کرتی ہے۔ آپ اپنی YAML کنفیگریشن سے <code>google_assistant:</code> سیکشن محفوظ طریقے سے ہٹا سکتے ہیں۔",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "اسٹیٹس رپورٹنگ فعال کرنے میں ناکامی۔ انٹیگریشن بند اور دوبارہ چالو کرنے کی کوشش کریں، یا Home Assistant لاگز چیک کریں۔",
     "report_state_disable_failed": "اسٹیٹس رپورٹنگ غیر فعال کرنے میں ناکامی۔ انٹیگریشن بند اور دوبارہ چالو کرنے کی کوشش کریں، یا Home Assistant لاگز چیک کریں۔",
     "ready_banner": "{name} تیار ہے، اسے ترتیبات ← آواز کے معاونین میں منظم کریں۔",
-    "update_available": "Google Assistant (دستی) کا ایک نیا ورژن دستیاب ہے۔ اسے لوڈ کرنے کے لیے اپنا براؤزر ریفریش کریں (Ctrl+Shift+R، یا Mac پر Cmd+Shift+R)۔"
+    "update_available": "Google Assistant (دستی) کا ایک نیا ورژن دستیاب ہے۔ اسے لوڈ کرنے کے لیے اپنا براؤزر ریفریش کریں (Ctrl+Shift+R، یا Mac پر Cmd+Shift+R)۔",
+    "export_yaml": "YAML برآمد کریں",
+    "import_yaml": "YAML درآمد کریں",
+    "import_confirm_title": "YAML کنفیگریشن درآمد کریں؟",
+    "import_confirm_text": "یہ Google Assistant (اور ظاہر کردہ ہستیوں) کی تمام ترتیبات کو اس فائل کے مواد سے بدل دیتا ہے۔ عرفی نام شامل کیے جاتے ہیں اور کبھی نہیں ہٹائے جاتے۔",
+    "import_confirm_warning": "اسے واپس نہیں کیا جا سکتا۔",
+    "import_success": "کنفیگریشن کامیابی سے درآمد ہو گئی۔",
+    "import_failed": "کنفیگریشن درآمد کرنے میں ناکام۔"
   }
 }

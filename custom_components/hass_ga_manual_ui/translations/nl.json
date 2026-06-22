@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "Hoe dit werkt",
+        "description": "Deze integratie beheert Google Assistant en overschrijft elke `google_assistant:`-sectie in uw configuration.yaml. U kunt later een zelfstandige YAML-configuratie exporteren of importeren via Instellingen → Spraakassistenten."
+      },
       "user": {
-        "title": "Google Assistant (Handmatig)",
-        "description": "Voer uw Google Cloud-project-ID in.\n\nVolg de installatiehandleiding op {guide_url} (stappen 1–13). U plakt uw serviceaccount JSON-sleutel in de volgende stap.{yaml_notice}",
+        "title": "Bestaande configuratie migreren",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "Project-ID"
+          "migrate_yaml": "Mijn bestaande YAML-configuratie migreren"
         },
         "data_description": {
-          "project_id": "Uw Google Cloud-project-ID"
+          "migrate_yaml": "Kopieert blootstelling, statusrapportage, pincode en aliassen. Schakel uit om opnieuw te beginnen."
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (Handmatig)",
+        "description": "Voer uw Google Cloud-project-ID in. Zie de installatiehandleiding op {guide_url} (stappen 1-13).",
+        "data": {
+          "project_id": "Project-ID"
         }
       },
       "service_account": {
         "title": "Serviceaccount",
-        "description": "Plak de inhoud van uw serviceaccount JSON-sleutelbestand.\n\nMaak er een aan op {docs_url} (stap 12 van de handleiding op {guide_url}).",
+        "description": "Plak uw serviceaccount JSON-sleutel. Maak er een aan op {docs_url} (stap 12 van de handleiding).",
         "data": {
           "service_account": "Serviceaccount JSON"
-        },
-        "data_description": {
-          "service_account": "Plak uw gedownloade serviceaccount JSON-sleutel"
         }
       }
     },

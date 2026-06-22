@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nImate odeljak `google_assistant:` u configuration.yaml. Ova integracija sada upravlja Google Assistantom i nadjačava ga, pa možete ukloniti taj odeljak.",
+  "yaml_notice": "U vašem configuration.yaml pronađen je `google_assistant:` odeljak. Ova integracija ga zamenjuje, pa ga možete ukloniti.",
   "install_notice": "Google Assistant (Ručno) je instaliran. Ako se njegova kartica ne pojavi u Podešavanja → Glasovni asistenti, uradite jednokratno tvrdo osvežavanje pregledača (Ctrl+Shift+R ili Cmd+Shift+R na Mac-u). Ovo je potrebno samo jednom, nakon instalacije ili ažuriranja.",
   "frontend": {
     "yaml_detected": "Odeljak <code>google_assistant:</code> otkriven je u <code>configuration.yaml</code> i onemogućen je. Ova integracija sada upravlja konfiguracijom Google Assistanta. Možete bezbedno ukloniti odeljak <code>google_assistant:</code> iz YAML konfiguracije.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Omogućavanje izveštavanja o stanju nije uspelo. Pokušajte da isključite i uključite integraciju ili proverite dnevnike Home Assistanta.",
     "report_state_disable_failed": "Onemogućavanje izveštavanja o stanju nije uspelo. Pokušajte da isključite i uključite integraciju ili proverite dnevnike Home Assistanta.",
     "ready_banner": "{name} je spreman, upravljajte njime u Podešavanja → Glasovni asistenti.",
-    "update_available": "Dostupna je nova verzija Google Assistant (Ručno). Osvežite pregledač (Ctrl+Shift+R ili Cmd+Shift+R na Mac-u) da biste je učitali."
+    "update_available": "Dostupna je nova verzija Google Assistant (Ručno). Osvežite pregledač (Ctrl+Shift+R ili Cmd+Shift+R na Mac-u) da biste je učitali.",
+    "export_yaml": "Izvezi YAML",
+    "import_yaml": "Uvezi YAML",
+    "import_confirm_title": "Uvesti YAML konfiguraciju?",
+    "import_confirm_text": "Ovo zamenjuje sva podešavanja za Google Assistant (i izložene entitete) sadržajem ove datoteke. Aliasi se dodaju i nikada ne uklanjaju.",
+    "import_confirm_warning": "Ovo se ne može opozvati.",
+    "import_success": "Konfiguracija je uspešno uvezena.",
+    "import_failed": "Uvoz konfiguracije nije uspeo."
   }
 }

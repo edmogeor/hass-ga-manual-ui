@@ -853,4 +853,145 @@ describe("Google Assistant Manual frontend", () => {
       expect(el._params!.extEntityReg).toBe(entry);
     });
   });
+
+  describe("export / import YAML", () => {
+    const flush = () => new Promise<void>((r) => setTimeout(r, 0));
+
+    function actionButtons() {
+      const card = document.querySelector("[data-ga-manual-card]")!;
+      const btns = Array.from(card.querySelectorAll("ha-button"));
+      return {
+        exportBtn: btns.find((b) => b.textContent === "Export YAML")!,
+        importBtn: btns.find((b) => b.textContent === "Import YAML")!,
+      };
+    }
+
+    it("renders Export and Import buttons in the card actions", () => {
+      setupDom(createMockHass());
+      evalFrontend();
+      const { exportBtn, importBtn } = actionButtons();
+      expect(exportBtn).toBeTruthy();
+      expect(importBtn).toBeTruthy();
+    });
+
+    it("export downloads the YAML returned by the backend", async () => {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "e1" });
+        }
+        if (msg.type === "hass_ga_manual_ui/export_config") {
+          return Promise.resolve({
+            yaml: "google_assistant:\n  project_id: p\n",
+            filename: "export.yaml",
+          });
+        }
+        return Promise.resolve({});
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      const createObjectURL = vi.fn(() => "blob:1");
+      const revokeObjectURL = vi.fn();
+      (URL as unknown as Record<string, unknown>).createObjectURL = createObjectURL;
+      (URL as unknown as Record<string, unknown>).revokeObjectURL = revokeObjectURL;
+      const clickSpy = vi
+        .spyOn(HTMLAnchorElement.prototype, "click")
+        .mockImplementation(() => undefined);
+
+      actionButtons().exportBtn.dispatchEvent(new Event("click"));
+      await flush();
+
+      expect(hass.callWS).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "hass_ga_manual_ui/export_config",
+          entry_id: "e1",
+        }),
+      );
+      expect(createObjectURL).toHaveBeenCalled();
+      expect(clickSpy).toHaveBeenCalled();
+      clickSpy.mockRestore();
+    });
+
+    // Pick a file on the (already clicked) import flow and wait for the dialog.
+    async function pickFileAndOpenDialog(): Promise<HTMLElement> {
+      actionButtons().importBtn.dispatchEvent(new Event("click"));
+      const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+      const file = new File(["google_assistant:\n  project_id: p\n"], "c.yaml", {
+        type: "text/yaml",
+      });
+      Object.defineProperty(input, "files", { value: [file], configurable: true });
+      input.dispatchEvent(new Event("change"));
+      await flush();
+      return document.querySelector<HTMLElement>("[data-ga-confirm-dialog]")!;
+    }
+
+    it("import shows an HA-component dialog (ha-card), never the native confirm", async () => {
+      const confirmSpy = vi.spyOn(window, "confirm").mockImplementation(() => true);
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "e1" });
+        }
+        return Promise.resolve({ summary: {} });
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      const dialog = await pickFileAndOpenDialog();
+      expect(dialog).not.toBeNull();
+      expect(dialog.tagName).toBe("DIALOG");
+      expect(dialog.querySelector("ha-card")).not.toBeNull();
+      expect(confirmSpy).not.toHaveBeenCalled(); // never the browser's native modal
+      confirmSpy.mockRestore();
+    });
+
+    it("import calls the import WS on confirm", async () => {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "e1" });
+        }
+        return Promise.resolve({ summary: {} });
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      const dialog = await pickFileAndOpenDialog();
+      dialog.querySelector<HTMLElement>("[data-ga-confirm]")!.dispatchEvent(
+        new Event("click"),
+      );
+      await flush();
+      await flush();
+
+      expect(document.querySelector("[data-ga-confirm-dialog]")).toBeNull();
+      expect(hass.callWS).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "hass_ga_manual_ui/import_config",
+          entry_id: "e1",
+        }),
+      );
+    });
+
+    it("import does NOT call the import WS when cancelled", async () => {
+      const hass = createMockHass();
+      setupDom(hass);
+      evalFrontend();
+
+      const dialog = await pickFileAndOpenDialog();
+      dialog.querySelector<HTMLElement>("[data-ga-cancel]")!.dispatchEvent(
+        new Event("click"),
+      );
+      await flush();
+      await flush();
+
+      expect(document.querySelector("[data-ga-confirm-dialog]")).toBeNull();
+      const importCalls = hass.callWS.mock.calls.filter(
+        (c: unknown[]) =>
+          typeof c[0] === "object" &&
+          (c[0] as Record<string, unknown>).type === "hass_ga_manual_ui/import_config",
+      );
+      expect(importCalls.length).toBe(0);
+    });
+  });
 });

@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nJūsų configuration.yaml faile yra `google_assistant:` skyrius. Ši integracija dabar valdo Google Assistant ir jį pakeičia, todėl galite pašalinti tą skyrių.",
+  "yaml_notice": "Jūsų configuration.yaml faile rasta `google_assistant:` skiltis. Ši integracija ją pakeičia, todėl galite ją pašalinti.",
   "install_notice": "Google Assistant (Manual) įdiegtas. Jei jo kortelė nerodoma skiltyje Nustatymai → Balso asistentai, atlikite vienkartinį griežtą naršyklės atnaujinimą (Ctrl+Shift+R, arba Cmd+Shift+R „Mac“). To reikia tik vieną kartą, po įdiegimo arba atnaujinimo.",
   "frontend": {
     "yaml_detected": "Skyrius <code>google_assistant:</code> buvo rastas jūsų <code>configuration.yaml</code> faile ir buvo išjungtas. Ši integracija dabar valdo jūsų Google Assistant konfigūraciją. Galite saugiai pašalinti skyrių <code>google_assistant:</code> iš YAML konfigūracijos.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Nepavyko įjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
     "report_state_disable_failed": "Nepavyko išjungti būsenos ataskaitų. Pabandykite išjungti ir vėl įjungti integraciją arba peržiūrėkite Home Assistant žurnalus.",
     "ready_banner": "{name} yra paruoštas, tvarkykite jį Nustatymai → Balso asistentai.",
-    "update_available": "Yra nauja Google Assistant (Manual) versija. Atnaujinkite naršyklę (Ctrl+Shift+R, arba Cmd+Shift+R „Mac“), kad ją įkeltumėte."
+    "update_available": "Yra nauja Google Assistant (Manual) versija. Atnaujinkite naršyklę (Ctrl+Shift+R, arba Cmd+Shift+R „Mac“), kad ją įkeltumėte.",
+    "export_yaml": "Eksportuoti YAML",
+    "import_yaml": "Importuoti YAML",
+    "import_confirm_title": "Importuoti YAML konfigūraciją?",
+    "import_confirm_text": "Tai pakeičia visus Google Assistant nustatymus (ir atskleistas esybes) šio failo turiniu. Slapyvardžiai pridedami ir niekada nepašalinami.",
+    "import_confirm_warning": "Šio veiksmo anuliuoti negalima.",
+    "import_success": "Konfigūracija sėkmingai importuota.",
+    "import_failed": "Nepavyko importuoti konfigūracijos."
   }
 }

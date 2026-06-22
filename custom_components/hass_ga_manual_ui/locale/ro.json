@@ -1,5 +1,5 @@
 {
-  "yaml_notice": "\n\nAveți o secțiune `google_assistant:` în configuration.yaml. Această integrare gestionează acum Google Assistant și o suprascrie, deci puteți elimina acea secțiune.",
+  "yaml_notice": "A fost găsită o secțiune `google_assistant:` în configuration.yaml. Această integrare o înlocuiește, deci o puteți elimina.",
   "install_notice": "Google Assistant (Manual) este instalat. Dacă cardul său nu apare sub Setări → Asistenți vocali, efectuați o reîmprospătare forțată o singură dată a browserului (Ctrl+Shift+R sau Cmd+Shift+R pe Mac). Acest lucru este necesar o singură dată, după instalare sau actualizare.",
   "frontend": {
     "yaml_detected": "Secțiunea <code>google_assistant:</code> a fost detectată în <code>configuration.yaml</code> și a fost dezactivată. Această integrare gestionează acum configurația Google Assistant. Puteți elimina în siguranță secțiunea <code>google_assistant:</code> din configurația YAML.",
@@ -13,6 +13,13 @@
     "report_state_enable_failed": "Activarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
     "report_state_disable_failed": "Dezactivarea raportării stării a eșuat. Încercați să opriți și să reporniți integrarea sau verificați jurnalele Home Assistant.",
     "ready_banner": "{name} este pregătit, gestionați-l în Setări → Asistenți vocali.",
-    "update_available": "Este disponibilă o nouă versiune de Google Assistant (Manual). Reîmprospătați browserul (Ctrl+Shift+R sau Cmd+Shift+R pe Mac) pentru a o încărca."
+    "update_available": "Este disponibilă o nouă versiune de Google Assistant (Manual). Reîmprospătați browserul (Ctrl+Shift+R sau Cmd+Shift+R pe Mac) pentru a o încărca.",
+    "export_yaml": "Exportă YAML",
+    "import_yaml": "Importă YAML",
+    "import_confirm_title": "Importați configurația YAML?",
+    "import_confirm_text": "Aceasta înlocuiește toate setările pentru Google Assistant (și entitățile expuse) cu conținutul acestui fișier. Aliasurile sunt adăugate și niciodată eliminate.",
+    "import_confirm_warning": "Această acțiune nu poate fi anulată.",
+    "import_success": "Configurație importată cu succes.",
+    "import_failed": "Importul configurației a eșuat."
   }
 }

@@ -1,24 +1,32 @@
 {
   "config": {
     "step": {
+      "intro": {
+        "title": "یہ کیسے کام کرتا ہے",
+        "description": "یہ انٹیگریشن Google Assistant کا انتظام کرتی ہے اور آپ کے configuration.yaml میں کسی بھی `google_assistant:` سیکشن کو اوور رائیڈ کرتی ہے۔ آپ بعد میں ترتیبات ← آواز کے معاونین سے ایک خود مختار YAML کنفیگریشن برآمد یا درآمد کر سکتے ہیں۔"
+      },
       "user": {
-        "title": "Google Assistant (دستی)",
-        "description": "اپنے Google Cloud پروجیکٹ ID درج کریں۔\n\n{guide_url} پر سیٹ اپ گائیڈ پر عمل کریں (مراحل 1–13)۔ آپ اگلے مرحلے میں اپنی سروس اکاؤنٹ JSON کلید پیسٹ کریں گے۔{yaml_notice}",
+        "title": "موجودہ کنفیگریشن منتقل کریں",
+        "description": "{yaml_notice}",
         "data": {
-          "project_id": "پروجیکٹ ID"
+          "migrate_yaml": "میری موجودہ YAML کنفیگریشن منتقل کریں"
         },
         "data_description": {
-          "project_id": "آپ کا Google Cloud پروجیکٹ ID"
+          "migrate_yaml": "نمائش، حالت کی رپورٹنگ، PIN اور عرفی نام کاپی کرتا ہے۔ نئے سرے سے شروع کرنے کے لیے نشان ہٹا دیں۔"
+        }
+      },
+      "credentials": {
+        "title": "Google Assistant (دستی)",
+        "description": "اپنے Google Cloud پروجیکٹ ID درج کریں۔ {guide_url} پر سیٹ اپ گائیڈ دیکھیں (مراحل 1-13)۔",
+        "data": {
+          "project_id": "پروجیکٹ ID"
         }
       },
       "service_account": {
         "title": "سروس اکاؤنٹ",
-        "description": "اپنی سروس اکاؤنٹ JSON کلید فائل کا مواد پیسٹ کریں۔\n\n{docs_url} پر ایک بنائیں ({guide_url} پر گائیڈ کا مرحلہ 12)۔",
+        "description": "اپنی سروس اکاؤنٹ JSON کلید پیسٹ کریں۔ {docs_url} پر ایک بنائیں (گائیڈ کا مرحلہ 12)۔",
         "data": {
           "service_account": "سروس اکاؤنٹ JSON"
-        },
-        "data_description": {
-          "service_account": "اپنی ڈاؤن لوڈ کردہ سروس اکاؤنٹ JSON کلید پیسٹ کریں"
         }
       }
     },
