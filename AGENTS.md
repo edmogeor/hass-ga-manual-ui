@@ -96,7 +96,7 @@ Two-layer monkey-patching approach. Neither layer modifies core HA files on disk
 
 ### Layer 1: Python Backend
 
-**Files:** `__init__.py`, `config_flow.py`, `const.py`, `frontend.py`
+**Files:** `__init__.py`, `config_flow.py`, `migrate.py`, `const.py`, `frontend.py`
 
 On `async_setup()`:
 1. Initiálises `hass.data["google_assistant"]` as an empty dict (safety for stale entries).
@@ -204,7 +204,12 @@ HA starts
   → Integration ready
 
 User adds integration via UI:
-  → config_flow: project_id → service_account (JSON textarea)
+  → config_flow: intro/migrate → credentials (project_id) → service_account (JSON
+    textarea). The first page is a migrate prompt (notice + opt-in checkbox) when
+    a `google_assistant:` YAML block exists, else a from-scratch heads-up. When
+    migrating, project_id / service_account are prefilled from the YAML and the
+    matching steps are skipped. The service account is verified against Google's
+    HomeGraph token endpoint before the entry is created.
     → ConfigEntry created for domain "hass_ga_manual_ui"
       → async_setup_entry() fires:
         1. Populates hass.data["google_assistant"]["config"]
@@ -215,7 +220,12 @@ User adds integration via UI:
         5. Patches GoogleConfig.secure_devices_pin → entry.options
         6. Patches GoogleConfig.should_expose → async_should_expose(hass, ASSISTANT_ID, entity_id)
         7. Registers auto-resync listeners (exposure / entity- + device-registry → requestSync)
-        8. Registers WS commands (get_config/update_config/enable/disable)
+        8. Registers WS commands (get_config/update_config/enable/disable/
+           get_entity/update_entity/export_config/import_config)
+        9. If the user opted to migrate YAML, schedules a one-shot migration on
+           HA-started (so late-loading integrations' entities are in the registry)
+           that applies the `google_assistant:` block via migrate.apply_ga_config,
+           then persists OPT_YAML_MIGRATED so it never reruns
 
 Browser loads HA frontend
   → HA loads /hass_ga_manual_ui/frontend.js as extra module
@@ -249,6 +259,15 @@ User changes settings in card (when enabled):
     - Updates entry.options
     - If report_state changed: calls GoogleConfig.async_enable/disable_report_state() + async_schedule_google_sync_all() (willReportState is per-device, so Google must be re-synced)
     - If PIN changed: no action needed (live property patch)
+
+User clicks Export / Import in the card actions:
+  → Export: JS calls hass_ga_manual_ui/export_config → migrate.export_ga_config
+    builds a strict, standalone-valid `google_assistant:` block (validated against
+    core GA's own GOOGLE_ASSISTANT_SCHEMA) and the JS downloads it as a .yaml file
+  → Import: JS picks a file, confirms (overwrites exposure + flags), then calls
+    hass_ga_manual_ui/import_config → migrate.apply_ga_config (same path as the
+    YAML migration: replaces exposure/flags under our assistant id, merges aliases
+    additively into the shared registry)
 ```
 
 ## Example dialogue
@@ -290,26 +309,30 @@ Integration files live in `custom_components/hass_ga_manual_ui/` (standard HACS 
 ├── custom_components/
 │   └── hass_ga_manual_ui/     # Integration (what HACS/HA loads)
 │       ├── __init__.py              # Integration entry point, core GA bridge, WS commands
-│       ├── config_flow.py           # Two-step config flow (project_id → service_account)
+│       ├── config_flow.py           # Config flow (intro/migrate → project_id → service_account)
+│       ├── migrate.py               # YAML migrate / import / export of the google_assistant: block
 │       ├── const.py                 # DOMAIN, ASSISTANT_ID, CONF_* keys, WS constants
 │       ├── frontend.py              # Serves frontend.js and assets via HA HTTP
 │       ├── frontend.js              # Compiled JS artifact (esbuild output, git-committed)
+│       ├── locale.py                # Reads custom strings from locale/<lang>.json
 │       ├── manifest.json            # HA integration manifest
-│       ├── hacs.json                # HACS dashboard metadata
 │       ├── strings.json             # Config flow translation keys
-│       ├── assets/
-│       │   └── icon.png             # Google Assistant brand icon
-│       └── translations/
-│           └── en.json              # Generated English translations
+│       ├── brand/                   # Brand icons (icon.png, dark_icon.png, @2x variants)
+│       ├── locale/                  # Custom (non-HA-schema) strings per language
+│       │   └── en.json              # English source of truth (card + notices)
+│       └── translations/            # HA-schema config/options strings per language
+│           └── en.json              # English (generated from strings.json)
+├── hacs.json                        # HACS dashboard metadata (repo root)
 ├── tests/                           # Test suites (colocated at repo root)
 │   ├── __init__.py                  # Python test package (imports custom_components)
 │   ├── conftest.py                  # Shared fixtures (mock_config_entry, FakeGoogleConfig, etc.)
 │   ├── test_init.py                 # Tests for __init__.py (bridge, WS, schema walker, teardown)
 │   ├── test_config_flow.py          # Tests for config_flow.py (validation, flow steps)
+│   ├── test_migrate.py              # Tests for migrate.py (apply/export, exposure rule, aliases)
 │   ├── test_const.py                # Tests for const.py (constant values, no drift)
 │   ├── test_frontend.py             # Tests for frontend.py (static path registration)
 │   └── frontend.test.ts             # Tests for frontend.ts (patch logic, card building, WS)
-├── frontend.ts                      # TypeScript source (~1340 lines, strict mode)
+├── frontend.ts                      # TypeScript source (~2440 lines, strict mode)
 ├── package.json                     # npm scripts and dev dependencies
 ├── tsconfig.json                    # TypeScript strict config, ES2020/DOM target
 ├── vitest.config.ts                 # Vitest runner config (DOM environment)
@@ -411,12 +434,12 @@ Two test frameworks serve different parts of the codebase:
 
 **Vitest** (`vitest.config.ts`), TypeScript tests:
 - DOM environment (via `@vitest/environment-dom` / `jsdom`)
-- 18 tests in `tests/frontend.test.ts`
+- 42 tests in `tests/frontend.test.ts`
 - Covers patch logic, card building, DOM manipulation, and WebSocket interactions
 - Runs as `vitest run` (single shot, no watch mode)
 
 **pytest** (`pytest.ini`), Python tests:
-- 163 tests across 5 files in `tests/`
+- 213 tests across 5 files in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()`, build `ConfigEntry`-like objects for all test scenarios
@@ -425,7 +448,8 @@ Two test frameworks serve different parts of the codebase:
   - `reset_version_cache`, `reset_original_props_cache`, autouse fixtures to prevent test pollution
 - Test files:
   - `test_init.py`, `_build_core_config`, `_make_core_entry`, `_find_core_entry`, `_reconcile_core_ga_entries`, `_safe_get_entry`, WS schemas, `_add_assistant_to_schema`, `_patch_google_config_properties`, `_teardown_core_ga` (unload vs disable), `_patch_core_assistants`
-  - `test_config_flow.py`, validation, `_parse_service_account_json`, `_is_valid_project_id`, flow steps
+  - `test_config_flow.py`, validation, `_parse_service_account_json`, `_is_valid_project_id`, flow steps, YAML prefill/migrate opt-in, service account verification
+  - `test_migrate.py`, `apply_ga_config` (exposure replace, additive alias merge), `export_ga_config` (standalone schema), `_yaml_should_expose` pinned against core GA
   - `test_const.py`, constant values match expectations and don't drift between Python and JS
   - `test_frontend.py`, HTTP path registration, asset serving
   - `frontend.test.ts`, JS patch functions, card DOM structure, WS client calls
