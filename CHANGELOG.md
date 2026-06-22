@@ -5,6 +5,21 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2026-06-22
+
+### Changed
+
+- Internal cleanup with no change to behavior: the YAML export dumper now
+  subclasses the standard `SafeDumper` directly (dropping a redundant C-dumper
+  import fallback and a type-checker suppression), and `None` values render as
+  empty keys via a representer instead of post-processing the dumped string.
+- The card-state refresh used by YAML import and card re-injection no longer
+  stashes a callback on the DOM element; it re-queries the card's controls
+  directly, removing a side channel that could silently stop working.
+- Consolidated the "push changes to Google" resync into a single helper shared
+  by the report-state, PIN, and import paths, and simplified the card's
+  config-entry-missing handling to derive from the error itself.
+
 ## [0.2.4] - 2026-06-22
 
 ### Fixed
