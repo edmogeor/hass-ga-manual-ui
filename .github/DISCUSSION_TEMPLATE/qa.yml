@@ -1,0 +1,15 @@
+name: Q&A
+description: Ask a question about setting up or using the integration
+body:
+  - type: input
+    id: ha_version
+    attributes:
+      label: Home Assistant version
+      placeholder: "2025.6.0"
+  - type: textarea
+    id: body
+    attributes:
+      label: Question
+      description: What do you need help with?
+    validations:
+      required: true

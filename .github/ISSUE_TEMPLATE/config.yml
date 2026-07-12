@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Question / Discussion
+    url: https://github.com/edmogeor/hass-ga-manual-ui/discussions
+    about: Ask questions and discuss usage of the integration here.
   - name: Home Assistant manual Google Assistant setup
     url: https://www.home-assistant.io/integrations/google_assistant/#manual-setup
     about: Guide for setting up a Google Cloud project and service account
