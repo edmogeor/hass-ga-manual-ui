@@ -112,6 +112,12 @@ Removing the integration also **deletes all Google Assistant configuration** (pr
 > [!TIP]
 > Before uninstalling, back up your settings: from the Google Assistant card in **Settings → Voice assistants**, use **Export YAML** to save a standalone config file. After reinstalling, you can restore it with **Import YAML**.
 
+## Donations
+
+Feel free to donate if you'd like to support the development of this integration.
+
+<a href="https://www.buymeacoffee.com/edmogeor" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me a Coffee" style="height: 60px !important;width: 217px !important;" ></a>
+
 ## License
 
 MIT
