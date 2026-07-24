@@ -112,6 +112,24 @@ Removing the integration also **deletes all Google Assistant configuration** (pr
 > [!TIP]
 > Before uninstalling, back up your settings: from the Google Assistant card in **Settings → Voice assistants**, use **Export YAML** to save a standalone config file. After reinstalling, you can restore it with **Import YAML**.
 
+## Troubleshooting
+
+### Error in logs on restart
+
+After a Home Assistant restart you may see the following error logged once by
+`homeassistant.config_entries`:
+
+```
+Error setting up entry ... for google_assistant
+KeyError: 'google_assistant'
+```
+
+This is a harmless boot-order race. HA auto-loads persisted entries before this
+integration's setup code can initialise its config, so the core Google Assistant
+component fails its first attempt. The entry is reloaded moments later once the
+config is ready, and everything works normally. The error is cosmetic and can be
+safely ignored.
+
 ## Donations
 
 Feel free to donate if you'd like to support the development of this integration.
