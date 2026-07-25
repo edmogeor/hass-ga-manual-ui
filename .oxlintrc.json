@@ -1,0 +1,16 @@
+{
+  "rules": {
+    "no-underscore-dangle": "off",
+    "no-extend-native": "off",
+    "no-shadow": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**"],
+      "rules": {
+        "unicorn/consistent-function-scoping": "off",
+        "unicorn/no-useless-spread": "off"
+      }
+    }
+  ]
+}

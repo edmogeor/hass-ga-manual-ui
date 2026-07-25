@@ -8,22 +8,20 @@
     "build": "esbuild frontend.ts --bundle --outfile=custom_components/hass_ga_manual_ui/frontend.js --target=es2020 --format=iife --define:__BUILD_VERSION__=$(node -p \"JSON.stringify(require('./custom_components/hass_ga_manual_ui/manifest.json').version)\")",
     "watch": "esbuild frontend.ts --bundle --outfile=custom_components/hass_ga_manual_ui/frontend.js --target=es2020 --format=iife --watch --define:__BUILD_VERSION__=$(node -p \"JSON.stringify(require('./custom_components/hass_ga_manual_ui/manifest.json').version)\")",
     "check": "tsc --noEmit && pyrefly check",
-    "lint": "eslint frontend.ts tests/ && ruff check . && ruff format --check .",
-    "lint:ts": "eslint frontend.ts tests/",
+    "lint": "oxlint frontend.ts tests/ && ruff check . && ruff format --check .",
+    "lint:ts": "oxlint frontend.ts tests/",
     "lint:py": "ruff check . && ruff format --check .",
-    "fix": "eslint --fix frontend.ts tests/ && ruff check --fix . && ruff format .",
+    "fix": "oxlint --fix frontend.ts tests/ && ruff check --fix . && ruff format .",
     "test": "vitest run && python -B -m pytest tests/ -q",
     "test:ts": "vitest run",
     "test:py": "python -B -m pytest tests/ -q"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/node": "^25.9.2",
-    "esbuild": "^0.25.0",
-    "eslint": "^10.4.1",
+    "@types/node": "^26.1.1",
+    "esbuild": "^0.28.1",
     "jsdom": "^29.1.1",
-    "typescript": "^5.7.0",
-    "typescript-eslint": "^8.61.0",
-    "vitest": "^4.1.8"
+    "oxlint": "^1.75.0",
+    "typescript": "^7.0.2",
+    "vitest": "^4.1.10"
   }
 }

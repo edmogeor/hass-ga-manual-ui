@@ -94,7 +94,7 @@ function setupDom(hass: MockHass): void {
 }
 
 async function flushMicrotasks(): Promise<void> {
-  await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  await new Promise<void>((r) => setTimeout(r, 0));
 }
 
 // ---------------------------------------------------------------------------

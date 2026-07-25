@@ -1392,15 +1392,15 @@ function _patchToggleRefresh(
   if ((orig as { __gaWrapped?: boolean }).__gaWrapped) return; // already patched
 
   const wrapped = async function (this: EntityVoiceSettingsElement, ev: Event) {
-    const t = ev.target as {
+    const target = ev.target as {
       checked?: boolean;
       assistants?: string[];
       assistant?: string;
     } | null;
     const snapshot = {
-      checked: t?.checked,
-      assistants: t?.assistants ? [...t.assistants] : t?.assistants,
-      assistant: t?.assistant,
+      checked: target?.checked,
+      assistants: target?.assistants ? [...target.assistants] : target?.assistants,
+      assistant: target?.assistant,
     };
     try {
       const hass = this.hass || getHass();
