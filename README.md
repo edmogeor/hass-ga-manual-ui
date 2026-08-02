@@ -14,6 +14,12 @@
   </p>
 </div>
 
+> **Home Assistant 2026.8 — heads up**
+>
+> The upcoming HA 2026.8 release reorganises how Cloud settings are displayed in the UI. Our review of the changes indicates they should **not** affect this integration, but we will fully confirm once 2026.8 ships.
+>
+> As a precaution, **export your current configuration** before upgrading: open the integration card in _Settings → Voice assistants_, then click the **Export YAML** button. This gives you a file you can re-import later, or fall back to as a manual YAML config if needed.
+
 A Home Assistant integration that brings the Google Assistant voice assistant to your Home Assistant without a Nabu Casa Cloud subscription. Once set up, the experience is **identical to the Nabu Casa Cloud Google Assistant**, same voice assistant card, same entity exposure UI, same per-entity 2FA toggle.
 
 ## Screenshots
