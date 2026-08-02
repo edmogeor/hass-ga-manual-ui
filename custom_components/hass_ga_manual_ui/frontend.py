@@ -88,7 +88,10 @@ async def async_setup_frontend(hass: HomeAssistant) -> None:
         if DATA_EXTRA_MODULE_URL not in hass.data:
             from homeassistant.components.frontend import UrlManager
 
-            hass.data[DATA_EXTRA_MODULE_URL] = UrlManager(lambda *_: None, [])
+            def _noop(*_args: object) -> None:
+                return None
+
+            hass.data[DATA_EXTRA_MODULE_URL] = UrlManager(_noop, [])
             _LOGGER.debug("Initialized UrlManager for extra JS modules")
 
         add_extra_js_url(hass, versioned_url)
