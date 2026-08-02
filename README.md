@@ -14,6 +14,7 @@
   </p>
 </div>
 
+> [!WARNING]
 > **Home Assistant 2026.8 — heads up**
 >
 > The upcoming HA 2026.8 release reorganises how Cloud settings are displayed in the UI. Our review of the changes indicates they should **not** affect this integration, but we will fully confirm once 2026.8 ships.
