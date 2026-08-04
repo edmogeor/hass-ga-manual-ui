@@ -1025,6 +1025,13 @@ function _loadHideCloudOption(): Promise<void> {
   return _hideCloudOptionRequest;
 }
 
+// Defer a Cloud-related render until its shared visibility setting is known.
+function _cloudVisibilityReady(el: LitLifecycle): boolean {
+  if (_hideCloudOption !== undefined) return true;
+  void _loadHideCloudOption().then(() => el.requestUpdate?.());
+  return false;
+}
+
 // Filter the dashboard page list before the original Lit render creates cards.
 // Its initial render returns an empty result while the setting is fetched, which
 // is preferable to briefly showing a card the user chose to hide.
@@ -1039,10 +1046,7 @@ function _patchConfigDashboardProto(proto: ConfigDashboardElement): void {
   protoRec.__gaCloudDashboardPatched = true;
 
   proto.render = function (this: ConfigDashboardElement) {
-    if (_hideCloudOption === undefined) {
-      void _loadHideCloudOption().then(() => this.requestUpdate?.());
-      return "";
-    }
+    if (!_cloudVisibilityReady(this)) return "";
     if (!_hideCloudOption || typeof this._pages !== "function") {
       return origRender.call(this);
     }
@@ -1074,10 +1078,7 @@ function _patchCloudDiscoverProto(proto: CloudDiscoverElement): void {
   protoRec.__gaCloudDiscoverPatched = true;
 
   proto.render = function (this: CloudDiscoverElement) {
-    if (_hideCloudOption === undefined) {
-      void _loadHideCloudOption().then(() => this.requestUpdate?.());
-      return "";
-    }
+    if (!_cloudVisibilityReady(this)) return "";
     return _hideCloudOption ? "" : origRender.call(this);
   };
 }

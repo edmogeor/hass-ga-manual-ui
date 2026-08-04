@@ -101,7 +101,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(
-        config_entry: Any,
+        _config_entry: Any,
     ) -> "GoogleAssistantManualOptionsFlow":
         """Create the post-setup configuration flow."""
         return GoogleAssistantManualOptionsFlow()
@@ -396,14 +396,16 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Optionally hide Home Assistant Cloud promotions."""
-        if user_input is not None:
-            self._options[OPT_HIDE_CLOUD] = bool(user_input.get(OPT_HIDE_CLOUD, False))
-            return await self._create_entry()
+        if user_input is None:
+            return self.async_show_form(
+                step_id="cloud_visibility",
+                data_schema=vol.Schema(
+                    {vol.Optional(OPT_HIDE_CLOUD, default=False): bool}
+                ),
+            )
 
-        return self.async_show_form(
-            step_id="cloud_visibility",
-            data_schema=vol.Schema({vol.Optional(OPT_HIDE_CLOUD, default=False): bool}),
-        )
+        self._options[OPT_HIDE_CLOUD] = bool(user_input.get(OPT_HIDE_CLOUD, False))
+        return await self._create_entry()
 
 
 class GoogleAssistantManualOptionsFlow(OptionsFlow):
