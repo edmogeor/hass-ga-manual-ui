@@ -46,7 +46,11 @@
         "description": "Update your Google Cloud project ID or service account JSON. Changes are validated and applied immediately.",
         "data": {
           "project_id": "Project ID",
-          "service_account": "Service account JSON"
+          "service_account": "Service account JSON",
+          "hide_home_assistant_cloud": "Hide Home Assistant Cloud from Settings"
+        },
+        "data_description": {
+          "hide_home_assistant_cloud": "Hides the Home Assistant Cloud card from the Settings dashboard. This does not disable Cloud or prevent direct access."
         }
       }
     },

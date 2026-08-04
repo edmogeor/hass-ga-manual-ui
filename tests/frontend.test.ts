@@ -613,6 +613,46 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
+  describe("Settings dashboard Cloud option", () => {
+    it("filters Cloud before the dashboard renders when enabled", async () => {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "mock-entry" });
+        }
+        if (msg.type === "hass_ga_manual_ui/get_config") {
+          return Promise.resolve({ hide_home_assistant_cloud: true });
+        }
+        return Promise.resolve({});
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      class FakeConfigDashboard extends HTMLElement {
+        requestUpdate = vi.fn();
+        _pages() {
+          return [[{ path: "/config/cloud" }, { path: "/config/integrations" }]];
+        }
+        render() {
+          return this._pages()[0].map((page) => page.path);
+        }
+      }
+      if (!customElements.get("ha-config-dashboard")) {
+        customElements.define("ha-config-dashboard", FakeConfigDashboard);
+      }
+
+      const dashboard = document.createElement(
+        "ha-config-dashboard",
+      ) as unknown as FakeConfigDashboard;
+      expect(dashboard.render()).toBe("");
+
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      expect(dashboard.render()).toEqual(["/config/integrations"]);
+    });
+  });
+
   // We wrap render() to neutralise HA's splice bug, which drops our id from the
   // list driving the master Expose toggle and per-assistant row visibility.
   describe("entity dialog master expose toggle", () => {

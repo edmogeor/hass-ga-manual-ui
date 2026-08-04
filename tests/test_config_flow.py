@@ -18,6 +18,7 @@ from hass_ga_manual_ui.const import (
     CONF_PRIVATE_KEY,
     CONF_PROJECT_ID,
     CONF_SERVICE_ACCOUNT,
+    OPT_HIDE_CLOUD,
 )
 
 from .conftest import (
@@ -274,6 +275,7 @@ class TestOptionsFlow:
         assert result["step_id"] == "init"
         assert _schema_has(result, CONF_PROJECT_ID)
         assert _schema_has(result, CONF_SERVICE_ACCOUNT)
+        assert _schema_has(result, OPT_HIDE_CLOUD)
 
     @pytest.mark.asyncio
     async def test_valid_update_persists_data_and_applies_live_config(self) -> None:
@@ -290,6 +292,7 @@ class TestOptionsFlow:
                 {
                     CONF_PROJECT_ID: "updated-project",
                     CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON,
+                    OPT_HIDE_CLOUD: True,
                 }
             )
         assert result["type"] == "create_entry"
@@ -297,6 +300,7 @@ class TestOptionsFlow:
         assert update.kwargs["title"] == "updated-project"
         assert update.kwargs["data"][CONF_PROJECT_ID] == "updated-project"
         apply_credentials.assert_awaited_once_with(flow.hass, entry)
+        assert flow.async_create_entry.call_args.kwargs["data"][OPT_HIDE_CLOUD] is True
 
     @pytest.mark.asyncio
     async def test_rejected_credentials_stay_on_form(self) -> None:

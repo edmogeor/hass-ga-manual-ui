@@ -23,6 +23,7 @@ WS_IMPORT_CONFIG = "hass_ga_manual_ui/import_config"
 # One-time YAML migration: config-flow checkbox + persisted "done" flag.
 CONF_MIGRATE_YAML = "migrate_yaml"
 OPT_YAML_MIGRATED = "yaml_migrated"
+OPT_HIDE_CLOUD = "hide_home_assistant_cloud"
 
 # Per-entity assistant option mirroring cloud's PREF_DISABLE_2FA.
 PREF_DISABLE_2FA = "disable_2fa"

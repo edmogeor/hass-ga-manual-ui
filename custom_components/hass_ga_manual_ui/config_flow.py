@@ -24,6 +24,7 @@ from .const import (
     CONF_SERVICE_ACCOUNT,
     CORE_GA_DOMAIN,
     DOMAIN,
+    OPT_HIDE_CLOUD,
 )
 from .locale import async_load_locale
 
@@ -402,6 +403,7 @@ class GoogleAssistantManualOptionsFlow(OptionsFlow):
         if user_input is not None:
             project_id = user_input.get(CONF_PROJECT_ID, "").strip()
             raw_service_account = user_input.get(CONF_SERVICE_ACCOUNT, "").strip()
+            hide_cloud = bool(user_input.get(OPT_HIDE_CLOUD, False))
 
             if not project_id:
                 errors[CONF_PROJECT_ID] = "project_id_required"
@@ -437,7 +439,9 @@ class GoogleAssistantManualOptionsFlow(OptionsFlow):
                 from . import async_apply_updated_credentials
 
                 await async_apply_updated_credentials(self.hass, entry)
-                return self.async_create_entry(title="", data=dict(entry.options))
+                return self.async_create_entry(
+                    title="", data={**entry.options, OPT_HIDE_CLOUD: hide_cloud}
+                )
 
         service_account = entry.data.get(CONF_SERVICE_ACCOUNT, {})
         service_account_json = json.dumps(service_account, indent=2)
@@ -453,6 +457,10 @@ class GoogleAssistantManualOptionsFlow(OptionsFlow):
                         CONF_SERVICE_ACCOUNT,
                         description={"suggested_value": service_account_json},
                     ): str,
+                    vol.Optional(
+                        OPT_HIDE_CLOUD,
+                        default=entry.options.get(OPT_HIDE_CLOUD, False),
+                    ): bool,
                 }
             ),
             errors=errors,

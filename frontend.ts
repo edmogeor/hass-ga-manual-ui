@@ -82,6 +82,10 @@ interface EntityVoiceSettingsElement extends HTMLElement, LitLifecycle {
   _unsupported?: Record<string, boolean>;
 }
 
+interface ConfigDashboardElement extends HTMLElement, LitLifecycle {
+  _pages?: (...args: unknown[]) => Array<Array<{ path?: string }>>;
+}
+
 interface WSError extends Error {
   error?: string;
   code?: string;
@@ -112,6 +116,7 @@ const WS_GET_ENTITY = `${ASSISTANT_ID}/get_entity`;
 const WS_UPDATE_ENTITY = `${ASSISTANT_ID}/update_entity`;
 const WS_EXPORT_CONFIG = `${ASSISTANT_ID}/export_config`;
 const WS_IMPORT_CONFIG = `${ASSISTANT_ID}/import_config`;
+const OPT_HIDE_CLOUD = "hide_home_assistant_cloud";
 
 // Injected at build time via esbuild --define (see package.json). Compared to
 // the server-reported version to detect a stale (cached) bundle; "" disables it.
@@ -988,6 +993,71 @@ async function patchExposePage(): Promise<void> {
 // 4. Patch custom element prototypes (both new definitions and retroactive)
 // ---------------------------------------------------------------------------
 
+let _hideCloudOption: boolean | undefined;
+let _hideCloudOptionRequest: Promise<void> | null = null;
+
+// Read the dashboard-only option once. Dashboard rendering waits for this value
+// so an enabled Cloud card never reaches the DOM, avoiding a visible flash.
+function _loadHideCloudOption(): Promise<void> {
+  if (_hideCloudOptionRequest) return _hideCloudOptionRequest;
+  _hideCloudOptionRequest = (async () => {
+    try {
+      const hass = getHass();
+      if (!hass) {
+        _hideCloudOption = false;
+        return;
+      }
+      const config = await _withEntryRetry((entryId) =>
+        hass.callWS<{ hide_home_assistant_cloud?: boolean }>({
+          type: WS_GET_CONFIG,
+          entry_id: entryId,
+        }),
+      );
+      _hideCloudOption = config[OPT_HIDE_CLOUD] === true;
+    } catch (e) {
+      _debug("Could not read Hide Home Assistant Cloud setting: " + _errorMessage(e));
+    }
+    // Fail open if the integration is not configured or the request fails.
+    _hideCloudOption ??= false;
+  })();
+  return _hideCloudOptionRequest;
+}
+
+// Filter the dashboard page list before the original Lit render creates cards.
+// Its initial render returns an empty result while the setting is fetched, which
+// is preferable to briefly showing a card the user chose to hide.
+function _patchConfigDashboardProto(proto: ConfigDashboardElement): void {
+  const protoRec = proto as unknown as { __gaCloudDashboardPatched?: boolean };
+  if (protoRec.__gaCloudDashboardPatched) return;
+  const origRender = proto.render;
+  if (typeof origRender !== "function") {
+    _warn("ha-config-dashboard.render not found; cannot hide Home Assistant Cloud");
+    return;
+  }
+  protoRec.__gaCloudDashboardPatched = true;
+
+  proto.render = function (this: ConfigDashboardElement) {
+    if (_hideCloudOption === undefined) {
+      void _loadHideCloudOption().then(() => this.requestUpdate?.());
+      return "";
+    }
+    if (!_hideCloudOption || typeof this._pages !== "function") {
+      return origRender.call(this);
+    }
+
+    const originalPages = this._pages;
+    this._pages = (...args: unknown[]) =>
+      originalPages(...args).map((pages) =>
+        pages.filter((page) => page.path !== "/config/cloud"),
+      );
+    try {
+      return origRender.call(this);
+    } finally {
+      this._pages = originalPages;
+    }
+  };
+}
+
 function _patchAssistantsPageProto(proto: AssistantsPageElement): void {
   try {
     const origConnected = proto.connectedCallback;
@@ -1513,6 +1583,7 @@ const PATCHERS: Record<string, ProtoPatcher> = {
   "voice-assistants-expose-assistant-icon": _patchExposeAssistantIconProto as ProtoPatcher,
   "entity-voice-settings": _patchEntityVoiceSettingsProto as ProtoPatcher,
   "dialog-voice-settings": _patchVoiceSettingsDialogProto as ProtoPatcher,
+  "ha-config-dashboard": _patchConfigDashboardProto as ProtoPatcher,
 };
 
 function patchCustomElements(): void {

@@ -32,6 +32,7 @@ from .const import (
     CORE_GA_DOMAIN,
     CORE_GA_PARENT_ENTRY_ID,
     DOMAIN,
+    OPT_HIDE_CLOUD,
     OPT_YAML_MIGRATED,
     PREF_DISABLE_2FA,
     WS_DISABLE,
@@ -1261,6 +1262,7 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
             result = {
                 "enabled": enabled,
                 "yaml_suppressed": current_entry.options.get("yaml_suppressed", False),
+                OPT_HIDE_CLOUD: current_entry.options.get(OPT_HIDE_CLOUD, False),
                 CONF_REPORT_STATE: current_entry.options.get(CONF_REPORT_STATE, False),
                 CONF_SECURE_DEVICES_PIN: current_entry.options.get(
                     CONF_SECURE_DEVICES_PIN, ""
