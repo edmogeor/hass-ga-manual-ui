@@ -942,21 +942,50 @@ describe("Google Assistant Manual frontend", () => {
     const flush = () => new Promise<void>((r) => setTimeout(r, 0));
 
     function actionButtons() {
-      const card = document.querySelector("[data-ga-manual-card]")!;
-      const btns = Array.from(card.querySelectorAll("ha-button"));
+      class FakeDataEntryFlowDialog extends HTMLElement {
+        _params?: { domain?: string; flowConfig?: { flowType?: string } };
+        _step?: { type?: string };
+        updated(_changedProps: Map<string, unknown>) {}
+      }
+      if (!customElements.get("dialog-data-entry-flow")) {
+        customElements.define("dialog-data-entry-flow", FakeDataEntryFlowDialog);
+      }
+
+      const dialog = document.createElement(
+        "dialog-data-entry-flow",
+      ) as unknown as FakeDataEntryFlowDialog;
+      dialog._params = {
+        domain: "hass_ga_manual_ui",
+        flowConfig: { flowType: "options_flow" },
+      };
+      dialog._step = { type: "form" };
+      const root = dialog.attachShadow({ mode: "open" });
+      root.appendChild(document.createElement("ha-dialog-footer"));
+      dialog.updated(new Map());
+
       return {
-        exportBtn: btns.find((b) => b.textContent === "Export YAML")!,
-        importBtn: btns.find((b) => b.textContent === "Import YAML")!,
+        exportBtn: root.querySelector<HTMLElement>("[data-ga-options-yaml=export]")!,
+        importBtn: root.querySelector<HTMLElement>("[data-ga-options-yaml=import]")!,
       };
     }
 
-    it("renders Export and Import buttons in the card actions", async () => {
+    it("renders Export and Import buttons in the options dialog", async () => {
       setupDom(createMockHass());
       evalFrontend();
       await flush();
       const { exportBtn, importBtn } = actionButtons();
       expect(exportBtn).toBeTruthy();
       expect(importBtn).toBeTruthy();
+    });
+
+    it("does not render YAML actions on the assistant card", async () => {
+      setupDom(createMockHass());
+      evalFrontend();
+      await flush();
+
+      const card = document.querySelector("[data-ga-manual-card]")!;
+      expect(card.textContent).not.toContain("Export YAML");
+      expect(card.textContent).not.toContain("Import YAML");
     });
 
     it("export downloads the YAML returned by the backend", async () => {
@@ -991,7 +1020,6 @@ describe("Google Assistant Manual frontend", () => {
       expect(hass.callWS).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "hass_ga_manual_ui/export_config",
-          entry_id: "e1",
         }),
       );
       expect(createObjectURL).toHaveBeenCalled();
@@ -1059,7 +1087,6 @@ describe("Google Assistant Manual frontend", () => {
       expect(hass.callWS).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "hass_ga_manual_ui/import_config",
-          entry_id: "e1",
         }),
       );
       // The card refresh fires after import, which updates the entity count.
@@ -1125,6 +1152,42 @@ describe("Google Assistant Manual frontend", () => {
       expect(toasts[0].message).toContain("Invalid JWT Signature");
       // HA hides a toast when duration === 0, so an error must use a visible duration.
       expect(toasts[0].duration).not.toBe(0);
+    });
+  });
+
+  describe("options-flow YAML actions", () => {
+    it("adds Import and Export buttons to this integration's options dialog", () => {
+      setupDom(createMockHass());
+      evalFrontend();
+
+      class FakeDataEntryFlowDialog extends HTMLElement {
+        _params?: { domain?: string; flowConfig?: { flowType?: string } };
+        _step?: { type?: string };
+        updated(_changedProps: Map<string, unknown>) {}
+      }
+      if (!customElements.get("dialog-data-entry-flow")) {
+        customElements.define("dialog-data-entry-flow", FakeDataEntryFlowDialog);
+      }
+
+      const dialog = document.createElement(
+        "dialog-data-entry-flow",
+      ) as unknown as FakeDataEntryFlowDialog;
+      dialog._params = {
+        domain: "hass_ga_manual_ui",
+        flowConfig: { flowType: "options_flow" },
+      };
+      dialog._step = { type: "form" };
+      const root = dialog.attachShadow({ mode: "open" });
+      root.appendChild(document.createElement("ha-dialog-footer"));
+
+      dialog.updated(new Map());
+
+      expect(root.querySelector("[data-ga-options-yaml=export]")?.textContent).toBe(
+        "Export YAML",
+      );
+      expect(root.querySelector("[data-ga-options-yaml=import]")?.textContent).toBe(
+        "Import YAML",
+      );
     });
   });
 });

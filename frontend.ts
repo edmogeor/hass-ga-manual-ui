@@ -88,6 +88,11 @@ interface ConfigDashboardElement extends HTMLElement, LitLifecycle {
 
 interface CloudDiscoverElement extends HTMLElement, LitLifecycle {}
 
+interface DataEntryFlowDialogElement extends HTMLElement, LitLifecycle {
+  _params?: { domain?: string; flowConfig?: { flowType?: string } };
+  _step?: { type?: string };
+}
+
 interface WSError extends Error {
   error?: string;
   code?: string;
@@ -1083,6 +1088,53 @@ function _patchCloudDiscoverProto(proto: CloudDiscoverElement): void {
   };
 }
 
+// Add file-based import/export to our native options dialog. The dialog is a
+// private frontend surface, so this only runs for our integration and leaves
+// all other config and options flows untouched.
+function _injectOptionsFlowYamlActions(el: DataEntryFlowDialogElement): void {
+  const root = el.shadowRoot;
+  if (!root) return;
+
+  const existing = root.querySelectorAll<HTMLElement>("[data-ga-options-yaml]");
+  const isOurOptionsFlow =
+    el._params?.domain === ASSISTANT_ID &&
+    el._params.flowConfig?.flowType === "options_flow" &&
+    el._step?.type === "form";
+  if (!isOurOptionsFlow) {
+    existing.forEach((action) => action.remove());
+    return;
+  }
+  if (existing.length) return;
+
+  const footer = root.querySelector("ha-dialog-footer");
+  if (!footer) return;
+
+  const exportButton = _actionButton("export_yaml", () => void _onExportClick());
+  exportButton.slot = "secondaryAction";
+  exportButton.dataset.gaOptionsYaml = "export";
+
+  const importButton = _actionButton("import_yaml", _onImportClick);
+  importButton.slot = "secondaryAction";
+  importButton.dataset.gaOptionsYaml = "import";
+
+  footer.append(exportButton, importButton);
+}
+
+function _patchOptionsFlowDialogProto(proto: DataEntryFlowDialogElement): void {
+  const protoRec = proto as unknown as { __gaOptionsDialogPatched?: boolean };
+  if (protoRec.__gaOptionsDialogPatched) return;
+  const origUpdated = proto.updated;
+  protoRec.__gaOptionsDialogPatched = true;
+
+  proto.updated = function (
+    this: DataEntryFlowDialogElement,
+    changedProps: Map<string, unknown>,
+  ): void {
+    origUpdated?.call(this, changedProps);
+    _injectOptionsFlowYamlActions(this);
+  };
+}
+
 function _patchAssistantsPageProto(proto: AssistantsPageElement): void {
   try {
     const origConnected = proto.connectedCallback;
@@ -1610,6 +1662,7 @@ const PATCHERS: Record<string, ProtoPatcher> = {
   "dialog-voice-settings": _patchVoiceSettingsDialogProto as ProtoPatcher,
   "ha-config-dashboard": _patchConfigDashboardProto as ProtoPatcher,
   "cloud-discover": _patchCloudDiscoverProto as ProtoPatcher,
+  "dialog-data-entry-flow": _patchOptionsFlowDialogProto as ProtoPatcher,
 };
 
 function patchCustomElements(): void {
@@ -1881,13 +1934,6 @@ function buildCard(): HTMLElement | null {
     exposeBtn.setAttribute("data-ga-count", "");
     exposeLink.appendChild(exposeBtn);
     actions.appendChild(exposeLink);
-
-    actions.appendChild(
-      _actionButton("export_yaml", () => void _onExportClick()),
-    );
-    actions.appendChild(
-      _actionButton("import_yaml", () => void _onImportClick()),
-    );
 
     card.appendChild(actions);
 

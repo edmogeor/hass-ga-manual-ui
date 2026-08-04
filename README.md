@@ -50,6 +50,7 @@ It's recommended to have the manual `google_assistant` setup working via YAML fi
 - **Report state**, syncs entity states back to Google for faster commands
 - **YAML migration**, import your existing `google_assistant:` configuration during setup
 - **Export / import**, back up your settings to a standalone YAML file or restore them later
+- **Optional Cloud hiding**, hide Home Assistant Cloud from Settings and Voice assistants without disabling Cloud or blocking direct access
 
 ## Requirements
 
@@ -83,8 +84,11 @@ After installation, add the integration:
    `configuration.yaml`, you'll instead be offered to **migrate** it (see below)
 4. Enter your **Google Cloud project ID**
 5. Paste your **service account JSON key**, it's verified against Google before the entry is created
+6. Optionally choose whether to hide Home Assistant Cloud from Settings and Voice assistants
 
 The Google Assistant card will appear in **Settings → Voice assistants** alongside the cloud assistants.
+
+You can change the Google Cloud project, service account, or Home Assistant Cloud visibility later from **Settings → Devices & Services → Integrations → Google Assistant (Manual) → cog icon** on the integration card.
 
 ## Migrating from YAML
 
@@ -99,10 +103,10 @@ section at runtime** so the two never conflict.
   it to start fresh.
 - **After migrating**, you can safely remove the `google_assistant:` section from
   your `configuration.yaml`, the integration no longer reads it.
-- **Export / import**, from the Google Assistant card in **Settings → Voice
-  assistants** you can export your current settings to a standalone
-  `google_assistant:` YAML file (a valid manual config you could paste back into
-  `configuration.yaml`), or import one to restore them. Importing **overwrites**
+- **Export / import**, use **Export YAML** or **Import YAML** from the cog icon
+  in **Settings → Devices & Services → Integrations → Google Assistant (Manual)**.
+  Export creates a standalone `google_assistant:` YAML file (a valid manual
+  config you could paste back into `configuration.yaml`). Importing **overwrites**
   exposure and flags but only **adds** aliases, it never removes existing ones.
 
 ## Uninstalling
@@ -110,7 +114,7 @@ section at runtime** so the two never conflict.
 Removing the integration also **deletes all Google Assistant configuration** (project ID, service account, PIN, exposure settings, entity aliases, and per-entity 2FA overrides). If you reinstall later, you'll need to reconfigure everything from scratch.
 
 > [!TIP]
-> Before uninstalling, back up your settings: from the Google Assistant card in **Settings → Voice assistants**, use **Export YAML** to save a standalone config file. After reinstalling, you can restore it with **Import YAML**.
+> Before uninstalling, back up your settings: use **Export YAML** from the integration cog icon. After reinstalling, you can restore it with **Import YAML**.
 
 ## Troubleshooting
 

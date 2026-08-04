@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hide Home Assistant Cloud from Settings and the Voice assistants page without
   disabling Cloud or blocking direct access.
 
+- **YAML import/export in integration settings.** The Configure dialog now has
+  native-style Import YAML and Export YAML actions, including the browser file
+  picker and YAML download used by the assistant card.
+
 ## [0.2.5] - 2026-06-22
 
 ### Changed
