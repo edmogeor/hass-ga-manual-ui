@@ -49,7 +49,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Google Assistant settings",
+        "title": "Google Assistant (Manual) Settings",
         "description": "Update the Google Cloud project and service account used by Google Assistant. Changes take effect as soon as you save.",
         "data": {
           "project_id": "Project ID",

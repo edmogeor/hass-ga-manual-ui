@@ -5,7 +5,7 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0-beta.1] - 2026-08-04
+## [0.3.0] - 2026-08-04
 
 ### Added
 
@@ -19,8 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   disabling Cloud or blocking direct access.
 
 - **YAML import/export in integration settings.** The Configure dialog now has
-  native-style Import YAML and Export YAML actions, including the browser file
-  picker and YAML download used by the assistant card.
+  native-style Import YAML and Export YAML actions, including a browser file
+  picker and YAML download.
 
 ## [0.2.5] - 2026-06-22
 
