@@ -141,6 +141,9 @@ class FakeGoogleConfig:
     def async_disable_report_state(self) -> None:
         self._report_state = False
 
+    def async_schedule_google_sync_all(self) -> None:
+        pass
+
     def async_deinitialize(self) -> None:
         pass
 

@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0-beta.1] - 2026-08-04
+
+### Added
+
+- **Post-setup credential editing.** The integration's Configure action now lets
+  users replace the Google Cloud project ID and service-account JSON without
+  deleting and re-adding the integration. Inputs are validated with Google
+  before saving, then applied immediately to the running core GA configuration.
+
 ## [0.2.5] - 2026-06-22
 
 ### Changed

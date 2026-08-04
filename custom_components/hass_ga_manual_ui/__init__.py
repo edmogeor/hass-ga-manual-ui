@@ -108,6 +108,9 @@ class _GoogleConfig(Protocol):
     hass: HomeAssistant
     should_report_state: bool
     secure_devices_pin: str | None
+    _config: dict[str, Any]
+    _access_token: Any
+    _access_token_renew: Any
 
     def should_expose(self, entity_id: str) -> bool: ...
     def should_2fa(self, state: State) -> bool: ...
@@ -167,6 +170,56 @@ def _resync_google(google_config: _GoogleConfig | None) -> None:
         google_config.async_schedule_google_sync_all()
     except Exception:
         _LOGGER.debug("async_schedule_google_sync_all failed", exc_info=True)
+
+
+async def async_apply_updated_credentials(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
+    """Apply edited credentials without reloading core GA's HTTP view.
+
+    Core GA has no safe runtime unload path. Its registered HTTP view retains the
+    GoogleConfig instance, so replace that instance's config and discard its
+    token cache rather than registering a second view through a reload.
+    """
+    config = _build_core_config(entry)
+    hass.data.setdefault(CORE_GA_DOMAIN, {})[CORE_GA_DATA_CONFIG] = config
+
+    core_entry = _find_core_entry(hass, entry)
+    if core_entry is not None and _owns_core_entry(core_entry):
+        hass.config_entries.async_update_entry(
+            core_entry,
+            title=entry.title,
+            data={
+                **entry.data,
+                CORE_GA_CREATED_BY: True,
+                CORE_GA_PARENT_ENTRY_ID: entry.entry_id,
+            },
+        )
+
+    runtime = entry.runtime_data
+    google_config = runtime.get("google_config") if isinstance(runtime, dict) else None
+    if google_config is None:
+        _LOGGER.debug(
+            "Saved credentials for disabled project='%s'; they will apply on enable",
+            _project_id(entry),
+        )
+        return
+
+    try:
+        # GoogleConfig intentionally owns this mapping. These are private core
+        # attributes, but replacing them is the only safe path while its HTTP view
+        # remains registered.
+        google_config._config = config
+        google_config._access_token = None
+        google_config._access_token_renew = None
+        _resync_google(google_config)
+        _LOGGER.info("Applied updated credentials for project='%s'", _project_id(entry))
+    except Exception:
+        _LOGGER.exception(
+            "Saved credentials for project='%s', but could not apply them live. "
+            "They will apply after Home Assistant restarts.",
+            _project_id(entry),
+        )
 
 
 def _sync_yaml_suppressed(hass: HomeAssistant, entry: ConfigEntry) -> None:

@@ -38,5 +38,22 @@
       "Missing 'client_email'": "The JSON is missing the 'client_email' field",
       "Missing 'private_key'": "The JSON is missing the 'private_key' field"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Google Assistant credentials",
+        "description": "Update your Google Cloud project ID or service account JSON. Changes are validated and applied immediately.",
+        "data": {
+          "project_id": "Project ID",
+          "service_account": "Service account JSON"
+        }
+      }
+    },
+    "error": {
+      "project_id_required": "Project ID is required",
+      "invalid_project_id": "Project ID must be 6-30 characters: lowercase letters, numbers, or hyphens",
+      "service_account_required": "Service account JSON is required"
+    }
   }
 }

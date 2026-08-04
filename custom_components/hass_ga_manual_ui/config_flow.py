@@ -11,7 +11,9 @@ from homeassistant.config import async_hass_config_yaml
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
+    OptionsFlow,
 )
+from homeassistant.core import callback
 from homeassistant.helpers.translation import async_get_translations
 
 from .const import (
@@ -94,6 +96,14 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Google Assistant (Manual)."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: Any,
+    ) -> "GoogleAssistantManualOptionsFlow":
+        """Create the post-setup configuration flow."""
+        return GoogleAssistantManualOptionsFlow()
 
     def __init__(self) -> None:
         """Initialize the config flow."""
@@ -364,23 +374,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         endpoint) block the config. Transport failures (offline, 5xx, timeout)
         return None so a valid config is not blocked when Google is unreachable.
         """
-        hass = getattr(self, "hass", None)
-        if hass is None:
-            return None
-        try:
-            await _mint_homegraph_token(
-                hass, account[CONF_CLIENT_EMAIL], account[CONF_PRIVATE_KEY]
-            )
-        except _CredentialsRejected as exc:
-            _LOGGER.warning("Service account rejected by Google: %s", exc)
-            return f"Google rejected the service account: {exc}"
-        except Exception as exc:
-            _LOGGER.warning(
-                "Could not verify service account (proceeding without check): %s", exc
-            )
-            return None
-        _LOGGER.debug("Service account verified against Google HomeGraph")
-        return None
+        return await _validate_service_account(getattr(self, "hass", None), account)
 
     async def _create_entry(self) -> ConfigFlowResult:
         """Finalize the flow: notify, then create the config entry."""
@@ -393,6 +387,102 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         )
         await self._notify_installed()
         return self.async_create_entry(title=project_id, data=self._data)
+
+
+class GoogleAssistantManualOptionsFlow(OptionsFlow):
+    """Handle post-setup credential changes."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Edit the Google Cloud project and service account."""
+        entry = self.config_entry
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            project_id = user_input.get(CONF_PROJECT_ID, "").strip()
+            raw_service_account = user_input.get(CONF_SERVICE_ACCOUNT, "").strip()
+
+            if not project_id:
+                errors[CONF_PROJECT_ID] = "project_id_required"
+            elif not _is_valid_project_id(project_id):
+                errors[CONF_PROJECT_ID] = "invalid_project_id"
+
+            account: dict[str, str] | None = None
+            if not raw_service_account:
+                errors[CONF_SERVICE_ACCOUNT] = "service_account_required"
+            else:
+                try:
+                    account = _parse_service_account_json(raw_service_account)
+                except vol.Invalid as exc:
+                    errors[CONF_SERVICE_ACCOUNT] = str(exc)
+
+            if account is not None and not errors:
+                error = await _validate_service_account(self.hass, account)
+                if error:
+                    errors[CONF_SERVICE_ACCOUNT] = error
+
+            if account is not None and not errors:
+                data = {
+                    **entry.data,
+                    CONF_PROJECT_ID: project_id,
+                    CONF_SERVICE_ACCOUNT: account,
+                }
+                self.hass.config_entries.async_update_entry(
+                    entry, title=project_id, data=data
+                )
+
+                # Core GA's HTTP view cannot be unloaded safely at runtime. Update
+                # its live config instead of reloading it and registering a duplicate view.
+                from . import async_apply_updated_credentials
+
+                await async_apply_updated_credentials(self.hass, entry)
+                return self.async_create_entry(title="", data=dict(entry.options))
+
+        service_account = entry.data.get(CONF_SERVICE_ACCOUNT, {})
+        service_account_json = json.dumps(service_account, indent=2)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_PROJECT_ID,
+                        default=entry.data.get(CONF_PROJECT_ID, ""),
+                    ): str,
+                    vol.Required(
+                        CONF_SERVICE_ACCOUNT,
+                        description={"suggested_value": service_account_json},
+                    ): str,
+                }
+            ),
+            errors=errors,
+            description_placeholders={
+                "docs_url": "https://console.cloud.google.com/iam-admin/serviceaccounts",
+                "guide_url": _GUIDE_URL,
+            },
+        )
+
+
+async def _validate_service_account(
+    hass: Any | None, account: dict[str, str]
+) -> str | None:
+    """Return an error when Google definitively rejects a service account."""
+    if hass is None:
+        return None
+    try:
+        await _mint_homegraph_token(
+            hass, account[CONF_CLIENT_EMAIL], account[CONF_PRIVATE_KEY]
+        )
+    except _CredentialsRejected as exc:
+        _LOGGER.warning("Service account rejected by Google: %s", exc)
+        return f"Google rejected the service account: {exc}"
+    except Exception as exc:
+        _LOGGER.warning(
+            "Could not verify service account (proceeding without check): %s", exc
+        )
+        return None
+    _LOGGER.debug("Service account verified against Google HomeGraph")
+    return None
 
 
 # GCP project IDs: 6-30 chars, lowercase-letter-led, lowercase/digits/hyphens,

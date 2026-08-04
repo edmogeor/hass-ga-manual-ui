@@ -22,6 +22,7 @@ from hass_ga_manual_ui import (
     _safe_get_entry,
     _sync_yaml_suppressed,
     _teardown_core_ga,
+    async_apply_updated_credentials,
     async_setup,
 )
 from hass_ga_manual_ui.const import (
@@ -149,6 +150,29 @@ class TestBuildCoreConfig:
         assert any("not a dict" in r.message for r in caplog.records)
         # Report state defaults to False when service_account is invalid
         assert config.get(CONF_REPORT_STATE, False) is False
+
+
+class TestApplyUpdatedCredentials:
+    """Tests for in-place credential changes to the core GA configuration."""
+
+    @pytest.mark.asyncio
+    async def test_updates_live_google_config_and_clears_token(self) -> None:
+        entry = mock_config_entry(project_id="updated-project")
+        google_config = FakeGoogleConfig()
+        google_config._config = {}  # type: ignore[attr-defined]
+        google_config._access_token = "old-token"  # type: ignore[attr-defined]
+        google_config._access_token_renew = "later"  # type: ignore[attr-defined]
+        entry.runtime_data = {"google_config": google_config}
+
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {CORE_GA_DOMAIN: {}}
+        hass.config_entries.async_entries.return_value = []
+
+        await async_apply_updated_credentials(hass, entry)
+
+        assert google_config._config[CONF_PROJECT_ID] == "updated-project"  # type: ignore[attr-defined]
+        assert google_config._access_token is None  # type: ignore[attr-defined]
+        assert google_config._access_token_renew is None  # type: ignore[attr-defined]
 
 
 # =============================================================================

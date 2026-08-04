@@ -7,6 +7,7 @@ import pytest
 import voluptuous as vol
 from hass_ga_manual_ui.config_flow import (
     GoogleAssistantManualConfigFlow,
+    GoogleAssistantManualOptionsFlow,
     _CredentialsRejected,
     _is_valid_project_id,
     _parse_service_account_json,
@@ -241,6 +242,75 @@ class TestConfigFlowUserStep:
         assert result["type"] == "form"
         assert result["step_id"] == "intro"
         assert not _schema_has(result, CONF_MIGRATE_YAML)
+
+
+class TestOptionsFlow:
+    """Tests for post-setup credential editing."""
+
+    def _flow(self) -> tuple[GoogleAssistantManualOptionsFlow, MagicMock]:
+        """Create an options flow backed by a mocked config entry."""
+        entry = MagicMock()
+        entry.entry_id = "abc123"
+        entry.title = "test-project"
+        entry.data = {
+            CONF_PROJECT_ID: "test-project",
+            CONF_SERVICE_ACCOUNT: json.loads(VALID_SERVICE_ACCOUNT_JSON),
+        }
+        entry.options = {"enabled": True}
+        entry.runtime_data = None
+
+        flow = GoogleAssistantManualOptionsFlow()
+        flow.hass = MagicMock()
+        flow.hass.config_entries.async_get_known_entry.return_value = entry
+        flow.handler = entry.entry_id
+        return flow, entry
+
+    @pytest.mark.asyncio
+    async def test_shows_existing_credentials(self) -> None:
+        """The form is prefilled from the persisted config-entry data."""
+        flow, _ = self._flow()
+        result = await flow.async_step_init()
+        assert result["type"] == "form"
+        assert result["step_id"] == "init"
+        assert _schema_has(result, CONF_PROJECT_ID)
+        assert _schema_has(result, CONF_SERVICE_ACCOUNT)
+
+    @pytest.mark.asyncio
+    async def test_valid_update_persists_data_and_applies_live_config(self) -> None:
+        """A valid update changes config-entry data without requiring a restart."""
+        flow, entry = self._flow()
+        flow.async_create_entry = MagicMock(return_value={"type": "create_entry"})  # type: ignore[method-assign]
+        with (
+            patch(_MINT, AsyncMock()),
+            patch(
+                "hass_ga_manual_ui.async_apply_updated_credentials", AsyncMock()
+            ) as apply_credentials,
+        ):
+            result = await flow.async_step_init(
+                {
+                    CONF_PROJECT_ID: "updated-project",
+                    CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON,
+                }
+            )
+        assert result["type"] == "create_entry"
+        update = flow.hass.config_entries.async_update_entry.call_args
+        assert update.kwargs["title"] == "updated-project"
+        assert update.kwargs["data"][CONF_PROJECT_ID] == "updated-project"
+        apply_credentials.assert_awaited_once_with(flow.hass, entry)
+
+    @pytest.mark.asyncio
+    async def test_rejected_credentials_stay_on_form(self) -> None:
+        """Google-rejected credentials are not saved."""
+        flow, _ = self._flow()
+        with patch(_MINT, AsyncMock(side_effect=_CredentialsRejected("invalid_grant"))):
+            result = await flow.async_step_init(
+                {
+                    CONF_PROJECT_ID: "updated-project",
+                    CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON,
+                }
+            )
+        assert result["type"] == "form"
+        assert "invalid_grant" in result["errors"][CONF_SERVICE_ACCOUNT]
 
     @pytest.mark.asyncio
     async def test_intro_advances_to_credentials(
