@@ -110,6 +110,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         super().__init__()
         self._data: dict[str, Any] = {}
+        self._options: dict[str, Any] = {}
         # The parsed google_assistant: YAML block, cached for prefill/migration.
         self._yaml_block: dict[str, Any] | None = None
 
@@ -349,7 +350,7 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors[CONF_SERVICE_ACCOUNT] = error
             else:
                 self._data[CONF_SERVICE_ACCOUNT] = account
-                return await self._create_entry()
+                return await self.async_step_cloud_visibility()
 
         return self.async_show_form(
             step_id="service_account",
@@ -387,7 +388,22 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
             account.get(CONF_CLIENT_EMAIL, "<missing>"),
         )
         await self._notify_installed()
-        return self.async_create_entry(title=project_id, data=self._data)
+        return self.async_create_entry(
+            title=project_id, data=self._data, options=self._options
+        )
+
+    async def async_step_cloud_visibility(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Optionally hide Home Assistant Cloud promotions."""
+        if user_input is not None:
+            self._options[OPT_HIDE_CLOUD] = bool(user_input.get(OPT_HIDE_CLOUD, False))
+            return await self._create_entry()
+
+        return self.async_show_form(
+            step_id="cloud_visibility",
+            data_schema=vol.Schema({vol.Optional(OPT_HIDE_CLOUD, default=False): bool}),
+        )
 
 
 class GoogleAssistantManualOptionsFlow(OptionsFlow):

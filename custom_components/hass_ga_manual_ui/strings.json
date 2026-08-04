@@ -28,6 +28,13 @@
         "data": {
           "service_account": "Service account JSON"
         }
+      },
+      "cloud_visibility": {
+        "title": "Home Assistant Cloud",
+        "description": "Choose whether to show Home Assistant Cloud in Settings and Voice assistants. You can change this later in Google Assistant settings.",
+        "data": {
+          "hide_home_assistant_cloud": "Hide Home Assistant Cloud"
+        }
       }
     },
     "error": {

@@ -439,18 +439,15 @@ class TestConfigFlowYamlMigration:
         assert not _schema_has(result, CONF_PROJECT_ID)
 
     @pytest.mark.asyncio
-    async def test_full_yaml_migrate_skips_both_steps(
+    async def test_full_yaml_migrate_skips_credentials_but_shows_cloud_visibility(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
         _with_yaml(
             config_flow,
             {CONF_PROJECT_ID: "yaml-project-1", CONF_SERVICE_ACCOUNT: _YAML_SA},
         )
-        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
-            return_value={"type": "create_entry"}
-        )
         result = await config_flow.async_step_user({CONF_MIGRATE_YAML: True})
-        assert result["type"] == "create_entry"
+        assert result["step_id"] == "cloud_visibility"
         assert config_flow._data[CONF_PROJECT_ID] == "yaml-project-1"
         assert config_flow._data[CONF_SERVICE_ACCOUNT] == _YAML_SA
 
@@ -578,30 +575,20 @@ class TestConfigFlowServiceAccountStep:
         assert "Missing required fields" in error
 
     @pytest.mark.asyncio
-    async def test_valid_json_creates_entry(
+    async def test_valid_json_advances_to_cloud_visibility(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
         config_flow._data[CONF_PROJECT_ID] = "test-project"
-        config_flow.async_create_entry = MagicMock(
-            return_value={"type": "create_entry"}
-        )  # type: ignore[method-assign]
-        await config_flow.async_step_service_account(
+        result = await config_flow.async_step_service_account(
             {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
         )
-        config_flow.async_create_entry.assert_called_once()
-        call_args = config_flow.async_create_entry.call_args
-        assert call_args[1]["title"] == "test-project"
-        assert CONF_PROJECT_ID in call_args[1]["data"]
-        assert CONF_SERVICE_ACCOUNT in call_args[1]["data"]
+        assert result["step_id"] == "cloud_visibility"
 
     @pytest.mark.asyncio
     async def test_service_account_stored_in_data(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
         config_flow._data[CONF_PROJECT_ID] = "test-project"
-        config_flow.async_create_entry = MagicMock(
-            return_value={"type": "create_entry"}
-        )  # type: ignore[method-assign]
         await config_flow.async_step_service_account(
             {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
         )
@@ -722,12 +709,43 @@ class TestConfigFlowServiceAccountStep:
     ) -> None:
         """Whitespace around valid JSON is stripped before parsing."""
         config_flow._data[CONF_PROJECT_ID] = "test-project"
-        config_flow.async_create_entry = MagicMock(
-            return_value={"type": "create_entry"}
-        )  # type: ignore[method-assign]
         padded = f"  {VALID_SERVICE_ACCOUNT_JSON}  "
-        await config_flow.async_step_service_account({CONF_SERVICE_ACCOUNT: padded})
-        config_flow.async_create_entry.assert_called_once()
+        result = await config_flow.async_step_service_account(
+            {CONF_SERVICE_ACCOUNT: padded}
+        )
+        assert result["step_id"] == "cloud_visibility"
+
+
+class TestConfigFlowCloudVisibilityStep:
+    """Tests for the optional initial Cloud-hiding choice."""
+
+    @pytest.mark.asyncio
+    async def test_shows_optional_checkbox(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        result = await config_flow.async_step_cloud_visibility()
+        assert result["step_id"] == "cloud_visibility"
+        assert _schema_has(result, OPT_HIDE_CLOUD)
+
+    @pytest.mark.asyncio
+    async def test_checked_option_is_saved_with_new_entry(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        config_flow._data = {
+            CONF_PROJECT_ID: "test-project",
+            CONF_SERVICE_ACCOUNT: _YAML_SA,
+        }
+        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
+            return_value={"type": "create_entry"}
+        )
+        config_flow._notify_installed = AsyncMock()  # type: ignore[method-assign]
+
+        result = await config_flow.async_step_cloud_visibility({OPT_HIDE_CLOUD: True})
+
+        assert result["type"] == "create_entry"
+        assert config_flow.async_create_entry.call_args.kwargs["options"] == {
+            OPT_HIDE_CLOUD: True
+        }
 
 
 class TestNotifyInstalled:
@@ -827,20 +845,16 @@ class TestConfigFlowCredentialValidation:
     """The service account is verified against Google before the entry is created."""
 
     @pytest.mark.asyncio
-    async def test_valid_credentials_create_entry(
+    async def test_valid_credentials_advance_to_cloud_visibility(
         self, config_flow: GoogleAssistantManualConfigFlow
     ) -> None:
         config_flow.hass = MagicMock()
         config_flow._data[CONF_PROJECT_ID] = "test-project"
-        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
-            return_value={"type": "create_entry"}
-        )
-        config_flow._notify_installed = AsyncMock()  # type: ignore[method-assign]
         with patch(_MINT, AsyncMock()):
             result = await config_flow.async_step_service_account(
                 {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
             )
-        assert result["type"] == "create_entry"
+        assert result["step_id"] == "cloud_visibility"
 
     @pytest.mark.asyncio
     async def test_rejected_credentials_show_error(
@@ -865,15 +879,11 @@ class TestConfigFlowCredentialValidation:
         """A network/5xx error cannot conclude the creds are bad, so it proceeds."""
         config_flow.hass = MagicMock()
         config_flow._data[CONF_PROJECT_ID] = "test-project"
-        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
-            return_value={"type": "create_entry"}
-        )
-        config_flow._notify_installed = AsyncMock()  # type: ignore[method-assign]
         with patch(_MINT, AsyncMock(side_effect=OSError("network down"))):
             result = await config_flow.async_step_service_account(
                 {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
             )
-        assert result["type"] == "create_entry"
+        assert result["step_id"] == "cloud_visibility"
 
     @pytest.mark.asyncio
     async def test_no_hass_skips_validation(
@@ -881,13 +891,10 @@ class TestConfigFlowCredentialValidation:
     ) -> None:
         # Bare flow (no hass) cannot verify; it must not block entry creation.
         config_flow._data[CONF_PROJECT_ID] = "test-project"
-        config_flow.async_create_entry = MagicMock(  # type: ignore[method-assign]
-            return_value={"type": "create_entry"}
-        )
         result = await config_flow.async_step_service_account(
             {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
         )
-        assert result["type"] == "create_entry"
+        assert result["step_id"] == "cloud_visibility"
 
     @pytest.mark.asyncio
     async def test_migrate_rejected_credentials_shows_sa_form(

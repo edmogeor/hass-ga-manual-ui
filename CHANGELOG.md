@@ -14,9 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   deleting and re-adding the integration. Inputs are validated with Google
   before saving, then applied immediately to the running core GA configuration.
 
-- **Optional Home Assistant Cloud hiding.** The Configure action can hide Home
-  Assistant Cloud from Settings and the Voice assistants page without disabling
-  Cloud or blocking direct access.
+- **Optional Home Assistant Cloud hiding.** Setup and the Configure action can
+  hide Home Assistant Cloud from Settings and the Voice assistants page without
+  disabling Cloud or blocking direct access.
 
 ## [0.2.5] - 2026-06-22
 
