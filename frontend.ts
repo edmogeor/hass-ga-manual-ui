@@ -86,6 +86,8 @@ interface ConfigDashboardElement extends HTMLElement, LitLifecycle {
   _pages?: (...args: unknown[]) => Array<Array<{ path?: string }>>;
 }
 
+interface CloudDiscoverElement extends HTMLElement, LitLifecycle {}
+
 interface WSError extends Error {
   error?: string;
   code?: string;
@@ -1058,6 +1060,28 @@ function _patchConfigDashboardProto(proto: ConfigDashboardElement): void {
   };
 }
 
+// Cloud Discover is the Home Assistant Cloud promotion shown on the Voice
+// assistants page when the user is not signed into Cloud. Wait for the option
+// before its first render so the promotion never flashes into view.
+function _patchCloudDiscoverProto(proto: CloudDiscoverElement): void {
+  const protoRec = proto as unknown as { __gaCloudDiscoverPatched?: boolean };
+  if (protoRec.__gaCloudDiscoverPatched) return;
+  const origRender = proto.render;
+  if (typeof origRender !== "function") {
+    _warn("cloud-discover.render not found; cannot hide Cloud promotion");
+    return;
+  }
+  protoRec.__gaCloudDiscoverPatched = true;
+
+  proto.render = function (this: CloudDiscoverElement) {
+    if (_hideCloudOption === undefined) {
+      void _loadHideCloudOption().then(() => this.requestUpdate?.());
+      return "";
+    }
+    return _hideCloudOption ? "" : origRender.call(this);
+  };
+}
+
 function _patchAssistantsPageProto(proto: AssistantsPageElement): void {
   try {
     const origConnected = proto.connectedCallback;
@@ -1584,6 +1608,7 @@ const PATCHERS: Record<string, ProtoPatcher> = {
   "entity-voice-settings": _patchEntityVoiceSettingsProto as ProtoPatcher,
   "dialog-voice-settings": _patchVoiceSettingsDialogProto as ProtoPatcher,
   "ha-config-dashboard": _patchConfigDashboardProto as ProtoPatcher,
+  "cloud-discover": _patchCloudDiscoverProto as ProtoPatcher,
 };
 
 function patchCustomElements(): void {

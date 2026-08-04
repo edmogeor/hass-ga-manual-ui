@@ -651,6 +651,41 @@ describe("Google Assistant Manual frontend", () => {
 
       expect(dashboard.render()).toEqual(["/config/integrations"]);
     });
+
+    it("does not render the Voice assistants Cloud promotion when enabled", async () => {
+      const hass = createMockHass();
+      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
+        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
+          return Promise.resolve({ entry_id: "mock-entry" });
+        }
+        if (msg.type === "hass_ga_manual_ui/get_config") {
+          return Promise.resolve({ hide_home_assistant_cloud: true });
+        }
+        return Promise.resolve({});
+      });
+      setupDom(hass);
+      evalFrontend();
+
+      class FakeCloudDiscover extends HTMLElement {
+        requestUpdate = vi.fn();
+        render() {
+          return "CLOUD PROMOTION";
+        }
+      }
+      if (!customElements.get("cloud-discover")) {
+        customElements.define("cloud-discover", FakeCloudDiscover);
+      }
+
+      const discover = document.createElement(
+        "cloud-discover",
+      ) as unknown as FakeCloudDiscover;
+      expect(discover.render()).toBe("");
+
+      await flushMicrotasks();
+      await flushMicrotasks();
+
+      expect(discover.render()).toBe("");
+    });
   });
 
   // We wrap render() to neutralise HA's splice bug, which drops our id from the
