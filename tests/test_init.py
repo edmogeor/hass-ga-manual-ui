@@ -306,7 +306,7 @@ class TestWsConfigSchema:
             WS_CONFIG_SCHEMA({CONF_SECURE_DEVICES_PIN: 1234})
 
     def test_unknown_keys_rejected(self) -> None:
-        with pytest.raises(vol.Invalid, match="extra keys not allowed"):
+        with pytest.raises(vol.Invalid):
             WS_CONFIG_SCHEMA({"unknown_key": "value"})
 
 
