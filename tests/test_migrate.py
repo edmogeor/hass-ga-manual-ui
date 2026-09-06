@@ -135,6 +135,10 @@ class FakeEntry:
         self.options = options or {}
 
 
+class TaggedStr(str):
+    """Stand-in for Home Assistant's YAML provenance-carrying string subclass."""
+
+
 @pytest.fixture
 def patch_registry(monkeypatch: pytest.MonkeyPatch):
     """Route entity_registry.async_get to a caller-provided FakeRegistry."""
@@ -343,6 +347,26 @@ def test_export_pem_round_trip_preserved(patch_registry) -> None:
     yaml_str = migrate.export_ga_config(hass, entry)
     block = parse_yaml(yaml_str)[CORE_GA_DOMAIN]
     assert block[CONF_SERVICE_ACCOUNT][CONF_PRIVATE_KEY] == _PEM
+
+
+def test_export_accepts_yaml_tagged_string_subclasses(patch_registry) -> None:
+    """Export config migrated from HA's YAML loader without a RepresenterError."""
+    patch_registry(FakeRegistry([]))
+    hass = FakeHass([], FakeExposed())
+    entry = FakeEntry(options={CONF_REPORT_STATE: True})
+    entry.data[CONF_PROJECT_ID] = TaggedStr("my-home-12345")
+    entry.data[CONF_SERVICE_ACCOUNT] = {
+        CONF_CLIENT_EMAIL: TaggedStr("a@b.iam.gserviceaccount.com"),
+        CONF_PRIVATE_KEY: TaggedStr(_PEM),
+    }
+
+    block = parse_yaml(migrate.export_ga_config(hass, entry))[CORE_GA_DOMAIN]
+
+    assert block[CONF_PROJECT_ID] == "my-home-12345"
+    assert block[CONF_SERVICE_ACCOUNT] == {
+        CONF_CLIENT_EMAIL: "a@b.iam.gserviceaccount.com",
+        CONF_PRIVATE_KEY: _PEM,
+    }
 
 
 def test_dump_parse_pem_round_trip() -> None:

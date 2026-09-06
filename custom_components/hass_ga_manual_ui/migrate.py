@@ -50,6 +50,7 @@ def _none_representer(dumper: yaml.SafeDumper, _data: None) -> yaml.Node:
 
 
 _ExportDumper.add_representer(str, _str_representer)
+_ExportDumper.add_multi_representer(str, _str_representer)
 _ExportDumper.add_representer(type(None), _none_representer)
 
 
