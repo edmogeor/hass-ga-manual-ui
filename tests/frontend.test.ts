@@ -442,6 +442,11 @@ describe("Google Assistant Manual frontend", () => {
       await flushMicrotasks();
 
       expect(updateNotifications(hass).length).toBe(0);
+      expect(hass.callService).toHaveBeenCalledWith(
+        "persistent_notification",
+        "dismiss",
+        { notification_id: "hass_ga_manual_ui_update" },
+      );
     });
 
     it("prompts a reload even when the Assistants page is never opened", async () => {

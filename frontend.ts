@@ -571,6 +571,7 @@ function _confirmDialog(
 }
 
 let _updatePromptShown = false;
+let _updatePromptDismissed = false;
 
 // After a HACS update + HA restart, the browser may serve a stale cached
 // frontend.js (HA's service worker holds the prior app shell). On version
@@ -579,16 +580,25 @@ let _updatePromptShown = false;
 function _maybePromptReload(serverVersion?: string): void {
   if (_updatePromptShown) return;
   // Can't compare without both versions (older backend, or no --define).
-  if (!serverVersion || !BUILD_VERSION || serverVersion === BUILD_VERSION) return;
-  _updatePromptShown = true;
-  _info(
-    "Frontend bundle is stale (running " + BUILD_VERSION + ", server has " +
-      serverVersion + "); prompting reload",
-  );
+  if (!serverVersion || !BUILD_VERSION) return;
 
   try {
     const hass = getHass();
     if (!hass?.callService) return;
+    if (serverVersion === BUILD_VERSION) {
+      if (_updatePromptDismissed) return;
+      _updatePromptDismissed = true;
+      hass.callService("persistent_notification", "dismiss", {
+        notification_id: "hass_ga_manual_ui_update",
+      });
+      return;
+    }
+
+    _updatePromptShown = true;
+    _info(
+      "Frontend bundle is stale (running " + BUILD_VERSION + ", server has " +
+        serverVersion + "); prompting reload",
+    );
     hass.callService("persistent_notification", "create", {
       title: ASSISTANT_NAME,
       message: t("update_available"),
@@ -604,6 +614,7 @@ function _maybePromptReload(serverVersion?: string): void {
 // else. Waits for hass, then compares the installed version to BUILD_VERSION.
 async function _checkVersionForReloadPrompt(): Promise<void> {
   if (!BUILD_VERSION) return;
+  await ensureTranslationsLoaded();
   for (let i = 0; i < 60 && !_updatePromptShown; i++) {
     const hass = getHass();
     if (hass?.callWS) {
