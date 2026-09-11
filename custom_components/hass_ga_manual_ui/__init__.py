@@ -1780,13 +1780,14 @@ def _add_assistant_to_schema(schema: object, assistant_id: str) -> None:
         """Recurse into a Voluptuous schema, injecting our assistant id into vol.In validators."""
         try:
             if isinstance(obj, vol.In):
-                container = getattr(obj, "container", None)
+                validator: Any = obj
+                container = getattr(validator, "container", None)
                 if (
                     container is not None
                     and "conversation" in container
                     and assistant_id not in container
                 ):
-                    obj.container = list(container) + [assistant_id]
+                    validator.container = list(container) + [assistant_id]
                     _LOGGER.debug(
                         "Schema walk [%s]: added '%s' to vol.In (was: %s)",
                         path,
@@ -1794,7 +1795,8 @@ def _add_assistant_to_schema(schema: object, assistant_id: str) -> None:
                         container,
                     )
             elif isinstance(obj, vol.Schema):
-                _walk(obj.schema, f"{path}.Schema")
+                schema_obj: Any = obj
+                _walk(schema_obj.schema, f"{path}.Schema")
             elif isinstance(obj, dict):
                 for key, value in obj.items():
                     _walk(value, f"{path}.{key}")
