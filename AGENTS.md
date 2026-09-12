@@ -10,6 +10,10 @@ Google Assistant integration, reaching feature parity with the Nabu Casa Cloud G
 **Type:** HA custom integration (Python 3 + vanilla JS)
 **Install:** Place this entire project folder as `custom_components/hass_ga_manual_ui/` in HA config, then restart.
 
+## Releases
+
+- Bump and commit `custom_components/hass_ga_manual_ui/manifest.json` and the changelog before tagging a release.
+
 ## Problem Solved
 
 HA core hardcodes three voice assistants for entity exposure:
