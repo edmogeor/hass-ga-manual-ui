@@ -17,7 +17,7 @@
     "test:py": "python -B -m pytest tests/ -q"
   },
   "devDependencies": {
-    "@types/node": "^26.5.0",
+    "@types/node": "^26.5.1",
     "esbuild": "^0.28.2",
     "jsdom": "^30.0.1",
     "oxlint": "^1.82.0",
