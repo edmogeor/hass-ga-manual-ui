@@ -703,21 +703,20 @@ let _primeStarted = false;
 
 // Prime the voiceAssistants map so the expose page advertises us on first
 // visit. Capture is normally passive (only on Object.keys), which the expose
-// page never triggers. We trip it via a throwaway ha-filter-voice-assistants
-// whose firstUpdated() runs Object.keys - requestUpdate is stubbed so it never
-// renders.
+// page never triggers. Prefer the filter component; the entity settings
+// component is a fallback loaded with the Add Entry dialog.
 function _primeVoiceAssistantsMap(): void {
   if (_voiceAssistantsMap) return;
-  const PROBE = "ha-filter-voice-assistants";
-  const cls = customElements.get(PROBE);
+  const FILTER_PROBE = "ha-filter-voice-assistants";
+  const DIALOG_PROBE = "entity-voice-settings";
+  const cls = customElements.get(FILTER_PROBE) || customElements.get(DIALOG_PROBE);
   if (!cls) {
-    // Not loaded yet - retry once it is (e.g. when the filter pane first opens).
+    // The filter is often lazy-loaded; entity settings is loaded with Add Entry.
     if (!_primeStarted) {
       _primeStarted = true;
-      customElements
-        .whenDefined(PROBE)
-        .then(() => _primeVoiceAssistantsMap())
-        .catch(() => undefined);
+      for (const probe of [FILTER_PROBE, DIALOG_PROBE]) {
+        customElements.whenDefined(probe).then(_primeVoiceAssistantsMap).catch(() => undefined);
+      }
     }
     return;
   }
@@ -725,9 +724,14 @@ function _primeVoiceAssistantsMap(): void {
     const probe = new cls() as {
       requestUpdate?: () => void;
       firstUpdated?: (changed: Map<PropertyKey, unknown>) => void;
+      render?: () => unknown;
     };
     probe.requestUpdate = () => undefined;
-    probe.firstUpdated?.(new Map());
+    if (cls === customElements.get(FILTER_PROBE)) {
+      probe.firstUpdated?.(new Map());
+    } else {
+      probe.render?.();
+    }
     if (_voiceAssistantsMap) {
       _info("Primed voiceAssistants map proactively (expose page)");
       _refreshExposePage();

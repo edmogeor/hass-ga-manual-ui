@@ -699,6 +699,11 @@ describe("Google Assistant Manual frontend", () => {
     // Mirrors HA's render() assistant-list computation, including the splice
     // bug. Cloud enablement is configurable to cover mixed cloud setups.
     class FakeEntityVoiceSettings extends HTMLElement {
+      static voiceAssistants: Record<string, { domain: string; name: string }> = {
+        conversation: { domain: "assist_pipeline", name: "Assist" },
+        "cloud.alexa": { domain: "cloud", name: "Amazon Alexa" },
+        "cloud.google_assistant": { domain: "cloud", name: "Google Assistant" },
+      };
       exposed: Record<string, boolean> = {};
       googleEnabled = false;
       alexaEnabled = false;
@@ -723,12 +728,7 @@ describe("Google Assistant Manual frontend", () => {
         this.lastTarget = ev?.target ?? null;
       }
       render() {
-        const voiceAssistants: Record<string, { domain: string; name: string }> = {
-          conversation: { domain: "assist_pipeline", name: "Assist" },
-          "cloud.alexa": { domain: "cloud", name: "Amazon Alexa" },
-          "cloud.google_assistant": { domain: "cloud", name: "Google Assistant" },
-          hass_ga_manual_ui: { domain: "google_assistant", name: "GA Manual" },
-        };
+        const voiceAssistants = FakeEntityVoiceSettings.voiceAssistants;
         const showAssistants = [...Object.keys(voiceAssistants)];
         const uiAssistants = [...showAssistants];
         if (!this.googleEnabled) {
@@ -753,6 +753,28 @@ describe("Google Assistant Manual frontend", () => {
       document.createElement(
         "entity-voice-settings",
       ) as unknown as FakeEntityVoiceSettings;
+
+    it("primes the dialog's assistant map before Add Entry renders", async () => {
+      delete FakeEntityVoiceSettings.voiceAssistants.hass_ga_manual_ui;
+      if (!customElements.get("ha-config-voice-assistants-expose")) {
+        class FakeExposePage extends HTMLElement {
+          get _availableAssistants() {
+            return ["conversation"];
+          }
+        }
+        customElements.define(
+          "ha-config-voice-assistants-expose",
+          FakeExposePage,
+        );
+      }
+      evalFrontend();
+      await flushMicrotasks();
+
+      expect(FakeEntityVoiceSettings.voiceAssistants.hass_ga_manual_ui).toEqual({
+        domain: "google_assistant",
+        name: "Google Assistant (Manual)",
+      });
+    });
 
     it("keeps our assistant in uiAssistants (master toggle + row visibility)", () => {
       evalFrontend();
