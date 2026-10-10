@@ -329,7 +329,7 @@ Integration files live in `custom_components/hass_ga_manual_ui/` (standard HACS 
 │   ├── test_init.py                 # Tests for __init__.py (bridge, WS, schema walker, teardown)
 │   ├── test_config_flow.py          # Tests for config_flow.py (validation, flow steps)
 │   ├── test_migrate.py              # Tests for migrate.py (apply/export, exposure rule, aliases)
-│   ├── test_const.py                # Tests for const.py (constant values, no drift)
+│   ├── test_locale.py               # Locale precedence and unreadable-file fallback
 │   ├── test_frontend.py             # Tests for frontend.py (static path registration)
 │   └── frontend.test.ts             # Tests for frontend.ts (patch logic, card building, WS)
 ├── frontend.ts                      # TypeScript source (~2440 lines, strict mode)
@@ -442,18 +442,19 @@ Unit tests use Vitest and pytest; E2E tests use Playwright with a real HA fixtur
 - Runs as `vitest run` (single shot, no watch mode)
 
 **pytest** (`pytest.ini`), Python unit tests:
-- 226 tests in `tests/`
+- 225 tests in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()`, build `ConfigEntry`-like objects for all test scenarios
   - `FakeGoogleConfig`, stand-in for core GA's `GoogleConfig` with `should_report_state` and `secure_devices_pin` properties and a `should_expose` method
   - `mock_ws_connection()`, fake WebSocket connection with `send_result` / `send_error` tracking
-  - `reset_version_cache`, `reset_original_props_cache`, autouse fixtures to prevent test pollution
+- `reset_original_props_cache`, an autouse fixture that isolates the patch cache
+  and restores the fake GoogleConfig class members after each test
 - Test files:
   - `test_init.py`, `_build_core_config`, `_make_core_entry`, `_find_core_entry`, `_reconcile_core_ga_entries`, `_safe_get_entry`, WS schemas, `_add_assistant_to_schema`, `_patch_google_config_properties`, `_teardown_core_ga` (unload vs disable), `_patch_core_assistants`
   - `test_config_flow.py`, validation, `_parse_service_account_json`, `_is_valid_project_id`, flow steps, YAML prefill/migrate opt-in, service account verification
   - `test_migrate.py`, `apply_ga_config` (exposure replace, additive alias merge), `export_ga_config` (standalone schema), `_yaml_should_expose` pinned against core GA
-  - `test_const.py`, constant values match expectations and don't drift between Python and JS
+  - `test_locale.py`, exact-tag/base-language precedence and missing/malformed-file fallback
   - `test_frontend.py`, HTTP path registration, asset serving
   - `frontend.test.ts`, JS patch functions, card DOM structure, WS client calls
 

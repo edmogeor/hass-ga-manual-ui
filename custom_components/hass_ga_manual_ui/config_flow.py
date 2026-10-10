@@ -75,7 +75,7 @@ def _parse_service_account_json(raw: str) -> dict[str, str]:
         _LOGGER.debug(
             "Service account JSON missing fields: %s. Available keys: %s",
             missing,
-            list(data.keys()),
+            list(data),
         )
         raise vol.Invalid(
             f"Missing required fields: {', '.join(missing)}. "
@@ -345,7 +345,9 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Verify the credentials actually work with Google before committing.
         if account is not None and not errors:
-            error = await self._validate_service_account(account)
+            error = await _validate_service_account(
+                getattr(self, "hass", None), account
+            )
             if error:
                 errors[CONF_SERVICE_ACCOUNT] = error
             else:
@@ -368,15 +370,6 @@ class GoogleAssistantManualConfigFlow(ConfigFlow, domain=DOMAIN):
                 "guide_url": _GUIDE_URL,
             },
         )
-
-    async def _validate_service_account(self, account: dict[str, str]) -> str | None:
-        """Return an error message if Google rejects the account, else None.
-
-        Definitive rejections (bad private key, or a 4xx from Google's token
-        endpoint) block the config. Transport failures (offline, 5xx, timeout)
-        return None so a valid config is not blocked when Google is unreachable.
-        """
-        return await _validate_service_account(getattr(self, "hass", None), account)
 
     async def _create_entry(self) -> ConfigFlowResult:
         """Finalize the flow: notify, then create the config entry."""
@@ -492,7 +485,7 @@ class GoogleAssistantManualOptionsFlow(OptionsFlow):
 async def _validate_service_account(
     hass: Any | None, account: dict[str, str]
 ) -> str | None:
-    """Return an error when Google definitively rejects a service account."""
+    """Return an error on definitive Google rejection, but allow transport failures."""
     if hass is None:
         return None
     try:
