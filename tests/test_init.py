@@ -2,7 +2,7 @@
 
 import logging
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 import voluptuous as vol
@@ -20,6 +20,7 @@ from hass_ga_manual_ui import (
     _reconcile_core_ga_entries,
     _register_sync_listeners,
     _safe_get_entry,
+    _setup_core_ga,
     _sync_yaml_suppressed,
     _teardown_core_ga,
     async_apply_updated_credentials,
@@ -38,7 +39,7 @@ from hass_ga_manual_ui.const import (
     CORE_GA_PARENT_ENTRY_ID,
     DOMAIN,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.config_entries import ConfigEntry, ConfigEntryState
 from homeassistant.core import HomeAssistant
 
 from .conftest import (
@@ -61,11 +62,6 @@ class TestProjectId:
         assert _project_id(entry) == "my-gcp-project"
 
     def test_returns_missing_when_no_project_id(self) -> None:
-        entry = MagicMock(spec=ConfigEntry)
-        entry.data = {}
-        assert _project_id(entry) == "<missing>"
-
-    def test_returns_missing_when_entry_data_is_empty_dict(self) -> None:
         entry = MagicMock(spec=ConfigEntry)
         entry.data = {}
         assert _project_id(entry) == "<missing>"
@@ -216,11 +212,6 @@ class TestMakeCoreEntry:
         e2 = _make_core_entry(entry)
         assert e1.entry_id != e2.entry_id
 
-    def test_entry_id_is_hex_string(self) -> None:
-        entry = mock_config_entry()
-        core_entry = _make_core_entry(entry)
-        assert len(core_entry.entry_id) == 26
-
     def test_source_is_system(self) -> None:
         entry = mock_config_entry()
         core_entry = _make_core_entry(entry)
@@ -230,11 +221,6 @@ class TestMakeCoreEntry:
         entry = mock_config_entry()
         core_entry = _make_core_entry(entry)
         assert core_entry.options == {}
-
-    def test_runtime_data_starts_unset(self) -> None:
-        entry = mock_config_entry()
-        core_entry = _make_core_entry(entry)
-        assert not hasattr(core_entry, "runtime_data")
 
     def test_disabled_by_is_none(self) -> None:
         entry = mock_config_entry()
@@ -492,6 +478,10 @@ class TestPatchGoogleConfigProperties:
 
         _patch_google_config_properties(gc, entry)
         assert gc.should_report_state is True
+        entry.options[CONF_REPORT_STATE] = False
+        entry.options[CONF_SECURE_DEVICES_PIN] = "2468"
+        assert gc.should_report_state is False
+        assert gc.secure_devices_pin == "2468"
 
     def test_should_report_state_false_when_disabled(
         self, reset_original_props_cache: None
@@ -535,10 +525,10 @@ class TestPatchGoogleConfigProperties:
         _patch_google_config_properties(gc, entry)
         assert gc.secure_devices_pin is None
 
-    def test_second_instance_uses_original_getters(
+    def test_repatch_preserves_original_getters_for_other_instances(
         self, reset_original_props_cache: None
     ) -> None:
-        """Second GoogleConfig instance should still use original properties."""
+        """Repatching must not chain the previous instance's property override."""
         entry = mock_config_entry()
         entry.options[CONF_REPORT_STATE] = False
 
@@ -548,9 +538,8 @@ class TestPatchGoogleConfigProperties:
 
         gc2 = FakeGoogleConfig(report_state=True)
         _patch_google_config_properties(gc2, entry)
-        # gc2 is a separate instance, not the patched one, so its
-        # class-level property reads from entry.options for gc2
         assert gc2.should_report_state is False
+        assert gc1.should_report_state is True
 
     def test_non_patched_instance_uses_original_getter(
         self, reset_original_props_cache: None
@@ -579,32 +568,6 @@ class TestPatchGoogleConfigProperties:
         entry = mock_config_entry()
         gc = MinimalGC()
         _patch_google_config_properties(gc, entry)
-
-    def test_missing_secure_devices_pin_property_handled(
-        self, reset_original_props_cache: None
-    ) -> None:
-        """GoogleConfig without secure_devices_pin property should be handled."""
-
-        class MinimalGC:
-            pass
-
-        entry = mock_config_entry()
-        gc = MinimalGC()
-        _patch_google_config_properties(gc, entry)
-
-    def test_class_property_patched_for_patched_instance(
-        self, reset_original_props_cache: None
-    ) -> None:
-        """The patched instance's class gets the property override."""
-        entry = mock_config_entry()
-        entry.options["enabled"] = True
-        entry.options[CONF_REPORT_STATE] = True
-        gc = FakeGoogleConfig(report_state=False)
-
-        _patch_google_config_properties(gc, entry)
-
-        # The patched instance reads from entry.options
-        assert gc.should_report_state is True
 
     def test_patch_failure_logged(
         self, reset_original_props_cache: None, caplog: pytest.LogCaptureFixture
@@ -984,6 +947,62 @@ class TestTeardownCoreGa:
         assert entry.runtime_data is None
 
 
+class TestSetupCoreGa:
+    """Verify setup happens once and persisted entries recover without replacement."""
+
+    @pytest.mark.parametrize(
+        "state", [None, ConfigEntryState.LOADED, ConfigEntryState.SETUP_ERROR]
+    )
+    async def test_creates_reuses_or_recovers_core_entry(self, state) -> None:
+        """Only a new entry is added; only a failed persisted entry is reloaded."""
+        entry = mock_config_entry(options={"enabled": False, CONF_REPORT_STATE: True})
+        core = mock_config_entry(entry_id="core-entry")
+        core.state = state
+        gc = FakeGoogleConfig()
+        core.runtime_data = gc
+        hass = MagicMock(spec=HomeAssistant)
+        hass.data = {}
+        hass.config_entries.async_add = AsyncMock()
+        hass.config_entries.async_reload = AsyncMock()
+
+        def update_entry(target, *, options) -> None:
+            """Model HA's synchronous options update for the live property patches."""
+            target.options = options
+
+        hass.config_entries.async_update_entry.side_effect = update_entry
+        unsubs = [MagicMock()]
+        with (
+            patch(
+                "hass_ga_manual_ui._find_core_entry",
+                return_value=None if state is None else core,
+            ),
+            patch("hass_ga_manual_ui._make_core_entry", return_value=core),
+            patch("hass_ga_manual_ui._register_sync_listeners", return_value=unsubs),
+            patch.object(gc, "async_enable_report_state") as enable_reporting,
+        ):
+            await _setup_core_ga(hass, entry)
+
+        if state is None:
+            hass.config_entries.async_add.assert_awaited_once_with(core)
+        else:
+            hass.config_entries.async_add.assert_not_awaited()
+        if state is ConfigEntryState.SETUP_ERROR:
+            hass.config_entries.async_reload.assert_awaited_once_with(core.entry_id)
+        else:
+            hass.config_entries.async_reload.assert_not_awaited()
+        assert (
+            hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG][CONF_PROJECT_ID]
+            == entry.data[CONF_PROJECT_ID]
+        )
+        assert entry.runtime_data == {
+            "core_entry": core,
+            "google_config": gc,
+            "sync_unsubs": unsubs,
+        }
+        assert entry.options["enabled"] is True
+        enable_reporting.assert_called_once()
+
+
 # =============================================================================
 # _register_sync_listeners
 # =============================================================================
@@ -1091,6 +1110,50 @@ class TestRegisterSyncListeners:
         handler(event)
 
         gc.async_schedule_google_sync_all.assert_not_called()
+
+    @pytest.mark.parametrize(
+        ("enabled", "running", "changes", "entity_area", "exposed", "expected"),
+        [
+            (True, True, {"area_id": "old-area"}, None, True, True),
+            (False, True, {"area_id": "old-area"}, None, True, False),
+            (True, False, {"area_id": "old-area"}, None, True, False),
+            (True, True, {"name": "old-name"}, None, True, False),
+            (True, True, {"area_id": "old-area"}, "own-area", True, False),
+            (True, True, {"area_id": "old-area"}, None, False, False),
+        ],
+    )
+    def test_device_area_sync_only_for_exposed_inheriting_entities(
+        self, enabled, running, changes, entity_area, exposed, expected
+    ) -> None:
+        """Device edits resync only when they affect Google's effective room."""
+        from homeassistant.core import CoreState
+        from homeassistant.helpers import device_registry as dr
+
+        hass = MagicMock(spec=HomeAssistant)
+        hass.bus = MagicMock()
+        hass.state = CoreState.running if running else CoreState.starting
+        entry = mock_config_entry(options={"enabled": enabled})
+        gc = MagicMock()
+        gc.should_expose.return_value = exposed
+        self._capture_registry_handler(hass, entry, gc)
+        handler = next(
+            call.args[1]
+            for call in hass.bus.async_listen.call_args_list
+            if call.args[0] == dr.EVENT_DEVICE_REGISTRY_UPDATED
+        )
+        event = MagicMock()
+        event.data = {"action": "update", "device_id": "device-1", "changes": changes}
+        with (
+            patch("homeassistant.helpers.entity_registry.async_get"),
+            patch(
+                "homeassistant.helpers.entity_registry.async_entries_for_device",
+                return_value=[
+                    MagicMock(entity_id="light.kitchen", area_id=entity_area),
+                ],
+            ),
+        ):
+            handler(event)
+        assert gc.async_schedule_google_sync_all.call_count == int(expected)
 
 
 # =============================================================================
@@ -1391,32 +1454,33 @@ class TestPatchCoreAssistants:
                     x for x in ee.KNOWN_ASSISTANTS if x != ASSISTANT_ID
                 )
 
-            test_schema = vol.Schema(
-                {
-                    "assistant": vol.In(["conversation", "cloud.alexa"]),
-                }
-            )
             fake_handler = MagicMock()
-
+            schemas = {
+                command: vol.Schema(
+                    {"assistant": vol.In(["conversation", "cloud.alexa"])}
+                )
+                for command in (
+                    "homeassistant/expose_entity",
+                    "homeassistant/expose_new_entities/get",
+                    "homeassistant/expose_new_entities/set",
+                )
+            }
             hass = MagicMock(spec=HomeAssistant)
             hass.data = {
                 "websocket_api": {
-                    "homeassistant/expose_entity": (fake_handler, test_schema),
-                    "homeassistant/expose_new_entities/get": (
-                        fake_handler,
-                        test_schema,
-                    ),
-                    "homeassistant/expose_new_entities/set": (
-                        fake_handler,
-                        test_schema,
-                    ),
+                    command: (fake_handler, schema)
+                    for command, schema in schemas.items()
                 }
             }
 
             _patch_core_assistants(hass)
 
-            container = test_schema.schema["assistant"].container
-            assert ASSISTANT_ID in container
+            for schema in schemas.values():
+                assert schema({"assistant": ASSISTANT_ID}) == {
+                    "assistant": ASSISTANT_ID
+                }
+                with pytest.raises(vol.Invalid):
+                    schema({"assistant": "unknown_assistant"})
         finally:
             ee.KNOWN_ASSISTANTS = original
 

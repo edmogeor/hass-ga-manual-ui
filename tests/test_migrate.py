@@ -21,7 +21,7 @@ from hass_ga_manual_ui.const import (
     CORE_GA_DOMAIN,
 )
 from homeassistant.components.homeassistant.const import DATA_EXPOSED_ENTITIES
-from homeassistant.util.yaml import dump, parse_yaml
+from homeassistant.util.yaml import parse_yaml
 
 ASSISTANT_ID = "hass_ga_manual_ui"
 _PEM = (
@@ -326,16 +326,30 @@ def test_export_standalone_valid_and_round_trip(patch_registry) -> None:
     assert block["entity_config"]["switch.fan"] == {"expose": True}
     # secure_devices_pin omitted when empty.
     assert CONF_SECURE_DEVICES_PIN not in block
-    assert reg  # registry was used
-
-
-def test_export_validates_against_core_schema() -> None:
-    """export_ga_config raises if its dict is not standalone-valid."""
     from homeassistant.components.google_assistant import GOOGLE_ASSISTANT_SCHEMA
 
-    # Sanity: the schema rejects report_state without a service account.
+    GOOGLE_ASSISTANT_SCHEMA(block)
+    restored = FakeExposed()
+    restored_hass = FakeHass(["light.kitchen", "switch.fan"], restored)
+    restored_entry = FakeEntry(options={CONF_REPORT_STATE: False})
+    summary = migrate.apply_ga_config(restored_hass, restored_entry, block)
+    assert restored_entry.options[CONF_REPORT_STATE] is True
+    assert restored.expose_new[ASSISTANT_ID] is False
+    assert restored.options == {
+        (ASSISTANT_ID, entity_id): {"should_expose": True}
+        for entity_id in ("light.kitchen", "switch.fan")
+    }
+    assert summary == {"exposed": 2, "hidden": 0, "aliases_added": 0}
+    assert reg.entities["light.kitchen"].aliases == ["reading light"]
+
+
+def test_export_rejects_missing_credentials(patch_registry) -> None:
+    """Exercise the exporter's standalone-schema guarantee, not just HA's schema."""
+    patch_registry(FakeRegistry([]))
+    entry = FakeEntry(options={CONF_REPORT_STATE: True})
+    entry.data.pop(CONF_SERVICE_ACCOUNT)
     with pytest.raises(vol.Invalid):
-        GOOGLE_ASSISTANT_SCHEMA({CONF_PROJECT_ID: "p-12345", CONF_REPORT_STATE: True})
+        migrate.export_ga_config(FakeHass([], FakeExposed()), entry)
 
 
 def test_export_pem_round_trip_preserved(patch_registry) -> None:
@@ -369,10 +383,45 @@ def test_export_accepts_yaml_tagged_string_subclasses(patch_registry) -> None:
     }
 
 
-def test_dump_parse_pem_round_trip() -> None:
-    """Guard the YAML lib itself preserves a multi-line PEM verbatim."""
-    cfg = {CONF_SERVICE_ACCOUNT: {CONF_PRIVATE_KEY: _PEM}}
-    assert parse_yaml(dump(cfg))[CONF_SERVICE_ACCOUNT][CONF_PRIVATE_KEY] == _PEM
+def test_apply_replaces_exposure_for_registry_only_and_state_only_entities(
+    patch_registry,
+) -> None:
+    """Unavailable entities are replaced too, without touching another assistant."""
+    patch_registry(FakeRegistry([FakeRegEntry("light.unavailable")]))
+    exposed = FakeExposed()
+    exposed.options = {
+        (ASSISTANT_ID, "light.unavailable"): {"should_expose": True},
+        ("conversation", "light.unavailable"): {"should_expose": True},
+    }
+    hass = FakeHass(["switch.state_only"], exposed)
+    entry = FakeEntry(
+        options={
+            "enabled": True,
+            CONF_REPORT_STATE: True,
+            CONF_SECURE_DEVICES_PIN: "1234",
+        }
+    )
+
+    summary = migrate.apply_ga_config(
+        hass,
+        entry,
+        {
+            "expose_by_default": False,
+            "entity_config": {"switch.state_only": {"expose": True}},
+        },
+    )
+
+    assert summary == {"exposed": 1, "hidden": 1, "aliases_added": 0}
+    assert exposed.options == {
+        (ASSISTANT_ID, "light.unavailable"): {"should_expose": False},
+        (ASSISTANT_ID, "switch.state_only"): {"should_expose": True},
+        ("conversation", "light.unavailable"): {"should_expose": True},
+    }
+    assert entry.options == {
+        "enabled": True,
+        CONF_REPORT_STATE: True,
+        CONF_SECURE_DEVICES_PIN: "1234",
+    }
 
 
 # ===========================================================================

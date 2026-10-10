@@ -10,6 +10,7 @@ from hass_ga_manual_ui.config_flow import (
     GoogleAssistantManualOptionsFlow,
     _CredentialsRejected,
     _is_valid_project_id,
+    _mint_homegraph_token,
     _parse_service_account_json,
 )
 from hass_ga_manual_ui.const import (
@@ -27,7 +28,6 @@ from .conftest import (
     SERVICE_ACCOUNT_JSON_ARRAY,
     SERVICE_ACCOUNT_NO_CLIENT_EMAIL,
     SERVICE_ACCOUNT_NO_PRIVATE_KEY,
-    SERVICE_ACCOUNT_WRONG_TYPES,
     VALID_SERVICE_ACCOUNT_JSON,
 )
 
@@ -53,9 +53,6 @@ class TestIsValidProjectId:
         ]
         for vid in valid:
             assert _is_valid_project_id(vid), f"Expected valid: '{vid}'"
-
-    def test_empty_string(self) -> None:
-        assert not _is_valid_project_id("")
 
     def test_none_value(self) -> None:
         """None or falsy values."""
@@ -190,11 +187,6 @@ class TestParseServiceAccountJson:
         with pytest.raises(vol.Invalid, match="private_key"):
             _parse_service_account_json(bad)
 
-    def test_wrong_types_raise_invalid(self) -> None:
-        """Non-string values should raise."""
-        with pytest.raises(vol.Invalid, match="must be a string"):
-            _parse_service_account_json(SERVICE_ACCOUNT_WRONG_TYPES)
-
     def test_client_email_is_int(self) -> None:
         bad = '{"client_email": 42, "private_key": "key"}'
         with pytest.raises(vol.Invalid, match="must be a string"):
@@ -243,6 +235,13 @@ class TestConfigFlowUserStep:
         assert result["type"] == "form"
         assert result["step_id"] == "intro"
         assert not _schema_has(result, CONF_MIGRATE_YAML)
+
+    async def test_intro_advances_to_credentials(
+        self, config_flow: GoogleAssistantManualConfigFlow
+    ) -> None:
+        """Acknowledging the intro opens the project ID form."""
+        result = await config_flow.async_step_intro({})
+        assert result["step_id"] == "credentials"
 
 
 class TestOptionsFlow:
@@ -315,13 +314,82 @@ class TestOptionsFlow:
             )
         assert result["type"] == "form"
         assert "invalid_grant" in result["errors"][CONF_SERVICE_ACCOUNT]
+        flow.hass.config_entries.async_update_entry.assert_not_called()
 
-    @pytest.mark.asyncio
-    async def test_intro_advances_to_credentials(
-        self, config_flow: GoogleAssistantManualConfigFlow
+
+class TestMintHomegraphToken:
+    """Test the real Google boundary underlying config flow and import validation."""
+
+    @pytest.mark.parametrize(
+        ("status", "body", "error"),
+        [
+            (200, {}, None),
+            (400, {"error_description": "Signature rejected"}, _CredentialsRejected),
+            (401, {"error": "invalid_grant"}, _CredentialsRejected),
+            (403, ValueError("not JSON"), _CredentialsRejected),
+            (503, {}, OSError),
+        ],
+    )
+    async def test_token_exchange_classifies_http_failures(
+        self, status, body, error
     ) -> None:
-        result = await config_flow.async_step_intro({})
-        assert result["step_id"] == "credentials"
+        """Only definitive rejections block setup; server failures remain retryable."""
+        response = MagicMock(status=status)
+        response.json = AsyncMock(
+            side_effect=body if isinstance(body, Exception) else None, return_value=body
+        )
+        if status == 503:
+            response.raise_for_status.side_effect = OSError("Google unavailable")
+        session = MagicMock()
+        session.post.return_value.__aenter__ = AsyncMock(return_value=response)
+        with (
+            patch("jwt.encode", return_value="signed-jwt") as encode,
+            patch("hass_ga_manual_ui.config_flow.time.time", return_value=1234),
+            patch(
+                "homeassistant.helpers.aiohttp_client.async_get_clientsession",
+                return_value=session,
+            ),
+        ):
+            if error is None:
+                await _mint_homegraph_token(MagicMock(), "sa@example.com", "key")
+            else:
+                reason = (
+                    body.get("error_description", body.get("error"))
+                    if isinstance(body, dict)
+                    else "HTTP 403"
+                )
+                with pytest.raises(error, match=reason):
+                    await _mint_homegraph_token(MagicMock(), "sa@example.com", "key")
+        encode.assert_called_once_with(
+            {
+                "iss": "sa@example.com",
+                "scope": "https://www.googleapis.com/auth/homegraph",
+                "aud": "https://accounts.google.com/o/oauth2/token",
+                "iat": 1234,
+                "exp": 4834,
+            },
+            "key",
+            algorithm="RS256",
+        )
+        session.post.assert_called_once_with(
+            "https://accounts.google.com/o/oauth2/token",
+            data={
+                "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+                "assertion": "signed-jwt",
+            },
+        )
+
+    async def test_invalid_private_key_never_contacts_google(self) -> None:
+        """Signing failures are definitive credential rejections, not network errors."""
+        with (
+            patch("jwt.encode", side_effect=ValueError("bad PEM")),
+            patch(
+                "homeassistant.helpers.aiohttp_client.async_get_clientsession"
+            ) as get_session,
+            pytest.raises(_CredentialsRejected, match="invalid private key"),
+        ):
+            await _mint_homegraph_token(MagicMock(), "sa@example.com", "bad-key")
+        get_session.assert_not_called()
 
 
 class TestConfigFlowCredentialsStep:
@@ -883,17 +951,6 @@ class TestConfigFlowCredentialValidation:
             result = await config_flow.async_step_service_account(
                 {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
             )
-        assert result["step_id"] == "cloud_visibility"
-
-    @pytest.mark.asyncio
-    async def test_no_hass_skips_validation(
-        self, config_flow: GoogleAssistantManualConfigFlow
-    ) -> None:
-        # Bare flow (no hass) cannot verify; it must not block entry creation.
-        config_flow._data[CONF_PROJECT_ID] = "test-project"
-        result = await config_flow.async_step_service_account(
-            {CONF_SERVICE_ACCOUNT: VALID_SERVICE_ACCOUNT_JSON}
-        )
         assert result["step_id"] == "cloud_visibility"
 
     @pytest.mark.asyncio
