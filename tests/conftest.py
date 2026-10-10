@@ -1,6 +1,7 @@
 """Shared test fixtures for hass_ga_manual_ui tests."""
 
 import sys
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
@@ -148,6 +149,17 @@ class FakeGoogleConfig:
         pass
 
 
+_ORIGINAL_FAKE_MEMBERS = {
+    name: vars(FakeGoogleConfig)[name]
+    for name in (
+        "should_report_state",
+        "secure_devices_pin",
+        "should_expose",
+        "should_2fa",
+    )
+}
+
+
 # ---------------------------------------------------------------------------
 # Service account JSON fixtures
 # ---------------------------------------------------------------------------
@@ -182,28 +194,17 @@ INVALID_JSON_STRING = "not json at all {{{"
 
 SERVICE_ACCOUNT_JSON_ARRAY = """[{"client_email": "test@test.com"}]"""
 
-SERVICE_ACCOUNT_WRONG_TYPES = """{
-    "client_email": 123,
-    "private_key": true
-}"""
-
-
 # ---------------------------------------------------------------------------
 # Misc
 # ---------------------------------------------------------------------------
 
 
-@pytest.fixture
-def reset_version_cache() -> None:
-    """Reset the _VERSION cache in __init__ module."""
+@pytest.fixture(autouse=True)
+def reset_original_props_cache(monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    """Isolate both the original-member cache and class patches between tests."""
     import hass_ga_manual_ui
 
-    hass_ga_manual_ui._VERSION = None
-
-
-@pytest.fixture
-def reset_original_props_cache() -> None:
-    """Reset the _ORIGINAL_GOOGLE_CONFIG_PROPS cache."""
-    import hass_ga_manual_ui
-
-    hass_ga_manual_ui._ORIGINAL_GOOGLE_CONFIG_PROPS.clear()
+    monkeypatch.setattr(hass_ga_manual_ui, "_ORIGINAL_GOOGLE_CONFIG_PROPS", {})
+    yield
+    for name, member in _ORIGINAL_FAKE_MEMBERS.items():
+        setattr(FakeGoogleConfig, name, member)

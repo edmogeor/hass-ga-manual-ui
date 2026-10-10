@@ -674,50 +674,33 @@ describe("Google Assistant Manual frontend", () => {
       expect(el._unsupported["hass_ga_manual_ui"]).toBeUndefined();
     });
 
-    it("awaits the expose write before delegating (master toggle)", async () => {
+    it.each([
+      ["_toggleAll", { checked: true, assistants: ["conversation", "hass_ga_manual_ui"] }, "orig-all"],
+      ["_toggleAssistant", { checked: false, assistant: "hass_ga_manual_ui" }, "orig-assistant"],
+    ] as const)("%s waits for the response before delegating", async (method, target, original) => {
       evalFrontend();
       const el = make();
       el.entityId = "light.demo";
+      let resolveWrite!: (value: object) => void;
+      const pendingWrite = new Promise<object>((finish) => { resolveWrite = finish; });
       const callWS = vi.fn((msg: { type: string }) => {
         if (msg.type === "homeassistant/expose_entity") el.order.push("expose");
-        return Promise.resolve({});
+        return pendingWrite;
       });
       el.hass = { callWS };
 
-      await (
-        el as unknown as { _toggleAll: (e: unknown) => Promise<void> }
-      )._toggleAll({
-        target: { checked: true, assistants: ["conversation", "hass_ga_manual_ui"] },
+      const toggle = (el as unknown as Record<string, (e: unknown) => Promise<void>>)[method].call(el, { target });
+      await flushMicrotasks();
+      expect(el.order).toEqual(["expose"]);
+      expect(callWS).toHaveBeenCalledWith({
+        type: "homeassistant/expose_entity",
+        assistants: method === "_toggleAll" ? ["conversation", "hass_ga_manual_ui"] : ["hass_ga_manual_ui"],
+        entity_ids: ["light.demo"],
+        should_expose: target.checked,
       });
-
-      expect(el.order).toEqual(["expose", "orig-all"]);
-      expect(callWS).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "homeassistant/expose_entity",
-          assistants: ["conversation", "hass_ga_manual_ui"],
-          entity_ids: ["light.demo"],
-          should_expose: true,
-        }),
-      );
-    });
-
-    it("awaits the expose write before delegating (per-assistant toggle)", async () => {
-      evalFrontend();
-      const el = make();
-      el.entityId = "light.demo";
-      const callWS = vi.fn((msg: { type: string }) => {
-        if (msg.type === "homeassistant/expose_entity") el.order.push("expose");
-        return Promise.resolve({});
-      });
-      el.hass = { callWS };
-
-      await (
-        el as unknown as { _toggleAssistant: (e: unknown) => Promise<void> }
-      )._toggleAssistant({
-        target: { checked: false, assistant: "hass_ga_manual_ui" },
-      });
-
-      expect(el.order).toEqual(["expose", "orig-assistant"]);
+      resolveWrite({});
+      await toggle;
+      expect(el.order).toEqual(["expose", original]);
     });
 
     // The switch's reactive props are reset after our await (intervening

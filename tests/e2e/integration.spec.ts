@@ -241,6 +241,20 @@ test("assistant card renders its controls and stays unique across toggles and SP
   await expect(globalSwitch).toHaveJSProperty("checked", true);
   await expect(exposeNew).toHaveJSProperty("checked", false);
 
+  // Verify settings writes and persistence, not just the presence of controls.
+  await exposeNew.click();
+  await expect.poll(async () => {
+    const result = await callBackend<{ expose_new: boolean }>({
+      type: "homeassistant/expose_new_entities/get", assistant: ASSISTANT,
+    });
+    return result.expose_new;
+  }).toBe(true);
+  const reportState = card.locator(".card-content ha-switch").nth(1);
+  await reportState.click();
+  await expect.poll(async () => (await integrationConfig()).report_state).toBe(true);
+  await card.locator("ha-input input").fill("1357");
+  await expect.poll(async () => (await integrationConfig()).secure_devices_pin).toBe("1357");
+
   // Use HA's tab navigation so its cached page and our lifecycle hooks are
   // exercised together; repeatedly evaluating a mocked bundle cannot do this.
   for (let visit = 0; visit < 2; visit++) {
@@ -253,6 +267,9 @@ test("assistant card renders its controls and stays unique across toggles and SP
   await page.reload();
   await expect(card).toHaveCount(1);
   await expect(card.locator("ha-input")).toBeVisible();
+  await expect(exposeNew).toHaveJSProperty("checked", true);
+  await expect(reportState).toHaveJSProperty("checked", true);
+  await expect(card.locator("ha-input")).toHaveJSProperty("value", "1357");
   expect(errors).toEqual([]);
 });
 
