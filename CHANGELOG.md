@@ -5,6 +5,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2026-10-10
+
+### Fixed
+
+- **Exposure dialogs now work when opening the Expose page directly**, including
+  the filtered Google Assistant (Manual) view, without first visiting another
+  Voice assistants page.
+- **Entity exposure refreshes after the browser reconnects.** Changes made while
+  a background tab was disconnected now appear without a manual page reload.
+- **Improved compatibility with Home Assistant 2026.10**, keeping the manual
+  assistant's exposure controls and optional Home Assistant Cloud hiding working
+  correctly.
+
 ## [0.3.3] - 2026-09-20
 
 ### Fixed
