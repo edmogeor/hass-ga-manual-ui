@@ -617,7 +617,7 @@ function _maybePromptReload(serverVersion?: string): void {
   }
 }
 
-// Page-independent stale-bundle check: refreshCardState only runs on the
+// Page-independent stale-bundle check: card refresh only runs on the
 // Assistants page, so without this the reload prompt is invisible everywhere
 // else. Waits for hass, then compares the installed version to BUILD_VERSION.
 async function _checkVersionForReloadPrompt(): Promise<void> {
@@ -1608,14 +1608,13 @@ function _patchToggleRefresh(
       const entityId = this.entityId;
       if (hass && entityId) {
         const expose = !!snapshot.checked;
-        const assistants =
-          method === "_toggleAll"
-            ? expose
-              ? (snapshot.assistants || []).filter((k) => !this._unsupported?.[k])
-              : snapshot.assistants || []
-            : snapshot.assistant != null
-              ? [snapshot.assistant]
-              : [];
+        let assistants: string[];
+        if (method === "_toggleAll") {
+          assistants = snapshot.assistants || [];
+          if (expose) assistants = assistants.filter((key) => !this._unsupported?.[key]);
+        } else {
+          assistants = snapshot.assistant != null ? [snapshot.assistant] : [];
+        }
         if (assistants.length) {
           await hass.callWS({
             type: "homeassistant/expose_entity",
@@ -1960,10 +1959,8 @@ function buildCard(): HTMLElement | null {
     body.appendChild(yamlAlert);
 
     const settingsRows: HTMLElement[] = [];
-    let reportStateSwitch: HTMLElement | null = null;
-    let pinInput: TogglableElement | null = null;
 
-    function addSetting(el: HTMLElement) {
+    function addSetting(el: HTMLElement): void {
       el.setAttribute("data-ga-row", "");
       settingsRows.push(el);
       body.appendChild(el);
@@ -1987,7 +1984,7 @@ function buildCard(): HTMLElement | null {
       "If you enable state reporting, Home Assistant will send all state changes of exposed entities to Google. This speeds up voice commands and allows you to always see the latest states in the Google app.",
       onReportStateToggle,
     );
-    reportStateSwitch = reportStateItem.querySelector("ha-switch");
+    const reportStateSwitch = reportStateItem.querySelector<HTMLElement>("ha-switch");
     reportStateSwitch?.setAttribute("data-ga-report-state", "");
     addSetting(reportStateItem);
 
@@ -2000,7 +1997,7 @@ function buildCard(): HTMLElement | null {
     );
     addSetting(securityItem);
 
-    pinInput = document.createElement("ha-input") as unknown as TogglableElement;
+    const pinInput = document.createElement("ha-input") as unknown as TogglableElement;
     pinInput.setAttribute(
       "label",
       (hass?.localize("ui.panel.config.cloud.account.google.devices_pin")) || "Security devices PIN",
@@ -2045,7 +2042,7 @@ function buildCard(): HTMLElement | null {
 
     // Hidden until the initial config state is fetched.
     _setRowsVisible(settingsRows, false);
-    refreshCardState(card, globalSwitch, settingsRows, reportStateSwitch, pinInput, yamlAlert);
+    refreshCardByElement(card);
 
     return card;
   } catch (e) {
@@ -2131,34 +2128,19 @@ async function _toggleIntegration(
 // Card state refresh
 // ---------------------------------------------------------------------------
 
-// Refresh a card given only its element, re-querying the controls from the DOM.
-// Used by callers that hold the card but not buildCard's local references
-// (the import handler and card re-injection).
-function refreshCardByElement(card: HTMLElement): Promise<void> {
-  const globalSwitch = card.querySelector<HTMLElement>(".card-header ha-switch");
+// Read the current config and exposure count into a card's controls. All callers
+// use the card itself, so there is one place to resolve its settings elements.
+async function refreshCardByElement(card: HTMLElement): Promise<void> {
+  const globalSwitch = card.querySelector<TogglableElement>(".card-header ha-switch");
   const yamlAlert = card.querySelector<HTMLElement>("ha-alert");
-  if (!globalSwitch || !yamlAlert) return Promise.resolve();
-  return refreshCardState(
-    card,
-    globalSwitch,
-    [...card.querySelectorAll<HTMLElement>("[data-ga-row]")],
-    card.querySelector<HTMLElement>("[data-ga-report-state]"),
-    card.querySelector("ha-input") as TogglableElement | null,
-    yamlAlert,
-  );
-}
+  if (!globalSwitch || !yamlAlert) return;
 
-async function refreshCardState(
-  card: HTMLElement,
-  globalSwitch: HTMLElement,
-  settingsRows: HTMLElement[],
-  reportStateSwitch: HTMLElement | null,
-  pinInput: TogglableElement | null,
-  yamlAlert: HTMLElement,
-): Promise<void> {
+  const settingsRows = [...card.querySelectorAll<HTMLElement>("[data-ga-row]")];
+  const reportStateSwitch = card.querySelector<TogglableElement>("[data-ga-report-state]");
+  const pinInput = card.querySelector<TogglableElement>("ha-input");
   const hass = getHass();
   if (!hass) {
-    _debug("refreshCardState: Home Assistant not loaded yet, will retry on next render");
+    _debug("refreshCardByElement: Home Assistant not loaded yet, will retry on next render");
     return;
   }
 
@@ -2177,7 +2159,7 @@ async function refreshCardState(
     );
 
     _debug(
-      "refreshCardState received config: enabled=" +
+      "refreshCardByElement received config: enabled=" +
         config.enabled +
         " report_state=" +
         config.report_state,
@@ -2188,17 +2170,14 @@ async function refreshCardState(
     _gaManualEnabled = config.enabled;
     _refreshExposePage();
 
-    (globalSwitch as TogglableElement).checked = config.enabled;
-
-    if (yamlAlert) {
-      yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
-    }
+    globalSwitch.checked = config.enabled;
+    yamlAlert.style.display = config.yaml_suppressed ? "" : "none";
 
     _setRowsVisible(settingsRows, config.enabled);
 
     if (reportStateSwitch) {
-      (reportStateSwitch as TogglableElement).checked = config.report_state;
-      (reportStateSwitch as TogglableElement).disabled = !config.enabled;
+      reportStateSwitch.checked = config.report_state;
+      reportStateSwitch.disabled = !config.enabled;
     }
 
     if (pinInput) {
@@ -2242,12 +2221,12 @@ async function injectCardInto(el: AssistantsPageElement): Promise<void> {
       return;
     }
 
-    if (content.querySelector("[data-ga-manual-card]")) {
+    const existingCard = content.querySelector<HTMLElement>("[data-ga-manual-card]");
+    if (existingCard) {
       _observerActive.delete(el);
       // Card already injected, but config or exposures may have changed
       // (e.g. user was on the Expose tab or changed settings elsewhere).
-      const card = content.querySelector<HTMLElement>("[data-ga-manual-card]");
-      if (card) await refreshCardByElement(card);
+      await refreshCardByElement(existingCard);
       return;
     }
 
