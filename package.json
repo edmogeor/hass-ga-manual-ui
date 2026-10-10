@@ -12,11 +12,14 @@
     "lint:ts": "oxlint frontend.ts tests/",
     "lint:py": "ruff check . && ruff format --check .",
     "fix": "oxlint --fix frontend.ts tests/ && ruff check --fix . && ruff format .",
-    "test": "vitest run && python -B -m pytest tests/ -q",
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "npm run build && vitest run && python -B -m pytest tests/ -q",
     "test:ts": "vitest run",
+    "test:e2e": "npm run build && playwright test",
     "test:py": "python -B -m pytest tests/ -q"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^26.6.2",
     "esbuild": "^0.28.2",
     "jsdom": "^30.1.1",

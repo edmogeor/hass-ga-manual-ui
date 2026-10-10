@@ -426,20 +426,23 @@ npm install
 | `npm run check` | Full type-check: `tsc --noEmit` + `pyrefly check` |
 | `npm run lint` | Full lint: `eslint frontend.ts tests/` + `ruff check .` + `ruff format --check .` |
 | `npm run fix` | Auto-fix all: `eslint --fix` + `ruff check --fix` + `ruff format` |
-| `npm test` | Run all tests: `vitest run` (18 TS tests) + `python -m pytest tests/ -q` (163 Python tests) |
+| `npm test` | Run unit tests followed by real-HA E2E tests |
+| `npm run test:unit` | Build the frontend and run Vitest + pytest unit tests |
+| `npm run test:e2e` | Build the frontend and run Playwright against a disposable real HA instance |
 
 ### Testing
 
-Two test frameworks serve different parts of the codebase:
+Unit tests use Vitest and pytest; E2E tests use Playwright with a real HA fixture.
+`npm test` runs both suites. The E2E prerequisites below are needed for the combined command.
 
-**Vitest** (`vitest.config.ts`), TypeScript tests:
+**Vitest** (`vitest.config.ts`), TypeScript unit tests:
 - DOM environment (via `@vitest/environment-dom` / `jsdom`)
-- 42 tests in `tests/frontend.test.ts`
-- Covers patch logic, card building, DOM manipulation, and WebSocket interactions
+- 26 tests in `tests/frontend.test.ts`
+- Covers patch mechanics, localization, error handling, and WebSocket ordering
 - Runs as `vitest run` (single shot, no watch mode)
 
-**pytest** (`pytest.ini`), Python tests:
-- 213 tests across 5 files in `tests/`
+**pytest** (`pytest.ini`), Python unit tests:
+- 226 tests in `tests/`
 - Async-compatible via `pytest-asyncio` (auto mode)
 - Shared fixtures in `tests/conftest.py`:
   - `mock_config_entry()` / `mock_config_entry_minimal()`, build `ConfigEntry`-like objects for all test scenarios
@@ -453,6 +456,26 @@ Two test frameworks serve different parts of the codebase:
   - `test_const.py`, constant values match expectations and don't drift between Python and JS
   - `test_frontend.py`, HTTP path registration, asset serving
   - `frontend.test.ts`, JS patch functions, card DOM structure, WS client calls
+
+**Playwright** (`playwright.config.ts`, `tests/e2e/`), real-HA E2E tests:
+- Requires Node.js 22+, Linux, and a running Docker daemon. After `npm ci`, run
+  `npx playwright install --with-deps chromium`, then `npm test` (all suites) or
+  `npm run test:e2e` (E2E only).
+- Uses HA 2026.10.0 / frontend 20260930.2 with a virtual switch. Only outbound
+  Google HomeGraph calls are mocked; integration setup, core GA, the native UI,
+  WebSocket commands, and exposure storage remain real. No devices or Google
+  account are needed.
+- Covers direct exposure-page visits, native dialog saving, integration/browser
+  reloads, WebSocket suspension/reconnect with an unchanged entity registry,
+  native master/per-assistant toggles and dialog refresh, Cloud hiding, assistant
+  card controls/idempotency across SPA navigation and enable/disable, and native
+  options-dialog YAML download/import (including cancellation and alias updates).
+  Reconnect is simulated rather than waiting through a 24-hour soak.
+- Builds a cached Docker image and starts HA on `127.0.0.1:18096` (keep that port
+  free). Playwright stops the container and removes its temporary HA config.
+- CI uses the same combined `npm test` command. Failures retain screenshots and
+  traces in `.e2e/results/`; inspect a trace with `npx playwright show-trace <path>`.
+  Update `tests/e2e/requirements.txt` to change the HA compatibility target.
 
 ### Tooling
 

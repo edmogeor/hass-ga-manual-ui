@@ -22,6 +22,7 @@ interface HomeAssistant {
   callWS<T = unknown>(msg: Record<string, unknown>): Promise<T>;
   localize(key: string, args?: Record<string, number | string>): string;
   states?: Record<string, unknown>;
+  connected?: boolean;
   themes?: { darkMode?: boolean };
   language?: string;
   locale?: { language?: string };
@@ -38,6 +39,13 @@ interface LitLifecycle {
 interface AssistantsPageElement extends HTMLElement, LitLifecycle {
   hass?: HomeAssistant;
   _fetchEntities?(): void;
+  _openEditEntry?(event: CustomEvent<{ id: string }>): void;
+}
+
+interface VoiceAssistantsRouterElement extends HTMLElement, LitLifecycle {
+  hass?: HomeAssistant;
+  willUpdate?(changedProps: Map<string, unknown>): void;
+  _fetchExposedEntities?(): Promise<void>;
 }
 
 interface VoiceAssistantBrandIcon extends HTMLElement, LitLifecycle {
@@ -741,6 +749,34 @@ function _primeVoiceAssistantsMap(): void {
   }
 }
 
+let _voiceSettingsImport: Promise<unknown> | null = null;
+
+// Direct exposure-page visits need not load either map probe. Ask HA for its
+// native voice-settings importer, swallowing just this synthetic dialog event
+// so the probe loads without opening a second dialog or guessing hashed URLs.
+async function _loadVoiceAssistantsProbe(el: AssistantsPageElement): Promise<unknown> {
+  if (_voiceSettingsImport) return _voiceSettingsImport;
+  let importer: (() => Promise<unknown>) | undefined;
+  const capture = (event: Event): void => {
+    const detail = (event as CustomEvent<{ dialogTag: string; dialogImport: () => Promise<unknown> }>).detail;
+    if (detail.dialogTag !== "dialog-voice-settings") return;
+    event.stopImmediatePropagation();
+    importer = detail.dialogImport;
+  };
+  el.addEventListener("show-dialog", capture, { capture: true });
+  try {
+    el._openEditEntry?.(new CustomEvent("row-click", { detail: { id: "" } }));
+  } finally {
+    el.removeEventListener("show-dialog", capture, { capture: true });
+  }
+  if (!importer) throw new Error("HA's voice-settings importer is unavailable");
+  _voiceSettingsImport = importer().catch((err: unknown) => {
+    _voiceSettingsImport = null;
+    throw err;
+  });
+  return _voiceSettingsImport;
+}
+
 // Forget the cached entry_id so the next getEntryId() re-resolves it.
 function _invalidateEntryId(): void {
   _entryId = null;
@@ -905,9 +941,9 @@ function findExposeElement(root: Node | null): AssistantsPageElement | null {
   return null;
 }
 
-// Advertise our id via the expose page's `_availableAssistants` getter, and wrap
-// the dialog methods that need a guarded context. Must land before the page's
-// first render: getAvailableAssistants() is memoizeOne, so a column built once
+// Advertise our id via the expose page's `_availableAssistants` getter, and load
+// the assistant map before native dialogs resolve names. Must land before the
+// page's first render: getAvailableAssistants() is memoizeOne, so a column built once
 // without our id stays cached and our icon column never appears. Hence PATCHERS
 // (synchronous define interceptor), not the async whenDefined path.
 function _patchExposePageProto(proto: AssistantsPageElement): void {
@@ -929,7 +965,6 @@ function _patchExposePageProto(proto: AssistantsPageElement): void {
     protoRec.__gaExposePatched = true;
 
     const orig = desc.get;
-    let _safeExposeContext = false;
 
     Object.defineProperty(proto, "_availableAssistants", {
       configurable: true,
@@ -941,13 +976,9 @@ function _patchExposePageProto(proto: AssistantsPageElement): void {
             return result.filter((id) => id !== ASSISTANT_ID);
           }
           _primeVoiceAssistantsMap();
-          const withUs = result.includes(ASSISTANT_ID)
+          return result.includes(ASSISTANT_ID)
             ? result
             : result.concat(ASSISTANT_ID);
-          if (_safeExposeContext && !_voiceAssistantsMap) {
-            return withUs.filter((id) => id !== ASSISTANT_ID);
-          }
-          return withUs;
         } catch (e) {
           _error("Error in _availableAssistants getter: " + (_errorMessage(e)));
           return orig.call(this);
@@ -955,7 +986,7 @@ function _patchExposePageProto(proto: AssistantsPageElement): void {
       },
     });
 
-    const _wrapSafe = (name: string) => {
+    const _wrapDialog = (name: string) => {
       const origFn = protoRec[name] as
         | ((this: unknown, ...args: unknown[]) => unknown)
         | undefined;
@@ -963,18 +994,26 @@ function _patchExposePageProto(proto: AssistantsPageElement): void {
         _debug("Expose page method not found (may have been renamed): " + name);
         return;
       }
-      protoRec[name] = function (this: unknown, ...args: unknown[]) {
-        _safeExposeContext = true;
-        try {
-          return origFn.apply(this, args);
-        } finally {
-          _safeExposeContext = false;
-        }
+      protoRec[name] = function (this: AssistantsPageElement, ...args: unknown[]) {
+        const invoke = () => origFn.apply(this, args);
+        _primeVoiceAssistantsMap();
+        if (_voiceAssistantsMap) return invoke();
+        // Filtered routes bypass _availableAssistants, so ensure the map even
+        // when the original method would never touch our patched getter.
+        return _loadVoiceAssistantsProbe(this).then(() => {
+          _primeVoiceAssistantsMap();
+          if (!_voiceAssistantsMap) throw new Error("Could not initialize the voice assistant map");
+          return invoke();
+        }).catch((err: unknown) => {
+          const message = "Unable to open exposure dialog: " + _errorMessage(err);
+          _error(message);
+          _showToast(message, true);
+        });
       };
     };
-    _wrapSafe("_addEntry");
-    _wrapSafe("_unexposeSelected");
-    _wrapSafe("_exposeSelected");
+    _wrapDialog("_addEntry");
+    _wrapDialog("_unexposeSelected");
+    _wrapDialog("_exposeSelected");
 
     _debug("Patched expose page proto (_availableAssistants getter + dialog methods)");
   } catch (e) {
@@ -1668,7 +1707,28 @@ function _patchVoiceSettingsDialogProto(proto: HTMLElement & LitLifecycle): void
 
 type ProtoPatcher = (proto: HTMLElement & LitLifecycle) => void;
 
+// HA preserves unchanged entity registries on reconnect, so its entity-change
+// hook can miss exposure changes made while a background tab was disconnected.
+function _patchVoiceAssistantsRouterProto(proto: VoiceAssistantsRouterElement): void {
+  const orig = proto.willUpdate;
+  if (typeof orig !== "function") return;
+  proto.willUpdate = function (this: VoiceAssistantsRouterElement, changedProps) {
+    orig.call(this, changedProps);
+    const previousHass = changedProps.get("hass") as HomeAssistant | undefined;
+    if (
+      !changedProps.has("_entities") &&
+      this.hass?.connected === true &&
+      previousHass?.connected === false
+    ) {
+      void this._fetchExposedEntities?.().catch((err: unknown) => {
+        _error("Failed to refresh exposures after reconnect: " + _wsErrorMessage(err));
+      });
+    }
+  };
+}
+
 const PATCHERS: Record<string, ProtoPatcher> = {
+  "ha-config-voice-assistants": _patchVoiceAssistantsRouterProto as ProtoPatcher,
   "ha-config-voice-assistants-assistants": _patchAssistantsPageProto as ProtoPatcher,
   "ha-config-voice-assistants-expose": _patchExposePageProto as ProtoPatcher,
   "voice-assistant-brand-icon": _patchBrandIconProto as ProtoPatcher,
@@ -1680,18 +1740,38 @@ const PATCHERS: Record<string, ProtoPatcher> = {
   "dialog-data-entry-flow": _patchOptionsFlowDialogProto as ProtoPatcher,
 };
 
+const _patchedRegistries = new WeakSet<CustomElementRegistry>();
+const _patchedElementProtos = new WeakSet<object>();
+
+// Registry replacement can revisit existing classes; wrap each prototype once.
+function _patchCustomElement(name: string, constructor: CustomElementConstructor): void {
+  const patcher = PATCHERS[name];
+  if (!patcher || _patchedElementProtos.has(constructor.prototype)) return;
+  patcher(constructor.prototype as HTMLElement & LitLifecycle);
+  _patchedElementProtos.add(constructor.prototype);
+}
+
 function patchCustomElements(): void {
   try {
-    const origDefine = customElements.define;
+    const registry = customElements;
+    if (_patchedRegistries.has(registry)) return;
+    _patchedRegistries.add(registry);
+    const origDefine = registry.define;
 
-    customElements.define = function (
+    registry.define = function (
       name: string,
       constructor: CustomElementConstructor,
       options?: ElementDefinitionOptions,
     ) {
       try {
-        const patcher = PATCHERS[name];
-        if (patcher) patcher(constructor.prototype as HTMLElement & LitLifecycle);
+        if (customElements !== registry) {
+          // HA's scoped registry polyfill retains this native define hook, but
+          // passes stand-in classes to it. Hook the replacement registry and
+          // patch its real classes, not the stand-ins (which have no render).
+          patchCustomElements();
+        } else {
+          _patchCustomElement(name, constructor);
+        }
       } catch (e) {
         _error(
           "Error in customElements.define interceptor for '" +
@@ -1705,8 +1785,8 @@ function patchCustomElements(): void {
 
     for (const name in PATCHERS) {
       try {
-        const cls = customElements.get(name);
-        if (cls) PATCHERS[name](cls.prototype as HTMLElement & LitLifecycle);
+        const cls = registry.get(name);
+        if (cls) _patchCustomElement(name, cls);
       } catch (e) {
         _error(
           "Error patching already-defined element '" +

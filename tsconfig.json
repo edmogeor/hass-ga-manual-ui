@@ -15,5 +15,5 @@
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true
   },
-  "include": ["frontend.ts", "tests/**/*.ts"]
+  "include": ["frontend.ts", "tests/**/*.ts", "playwright.config.ts"]
 }

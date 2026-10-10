@@ -1,5 +1,5 @@
 /**
- * Integration tests for the Google Assistant (Manual) frontend companion.
+ * Unit tests for the Google Assistant (Manual) frontend companion.
  *
  * Sets up a jsdom DOM with mocked Home Assistant APIs, evaluates the compiled
  * frontend.js IIFE, and verifies the settings card is injected correctly.
@@ -120,101 +120,6 @@ describe("Google Assistant Manual frontend", () => {
   });
 
   describe("card injection", () => {
-    it("injects a card into ha-config-voice-assistants-assistants", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      expect(card).not.toBeNull();
-    });
-
-    it("card is an ha-card with outlined attribute", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      expect(card).not.toBeNull();
-      expect(card!.tagName).toBe("HA-CARD");
-      expect(card!.hasAttribute("outlined")).toBe(true);
-    });
-
-    it("card contains the assistant name in header", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      const header = card!.querySelector("h1.card-header");
-      expect(header).not.toBeNull();
-      expect(header!.textContent).toContain("Google Assistant (Manual)");
-    });
-
-    it("card header has our bundled brand icon", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      const icon = card!.querySelector<HTMLImageElement>("img[data-ga-manual]");
-      expect(icon).not.toBeNull();
-      // Served locally, not from the brands CDN.
-      expect(icon!.getAttribute("src")).toBe("/hass_ga_manual_ui/brand/icon.png");
-    });
-
-    it("card body contains settings rows", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      const body = card!.querySelector(".card-content");
-      expect(body).not.toBeNull();
-
-      const rows = body!.querySelectorAll("ha-md-list-item");
-      expect(rows.length).toBe(3);
-    });
-
-    it("card has an expose new entities switch", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      const switches = card!.querySelectorAll("ha-md-list-item ha-switch");
-      expect(switches.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it("card has a description paragraph", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      const desc = card!.querySelector(".card-content p");
-      expect(desc).not.toBeNull();
-      expect(desc!.textContent!.length).toBeGreaterThan(0);
-    });
-
-    it("card has a PIN input for secure devices", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      const inputs = card!.querySelectorAll("ha-input, input");
-      expect(inputs.length).toBeGreaterThanOrEqual(1);
-    });
-
     it("card is not injected when no assistants page exists", () => {
       const hass = createMockHass();
       const ha = document.createElement("home-assistant");
@@ -282,49 +187,6 @@ describe("Google Assistant Manual frontend", () => {
       setupDom(hass);
       evalFrontend();
       await flushMicrotasks();
-    });
-  });
-
-  describe("global toggle state", () => {
-    it("global toggle stays on after refreshExposeToggle (not clobbered)", async () => {
-      // Regression: refreshExposeToggle did card.querySelector("ha-switch"),
-      // which matched the header's global toggle (first switch in the card)
-      // and reset it to expose_new (false) — instantly reverting the enable.
-      const hass = createMockHass();
-      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
-          return Promise.resolve({ entry_id: "mock-entry" });
-        }
-        if (msg.type === "hass_ga_manual_ui/get_config") {
-          return Promise.resolve({
-            enabled: true,
-            report_state: false,
-            secure_devices_pin: "",
-            yaml_suppressed: false,
-          });
-        }
-        if (msg.type === "homeassistant/expose_new_entities/get") {
-          return Promise.resolve({ expose_new: false });
-        }
-        if (msg.type === "homeassistant/expose_entity/list") {
-          return Promise.resolve({ exposed_entities: {} });
-        }
-        return Promise.resolve({});
-      });
-
-      setupDom(hass);
-      evalFrontend();
-      // Let refreshCardState + refreshExposeToggle (Promise.all) settle.
-      await flushMicrotasks();
-      await flushMicrotasks();
-      await flushMicrotasks();
-
-      const card = document.querySelector("[data-ga-manual-card]");
-      const globalSwitch = card!.querySelector<HTMLInputElement>(
-        "h1.card-header ha-switch",
-      );
-      expect(globalSwitch).not.toBeNull();
-      expect(globalSwitch!.checked).toBe(true);
     });
   });
 
@@ -471,20 +333,6 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
-  describe("assistant card idempotency", () => {
-    it("evaluating twice does not inject duplicate cards", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-
-      evalFrontend();
-      evalFrontend();
-      await flushMicrotasks();
-
-      const cards = document.querySelectorAll("[data-ga-manual-card]");
-      expect(cards.length).toBe(1);
-    });
-  });
-
   describe("global patches", () => {
     it("Object.keys still works normally after patching", () => {
       evalFrontend();
@@ -618,79 +466,97 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
-  describe("Settings dashboard Cloud option", () => {
-    it("filters Cloud before the dashboard renders when enabled", async () => {
-      const hass = createMockHass();
-      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
-          return Promise.resolve({ entry_id: "mock-entry" });
-        }
-        if (msg.type === "hass_ga_manual_ui/get_config") {
-          return Promise.resolve({ hide_home_assistant_cloud: true });
-        }
-        return Promise.resolve({});
-      });
-      setupDom(hass);
+  it("patches real exposure classes when HA replaces the custom element registry", async () => {
+    const hass = createMockHass();
+    const callWS = vi.fn((msg: Record<string, unknown>) => Promise.resolve(msg));
+    hass.callWS = callWS;
+    const homeAssistant = document.createElement("home-assistant");
+    (homeAssistant as unknown as { hass: MockHass }).hass = hass;
+    document.body.appendChild(homeAssistant);
+
+    // The scoped registry retains the intercepted native define, registering
+    // empty stand-ins there while get() on the replacement returns real classes.
+    const nativeDefine = vi.spyOn(customElements, "define").mockImplementation(() => undefined);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
       evalFrontend();
+      const interceptedDefine = customElements.define;
+      const definitions = new Map<string, CustomElementConstructor>();
+      const replacement = {
+        get: (name: string) => definitions.get(name),
+        define(name: string, cls: CustomElementConstructor) {
+          definitions.set(name, cls);
+          interceptedDefine.call(customElements, name, class extends HTMLElement {});
+        },
+      } as unknown as CustomElementRegistry;
+      vi.stubGlobal("customElements", replacement);
 
-      class FakeConfigDashboard extends HTMLElement {
-        requestUpdate = vi.fn();
-        _pages() {
-          return [[{ path: "/config/cloud" }, { path: "/config/integrations" }]];
-        }
-        render() {
-          return this._pages()[0].map((page) => page.path);
+      const assistants: Record<string, { domain: string; name: string }> = {
+        conversation: { domain: "assist_pipeline", name: "Assist" },
+        "cloud.alexa": { domain: "alexa", name: "Amazon Alexa" },
+        "cloud.google_assistant": { domain: "google_assistant", name: "Google Assistant" },
+      };
+      class FilterProbe {
+        firstUpdated() {
+          Object.keys(assistants);
         }
       }
-      if (!customElements.get("ha-config-dashboard")) {
-        customElements.define("ha-config-dashboard", FakeConfigDashboard);
+      definitions.set("ha-filter-voice-assistants", FilterProbe as unknown as CustomElementConstructor);
+
+      class ExposePage extends HTMLElement {
+        _searchParms = new URLSearchParams();
+        get _availableAssistants() {
+          return ["conversation"];
+        }
+        _addEntry() {
+          const ids = this._searchParms.has("assistants")
+            ? this._searchParms.get("assistants")!.split(",")
+            : this._availableAssistants;
+          return {
+            names: ids.map((id) => assistants[id].name),
+            exposeEntities: (entities: string[]) => callWS({
+              type: "homeassistant/expose_entity",
+              assistants: ids,
+              entity_ids: entities,
+              should_expose: true,
+            }),
+          };
+        }
       }
-
-      const dashboard = document.createElement(
-        "ha-config-dashboard",
-      ) as unknown as FakeConfigDashboard;
-      expect(dashboard.render()).toBe("");
-
-      await flushMicrotasks();
-      await flushMicrotasks();
-
-      expect(dashboard.render()).toEqual(["/config/integrations"]);
-    });
-
-    it("does not render the Voice assistants Cloud promotion when enabled", async () => {
-      const hass = createMockHass();
-      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
-          return Promise.resolve({ entry_id: "mock-entry" });
-        }
-        if (msg.type === "hass_ga_manual_ui/get_config") {
-          return Promise.resolve({ hide_home_assistant_cloud: true });
-        }
-        return Promise.resolve({});
+      warn.mockClear();
+      replacement.define("ha-config-voice-assistants-expose", ExposePage);
+      const page = Object.create(ExposePage.prototype) as ExposePage;
+      page._searchParms = new URLSearchParams();
+      const dialog = page._addEntry();
+      expect(dialog.names).toEqual(["Assist", "Google Assistant (Manual)"]);
+      await dialog.exposeEntities(["light.demo"]);
+      expect(hass.callWS).toHaveBeenCalledWith({
+        type: "homeassistant/expose_entity",
+        assistants: ["conversation", "hass_ga_manual_ui"],
+        entity_ids: ["light.demo"],
+        should_expose: true,
       });
-      setupDom(hass);
-      evalFrontend();
+      // The assistant card links to this filtered route. Without priming the
+      // real map, HA's dialog throws while resolving the assistant's name.
+      page._searchParms.set("assistants", "hass_ga_manual_ui");
+      expect(page._addEntry().names).toEqual(["Google Assistant (Manual)"]);
 
-      class FakeCloudDiscover extends HTMLElement {
-        requestUpdate = vi.fn();
-        render() {
-          return "CLOUD PROMOTION";
-        }
+      // Later registrations use the new hook synchronously and do not rewrap
+      // previously patched classes when they pass through the native hook.
+      const patchedAddEntry = ExposePage.prototype._addEntry;
+      class CloudDiscover extends HTMLElement {
+        render() { return "CLOUD PROMOTION"; }
       }
-      if (!customElements.get("cloud-discover")) {
-        customElements.define("cloud-discover", FakeCloudDiscover);
-      }
-
-      const discover = document.createElement(
-        "cloud-discover",
-      ) as unknown as FakeCloudDiscover;
-      expect(discover.render()).toBe("");
-
-      await flushMicrotasks();
-      await flushMicrotasks();
-
-      expect(discover.render()).toBe("");
-    });
+      const originalRender = CloudDiscover.prototype.render;
+      replacement.define("cloud-discover", CloudDiscover);
+      expect(CloudDiscover.prototype.render).not.toBe(originalRender);
+      expect(ExposePage.prototype._addEntry).toBe(patchedAddEntry);
+      expect(warn).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+      nativeDefine.mockRestore();
+      warn.mockRestore();
+    }
   });
 
   // We wrap render() to neutralise HA's splice bug, which drops our id from the
@@ -753,48 +619,6 @@ describe("Google Assistant Manual frontend", () => {
       document.createElement(
         "entity-voice-settings",
       ) as unknown as FakeEntityVoiceSettings;
-
-    it("primes the dialog's assistant map before Add Entry renders", async () => {
-      delete FakeEntityVoiceSettings.voiceAssistants.hass_ga_manual_ui;
-      if (!customElements.get("ha-config-voice-assistants-expose")) {
-        class FakeExposePage extends HTMLElement {
-          get _availableAssistants() {
-            return ["conversation"];
-          }
-        }
-        customElements.define(
-          "ha-config-voice-assistants-expose",
-          FakeExposePage,
-        );
-      }
-      evalFrontend();
-      await flushMicrotasks();
-
-      expect(FakeEntityVoiceSettings.voiceAssistants.hass_ga_manual_ui).toEqual({
-        domain: "google_assistant",
-        name: "Google Assistant (Manual)",
-      });
-    });
-
-    it("keeps our assistant in uiAssistants (master toggle + row visibility)", () => {
-      evalFrontend();
-      const el = make();
-      el.render();
-
-      expect(el.uiAssistants).toContain("hass_ga_manual_ui");
-      expect(el.uiAssistants).not.toContain("cloud.alexa");
-      // With no cloud enabled, our row still renders last.
-      expect(el.showAssistants).toEqual(["conversation", "hass_ga_manual_ui"]);
-    });
-
-    it("master toggle reflects exposure when only our assistant is exposed", () => {
-      evalFrontend();
-      const el = make();
-      el.exposed = { hass_ga_manual_ui: true };
-      el.render();
-
-      expect(el.anyExposed).toBe(true);
-    });
 
     // Regression: Alexa cloud on, Google cloud off (a plausible manual-Google
     // setup). The fix must keep enabled Alexa and drop disabled Google cloud —
@@ -925,50 +749,10 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
-  // The dialog feeds a static `exposed` snapshot; we recompute it from the entry.
-  describe("expose-tab dialog refresh", () => {
-    class FakeDialogVoiceSettings extends HTMLElement {
-      _params: { exposed?: Record<string, unknown>; extEntityReg?: unknown } | undefined;
-      _entityEntryUpdated(ev: { detail: unknown }) {
-        if (this._params) this._params.extEntityReg = ev.detail;
-      }
-    }
-    if (!customElements.get("dialog-voice-settings")) {
-      customElements.define("dialog-voice-settings", FakeDialogVoiceSettings);
-    }
-
-    it("recomputes exposed from the updated entry", () => {
-      evalFrontend();
-      const el = document.createElement(
-        "dialog-voice-settings",
-      ) as unknown as FakeDialogVoiceSettings;
-      el._params = {
-        exposed: { conversation: true, hass_ga_manual_ui: true },
-        extEntityReg: null,
-      };
-      const entry = {
-        options: {
-          conversation: { should_expose: false },
-          hass_ga_manual_ui: { should_expose: false },
-        },
-      };
-
-      (
-        el as unknown as { _entityEntryUpdated: (e: unknown) => void }
-      )._entityEntryUpdated({ detail: entry });
-
-      expect(el._params!.exposed).toEqual({
-        conversation: false,
-        hass_ga_manual_ui: false,
-      });
-      expect(el._params!.extEntityReg).toBe(entry);
-    });
-  });
-
-  describe("export / import YAML", () => {
+  describe("YAML import error handling", () => {
     const flush = () => new Promise<void>((r) => setTimeout(r, 0));
 
-    function actionButtons() {
+    function importButton(): HTMLElement {
       class FakeDataEntryFlowDialog extends HTMLElement {
         _params?: { domain?: string; flowConfig?: { flowType?: string } };
         _step?: { type?: string };
@@ -990,73 +774,12 @@ describe("Google Assistant Manual frontend", () => {
       root.appendChild(document.createElement("ha-dialog-footer"));
       dialog.updated(new Map());
 
-      return {
-        exportBtn: root.querySelector<HTMLElement>("[data-ga-options-yaml=export]")!,
-        importBtn: root.querySelector<HTMLElement>("[data-ga-options-yaml=import]")!,
-      };
+      return root.querySelector<HTMLElement>("[data-ga-options-yaml=import]")!;
     }
-
-    it("renders Export and Import buttons in the options dialog", async () => {
-      setupDom(createMockHass());
-      evalFrontend();
-      await flush();
-      const { exportBtn, importBtn } = actionButtons();
-      expect(exportBtn).toBeTruthy();
-      expect(importBtn).toBeTruthy();
-    });
-
-    it("does not render YAML actions on the assistant card", async () => {
-      setupDom(createMockHass());
-      evalFrontend();
-      await flush();
-
-      const card = document.querySelector("[data-ga-manual-card]")!;
-      expect(card.textContent).not.toContain("Export YAML");
-      expect(card.textContent).not.toContain("Import YAML");
-    });
-
-    it("export downloads the YAML returned by the backend", async () => {
-      const hass = createMockHass();
-      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
-          return Promise.resolve({ entry_id: "e1" });
-        }
-        if (msg.type === "hass_ga_manual_ui/export_config") {
-          return Promise.resolve({
-            yaml: "google_assistant:\n  project_id: p\n",
-            filename: "export.yaml",
-          });
-        }
-        return Promise.resolve({});
-      });
-      setupDom(hass);
-      evalFrontend();
-      await flush();
-
-      const createObjectURL = vi.fn(() => "blob:1");
-      const revokeObjectURL = vi.fn();
-      (URL as unknown as Record<string, unknown>).createObjectURL = createObjectURL;
-      (URL as unknown as Record<string, unknown>).revokeObjectURL = revokeObjectURL;
-      const clickSpy = vi
-        .spyOn(HTMLAnchorElement.prototype, "click")
-        .mockImplementation(() => undefined);
-
-      actionButtons().exportBtn.dispatchEvent(new Event("click"));
-      await flush();
-
-      expect(hass.callWS).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "hass_ga_manual_ui/export_config",
-        }),
-      );
-      expect(createObjectURL).toHaveBeenCalled();
-      expect(clickSpy).toHaveBeenCalled();
-      clickSpy.mockRestore();
-    });
 
     // Pick a file on the (already clicked) import flow and wait for the dialog.
     async function pickFileAndOpenDialog(): Promise<HTMLElement> {
-      actionButtons().importBtn.dispatchEvent(new Event("click"));
+      importButton().dispatchEvent(new Event("click"));
       const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
       const file = new File(["google_assistant:\n  project_id: p\n"], "c.yaml", {
         type: "text/yaml",
@@ -1066,83 +789,6 @@ describe("Google Assistant Manual frontend", () => {
       await flush();
       return document.querySelector<HTMLElement>("[data-ga-confirm-dialog]")!;
     }
-
-    it("import shows an HA-component dialog (ha-card), never the native confirm", async () => {
-      const confirmSpy = vi.spyOn(window, "confirm").mockImplementation(() => true);
-      const hass = createMockHass();
-      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        if (msg.type === "hass_ga_manual_ui/get_entry_id") {
-          return Promise.resolve({ entry_id: "e1" });
-        }
-        return Promise.resolve({ summary: {} });
-      });
-      setupDom(hass);
-      evalFrontend();
-      await flush();
-
-      const dialog = await pickFileAndOpenDialog();
-      expect(dialog).not.toBeNull();
-      expect(dialog.tagName).toBe("DIALOG");
-      expect(dialog.querySelector("ha-card")).not.toBeNull();
-      expect(confirmSpy).not.toHaveBeenCalled(); // never the browser's native modal
-      confirmSpy.mockRestore();
-    });
-
-    it("import calls the import WS on confirm", async () => {
-      const hass = createMockHass();
-      const callOrder: string[] = [];
-      hass.callWS.mockImplementation((msg: Record<string, unknown>) => {
-        const type = msg.type as string;
-        callOrder.push(type);
-        if (type === "hass_ga_manual_ui/get_entry_id") {
-          return Promise.resolve({ entry_id: "e1" });
-        }
-        return Promise.resolve({ summary: {} });
-      });
-      setupDom(hass);
-      evalFrontend();
-      await flush();
-
-      const dialog = await pickFileAndOpenDialog();
-      dialog.querySelector<HTMLElement>("[data-ga-confirm]")!.dispatchEvent(
-        new Event("click"),
-      );
-      await flush();
-      await flush();
-
-      expect(document.querySelector("[data-ga-confirm-dialog]")).toBeNull();
-      expect(hass.callWS).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "hass_ga_manual_ui/import_config",
-        }),
-      );
-      // The card refresh fires after import, which updates the entity count.
-      const importIdx = callOrder.indexOf("hass_ga_manual_ui/import_config");
-      const exposeListIdx = callOrder.lastIndexOf("homeassistant/expose_entity/list");
-      expect(exposeListIdx).toBeGreaterThan(importIdx);
-    });
-
-    it("import does NOT call the import WS when cancelled", async () => {
-      const hass = createMockHass();
-      setupDom(hass);
-      evalFrontend();
-      await flush();
-
-      const dialog = await pickFileAndOpenDialog();
-      dialog.querySelector<HTMLElement>("[data-ga-cancel]")!.dispatchEvent(
-        new Event("click"),
-      );
-      await flush();
-      await flush();
-
-      expect(document.querySelector("[data-ga-confirm-dialog]")).toBeNull();
-      const importCalls = hass.callWS.mock.calls.filter(
-        (c: unknown[]) =>
-          typeof c[0] === "object" &&
-          (c[0] as Record<string, unknown>).type === "hass_ga_manual_ui/import_config",
-      );
-      expect(importCalls.length).toBe(0);
-    });
 
     it("import failure shows a visible error toast with the server reason", async () => {
       const hass = createMockHass();
@@ -1182,39 +828,4 @@ describe("Google Assistant Manual frontend", () => {
     });
   });
 
-  describe("options-flow YAML actions", () => {
-    it("adds Import and Export buttons to this integration's options dialog", () => {
-      setupDom(createMockHass());
-      evalFrontend();
-
-      class FakeDataEntryFlowDialog extends HTMLElement {
-        _params?: { domain?: string; flowConfig?: { flowType?: string } };
-        _step?: { type?: string };
-        updated(_changedProps: Map<string, unknown>) {}
-      }
-      if (!customElements.get("dialog-data-entry-flow")) {
-        customElements.define("dialog-data-entry-flow", FakeDataEntryFlowDialog);
-      }
-
-      const dialog = document.createElement(
-        "dialog-data-entry-flow",
-      ) as unknown as FakeDataEntryFlowDialog;
-      dialog._params = {
-        domain: "hass_ga_manual_ui",
-        flowConfig: { flowType: "options_flow" },
-      };
-      dialog._step = { type: "form" };
-      const root = dialog.attachShadow({ mode: "open" });
-      root.appendChild(document.createElement("ha-dialog-footer"));
-
-      dialog.updated(new Map());
-
-      expect(root.querySelector("[data-ga-options-yaml=export]")?.textContent).toBe(
-        "Export YAML",
-      );
-      expect(root.querySelector("[data-ga-options-yaml=import]")?.textContent).toBe(
-        "Import YAML",
-      );
-    });
-  });
 });
