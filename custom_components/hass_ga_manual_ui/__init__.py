@@ -385,7 +385,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _sync_yaml_suppressed(hass, entry)
 
-    _register_ws_commands(hass, entry)
+    _register_ws_commands(hass)
 
     if entry.data.get(CONF_MIGRATE_YAML) and not entry.options.get(OPT_YAML_MIGRATED):
         _schedule_yaml_migration(hass, entry)
@@ -1232,7 +1232,7 @@ def _safe_get_entry(
     return entry
 
 
-def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
+def _register_ws_commands(hass: HomeAssistant) -> None:
     """Register WebSocket command handlers for the assistant card."""
 
     @callback
@@ -1674,21 +1674,20 @@ def _register_ws_commands(hass: HomeAssistant, entry: ConfigEntry) -> None:
 
         connection.send_result(msg["id"], {"summary": summary})
 
-    commands = [
-        ("ws_get_config", ws_get_config),
-        ("ws_update_config", ws_update_config),
-        ("ws_enable", ws_enable),
-        ("ws_disable", ws_disable),
-        ("ws_get_entity", ws_get_entity),
-        ("ws_update_entity", ws_update_entity),
-        ("ws_export_config", ws_export_config),
-        ("ws_import_config", ws_import_config),
-    ]
-    for name, handler in commands:
+    for handler in (
+        ws_get_config,
+        ws_update_config,
+        ws_enable,
+        ws_disable,
+        ws_get_entity,
+        ws_update_entity,
+        ws_export_config,
+        ws_import_config,
+    ):
         try:
             websocket_api.async_register_command(hass, handler)
         except Exception:
-            _LOGGER.exception("Failed to register WS command: %s", name)
+            _LOGGER.exception("Failed to register WS command: %s", handler.__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -1703,7 +1702,7 @@ def _patch_core_assistants(hass: HomeAssistant) -> None:
         import homeassistant.components.homeassistant.exposed_entities as ee
 
         if ASSISTANT_ID not in ee.KNOWN_ASSISTANTS:
-            ee.KNOWN_ASSISTANTS = tuple(list(ee.KNOWN_ASSISTANTS) + [ASSISTANT_ID])
+            ee.KNOWN_ASSISTANTS = (*ee.KNOWN_ASSISTANTS, ASSISTANT_ID)
             _LOGGER.info(
                 "Added '%s' to KNOWN_ASSISTANTS (now: %s)",
                 ASSISTANT_ID,

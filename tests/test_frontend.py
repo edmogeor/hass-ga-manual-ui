@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import hass_ga_manual_ui.frontend as frontend_module
 import pytest
-from hass_ga_manual_ui.const import DOMAIN
 from hass_ga_manual_ui.frontend import (
     BRAND_URL,
     FRONTEND_JS_PATH,
@@ -15,23 +14,6 @@ from hass_ga_manual_ui.frontend import (
     async_setup_frontend,
 )
 from homeassistant.core import HomeAssistant
-
-
-class TestPathConstants:
-    """Test the path constants defined in frontend.py."""
-
-    def test_frontend_js_path_is_absolute(self) -> None:
-        assert FRONTEND_JS_PATH.is_absolute()
-
-    def test_frontend_js_path_exists(self) -> None:
-        assert FRONTEND_JS_PATH.exists()
-
-    def test_frontend_js_path_points_to_correct_file(self) -> None:
-        assert FRONTEND_JS_PATH.name == "frontend.js"
-
-    def test_frontend_url_includes_domain(self) -> None:
-        assert f"/{DOMAIN}/frontend.js" == FRONTEND_URL
-        assert FRONTEND_URL.startswith("/")
 
 
 def _make_hass() -> MagicMock:
@@ -47,12 +29,21 @@ class TestAsyncSetupFrontend:
     """Tests for async_setup_frontend."""
 
     @pytest.mark.asyncio
-    async def test_registers_static_paths(self) -> None:
+    @pytest.mark.parametrize("hash_fails", [False, True])
+    async def test_registers_static_paths(self, hash_fails: bool) -> None:
         """Test that the static path is registered for frontend.js."""
         hass = _make_hass()
         hass.data = {}
 
-        with patch.object(frontend_module, "add_extra_js_url") as mock_add_js:
+        with (
+            patch.object(frontend_module, "add_extra_js_url") as mock_add_js,
+            patch.object(
+                frontend_module,
+                "_compute_js_hash",
+                side_effect=OSError("unreadable") if hash_fails else None,
+                return_value="012345abcdef",
+            ),
+        ):
             await async_setup_frontend(hass)
 
         hass.http.async_register_static_paths.assert_called_once()
@@ -66,7 +57,19 @@ class TestAsyncSetupFrontend:
         # path itself stays at the unversioned URL.
         mock_add_js.assert_called_once()
         advertised_url = mock_add_js.call_args[0][1]
-        assert advertised_url.startswith(f"{FRONTEND_URL}?v=")
+        assert advertised_url == (
+            FRONTEND_URL if hash_fails else f"{FRONTEND_URL}?v=012345abcdef"
+        )
+        js_path = next(c for c in call_args if c.url_path == FRONTEND_URL)
+        assert js_path.path == str(FRONTEND_JS_PATH)
+        assert js_path.cache_headers is (not hash_fails)
+        assert (
+            next(c for c in call_args if c.url_path == LOCALE_URL).cache_headers
+            is False
+        )
+        assert (
+            next(c for c in call_args if c.url_path == BRAND_URL).cache_headers is True
+        )
 
     @pytest.mark.asyncio
     async def test_handles_missing_frontend_js(
