@@ -5,6 +5,29 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2026-11-21
+
+### Fixed
+
+- **Home Assistant 2026.11 compatibility.** The config layer now writes core GA's
+  configuration in the expected storage layout, restoring the Sync devices
+  button while retaining compatibility with older HA releases.
+- **Assistant card settings render correctly again.** Settings use HA's native
+  row component with wrapping labels, with a fallback for older frontends.
+- **The "Ask for PIN" checkbox is visible and saves correctly** in the native
+  entity dialog for security devices, including after a browser reload.
+
+### Changed
+
+- Updated development dependencies and CI/release actions, including security
+  fixes in test dependencies.
+- Expanded regression coverage and updated the real-HA test target to
+  Home Assistant 2026.11.2 / frontend 20261028.6.
+
+After updating, restart Home Assistant and hard-refresh your browser. Existing
+settings are retained; no configuration export/import or account relinking is
+required.
+
 ## [0.3.4] - 2026-10-10
 
 ### Fixed
