@@ -1,5 +1,5 @@
-homeassistant==2026.10.0
-home-assistant-frontend==20260930.2
+homeassistant==2026.11.2
+home-assistant-frontend==20261028.6
 ha-ffmpeg==3.2.2
 PyTurboJPEG==1.8.3
 hassil==3.12.1
@@ -10,4 +10,4 @@ infrared-protocols==10.1.0
 rf-protocols==4.3.0
 pymicro-vad==1.0.1
 pyspeex-noise==1.0.2
-aiohasupervisor==0.6.0
+aiohasupervisor==0.8.1

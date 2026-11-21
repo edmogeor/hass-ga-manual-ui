@@ -120,6 +120,40 @@ describe("Google Assistant Manual frontend", () => {
   });
 
   describe("card injection", () => {
+    it("builds settings with native row items and wrapping labels", async () => {
+      setupDom(createMockHass());
+      evalFrontend();
+      await flushMicrotasks();
+
+      const card = document.querySelector("[data-ga-manual-card]")!;
+      const rows = card.querySelectorAll<HTMLElement>("ha-row-item");
+      expect(rows).toHaveLength(3);
+      expect(card.querySelector("ha-md-list-item")).toBeNull();
+      for (const row of rows) {
+        expect(row.style.getPropertyValue("--ha-row-item-padding-inline")).toBe("0");
+        for (const label of row.querySelectorAll<HTMLElement>("span[slot]")) {
+          expect(label.style.whiteSpace).toBe("normal");
+        }
+      }
+    });
+
+    it("keeps legacy settings rows on older frontends", async () => {
+      const originalGet = customElements.get.bind(customElements);
+      const get = vi.spyOn(customElements, "get").mockImplementation((name) =>
+        name === "ha-md-list-item" ? HTMLElement : originalGet(name),
+      );
+      try {
+        setupDom(createMockHass());
+        evalFrontend();
+        await flushMicrotasks();
+        const rows = document.querySelectorAll<HTMLElement>("[data-ga-manual-card] ha-md-list-item");
+        expect(rows).toHaveLength(3);
+        expect(rows[0].style.getPropertyValue("--md-list-item-leading-space")).toBe("0");
+      } finally {
+        get.mockRestore();
+      }
+    });
+
     it("card is not injected when no assistants page exists", () => {
       const hass = createMockHass();
       const ha = document.createElement("home-assistant");
@@ -672,6 +706,52 @@ describe("Google Assistant Manual frontend", () => {
       await new Promise((r) => setTimeout(r, 0));
 
       expect(el._unsupported["hass_ga_manual_ui"]).toBeUndefined();
+    });
+
+    it.each(["ha-row-item", "ha-md-list-item"])("injects one PIN checkbox into %s and saves changes", async (tag) => {
+      evalFrontend();
+      const el = make() as FakeEntityVoiceSettings & {
+        updated(props: Map<string, unknown>): void;
+        __gaInfo: { might_2fa: boolean };
+      };
+      el.entityId = "lock.front_door";
+      const callWS = vi.fn(() => Promise.resolve({
+        entity_id: el.entityId,
+        might_2fa: true,
+        disable_2fa: false,
+      }));
+      el.hass = { callWS, localize: () => "Ask for PIN" };
+      const root = el.attachShadow({ mode: "open" });
+      const row = Object.assign(document.createElement(tag), { requestUpdate: vi.fn() });
+      const icon = Object.assign(document.createElement("voice-assistant-brand-icon"), {
+        voiceAssistantId: "hass_ga_manual_ui",
+      });
+      row.appendChild(icon);
+      root.appendChild(row);
+
+      el.updated(new Map());
+      await flushMicrotasks();
+      el.updated(new Map());
+      expect(row.querySelectorAll("[data-ga-2fa]")).toHaveLength(1);
+      expect(row.requestUpdate).toHaveBeenCalledTimes(1);
+      const checkbox = row.querySelector<HTMLElement & { checked: boolean }>("[data-ga-2fa]")!;
+      expect(checkbox.checked).toBe(true);
+      expect(checkbox.slot).toBe("supporting-text");
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event("change"));
+      await flushMicrotasks();
+
+      expect(callWS).toHaveBeenCalledWith({
+        type: "hass_ga_manual_ui/update_entity",
+        entity_id: "lock.front_door",
+        disable_2fa: true,
+      });
+      el.updated(new Map());
+      expect(checkbox.checked).toBe(false);
+      el.__gaInfo = { might_2fa: false };
+      el.updated(new Map());
+      expect(row.querySelector("[data-ga-2fa]")).toBeNull();
+      expect(row.requestUpdate).toHaveBeenCalledTimes(2);
     });
 
     it.each([

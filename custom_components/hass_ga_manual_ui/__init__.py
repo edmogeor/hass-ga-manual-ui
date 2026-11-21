@@ -28,7 +28,6 @@ from .const import (
     CONF_SECURE_DEVICES_PIN,
     CONF_SERVICE_ACCOUNT,
     CORE_GA_CREATED_BY,
-    CORE_GA_DATA_CONFIG,
     CORE_GA_DOMAIN,
     CORE_GA_PARENT_ENTRY_ID,
     DOMAIN,
@@ -183,7 +182,7 @@ async def async_apply_updated_credentials(
     token cache rather than registering a second view through a reload.
     """
     config = _build_core_config(entry)
-    hass.data.setdefault(CORE_GA_DOMAIN, {})[CORE_GA_DATA_CONFIG] = config
+    _store_core_config(hass, config)
 
     core_entry = _find_core_entry(hass, entry)
     if core_entry is not None and _owns_core_entry(core_entry):
@@ -266,7 +265,7 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
     The persisted core GA entry carries device-registry links, so we keep it
     across restarts rather than removing it. Two steps:
 
-    1. Seed ``hass.data["google_assistant"][DATA_CONFIG]`` so the boot-time
+    1. Seed core GA's ``DATA_CONFIG`` so the boot-time
        auto-setup of that entry doesn't crash with ``KeyError``.
     2. Prune only shadow entries *we own* that are orphaned or duplicated;
        leave unmarked and disabled-but-present ones (their links must survive).
@@ -287,9 +286,7 @@ async def _reconcile_core_ga_entries(hass: HomeAssistant) -> None:
         if not _is_enabled(e):
             continue
         try:
-            hass.data.setdefault(CORE_GA_DOMAIN, {})[CORE_GA_DATA_CONFIG] = (
-                _build_core_config(e)
-            )
+            _store_core_config(hass, _build_core_config(e))
             break
         except ValueError as exc:
             _LOGGER.debug("Skipping DATA_CONFIG seed for an entry: %s", exc)
@@ -540,6 +537,17 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _store_core_config(hass: HomeAssistant, config: dict[str, Any]) -> None:
+    """Store config in core GA's current layout, including pre-2026.11 versions."""
+    from homeassistant.components.google_assistant.const import DATA_CONFIG
+
+    # Since 2026.11, DATA_CONFIG names a top-level HassKey instead of "config".
+    if DATA_CONFIG == CORE_GA_DOMAIN:
+        hass.data[DATA_CONFIG] = config
+    else:
+        hass.data.setdefault(CORE_GA_DOMAIN, {})[DATA_CONFIG] = config
+
+
 def _build_core_config(entry: ConfigEntry) -> dict[str, Any]:
     """Build the config dict that core GA expects (GOOGLE_ASSISTANT_SCHEMA).
 
@@ -705,7 +713,7 @@ async def _setup_core_ga(hass: HomeAssistant, entry: ConfigEntry) -> None:
         _LOGGER.error("Cannot build core GA config: %s", exc)
         raise
 
-    hass.data.setdefault(CORE_GA_DOMAIN, {})[CORE_GA_DATA_CONFIG] = config
+    _store_core_config(hass, config)
 
     # Verify core GA is available (async_add below relies on it to set up the
     # registered entry). Fail with an actionable message if it is missing.

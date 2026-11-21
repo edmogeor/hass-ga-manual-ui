@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const ASSISTANT = "hass_ga_manual_ui";
 const ENTITY = "input_boolean.e2e_switch";
+const LOCK = "lock.e2e_test_lock";
 const NAME = "E2E test switch";
 const EXPOSE_URL = `/config/voice-assistants/expose?assistants=${ASSISTANT}`;
 
@@ -109,9 +110,14 @@ test.beforeEach(async ({ context }) => {
   await callBackend({
     type: "homeassistant/expose_entity",
     assistants: [ASSISTANT, "conversation"],
-    entity_ids: [ENTITY],
+    entity_ids: [ENTITY, LOCK],
     should_expose: false,
   });
+});
+
+test("core GA creates its sync button from the shared configuration", async () => {
+  const states = await callBackend<{ entity_id: string }[]>({ type: "get_states" });
+  expect(states.map((state) => state.entity_id)).toContain("button.google_assistant_synchronize_devices");
 });
 
 test("native exposure dialog saves, survives reload, and works after idle reconnect", async ({ page }) => {
@@ -201,6 +207,36 @@ test("native entity dialog keeps manual-only exposure and refreshes both toggle 
   expect(errors).toEqual([]);
 });
 
+test("security devices show a persistent Ask for PIN checkbox in the native dialog", async ({ page }) => {
+  const errors = collectFrontendFailures(page);
+  await callBackend({
+    type: "homeassistant/expose_entity", assistants: [ASSISTANT], entity_ids: [LOCK], should_expose: true,
+  });
+  await callBackend({ type: `${ASSISTANT}/update_entity`, entity_id: LOCK, disable_2fa: false });
+  await page.goto(EXPOSE_URL);
+  const lock = page.locator("ha-config-voice-assistants-expose").getByText("E2E test lock", { exact: true });
+  await lock.click();
+  const row = page.locator("dialog-voice-settings entity-voice-settings ha-row-item")
+    .filter({ hasText: "Google Assistant (Manual)" });
+  const checkbox = row.locator("ha-checkbox[data-ga-2fa]");
+  await expect(checkbox).toHaveCount(1);
+  await expect(checkbox).toBeVisible();
+  await expect(checkbox).toHaveText("Ask for PIN");
+  await expect(checkbox).toHaveJSProperty("checked", true);
+  await checkbox.click();
+  await expect.poll(async () => {
+    const entity = await callBackend<{ disable_2fa: boolean }>({
+      type: `${ASSISTANT}/get_entity`, entity_id: LOCK,
+    });
+    return entity.disable_2fa;
+  }).toBe(true);
+  await page.reload();
+  await lock.click();
+  await expect(checkbox).toHaveCount(1);
+  await expect(checkbox).toHaveJSProperty("checked", false);
+  expect(errors).toEqual([]);
+});
+
 test("the configured Cloud promotion and dashboard entry are hidden", async ({ page }) => {
   const errors = collectFrontendFailures(page);
   await page.goto("/config/voice-assistants/assistants");
@@ -224,7 +260,11 @@ test("assistant card renders its controls and stays unique across toggles and SP
   await expect(icon).toHaveAttribute("src", /\/hass_ga_manual_ui\/brand\/icon\.png$/);
   await expect.poll(() => icon.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
   await expect(card.locator(".card-content p")).not.toBeEmpty();
-  await expect(card.locator("ha-md-list-item")).toHaveCount(3);
+  const rows = card.locator("ha-row-item");
+  await expect(rows).toHaveCount(3);
+  for (const row of await rows.all()) {
+    await expect.poll(() => row.evaluate((el) => !!el.shadowRoot)).toBe(true);
+  }
   await expect(card.locator("ha-input")).toBeVisible();
   await expect(card.locator("[data-ga-options-yaml]")).toHaveCount(0);
 
@@ -255,12 +295,19 @@ test("assistant card renders its controls and stays unique across toggles and SP
   await card.locator("ha-input input").fill("1357");
   await expect.poll(async () => (await integrationConfig()).secure_devices_pin).toBe("1357");
 
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect.poll(() => card.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await card.screenshot({ path: test.info().outputPath(`assistant-card-${width}.png`) });
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   // Use HA's tab navigation so its cached page and our lifecycle hooks are
   // exercised together; repeatedly evaluating a mocked bundle cannot do this.
   for (let visit = 0; visit < 2; visit++) {
-    await page.getByRole("tab", { name: "Expose", exact: true }).click();
+    await page.getByRole("link", { name: "Expose", exact: true }).click();
     await expect(page.locator("ha-config-voice-assistants-expose ha-button[slot=fab]")).toBeVisible();
-    await page.getByRole("tab", { name: "Assistants", exact: true }).click();
+    await page.getByRole("link", { name: "Assistants", exact: true }).click();
     await expect(card).toHaveCount(1);
     await expect(globalSwitch).toHaveJSProperty("checked", true);
   }

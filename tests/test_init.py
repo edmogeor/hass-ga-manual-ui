@@ -34,7 +34,6 @@ from hass_ga_manual_ui.const import (
     CONF_SECURE_DEVICES_PIN,
     CONF_SERVICE_ACCOUNT,
     CORE_GA_CREATED_BY,
-    CORE_GA_DATA_CONFIG,
     CORE_GA_DOMAIN,
     CORE_GA_PARENT_ENTRY_ID,
     DOMAIN,
@@ -48,6 +47,18 @@ from .conftest import (
     mock_config_entry_minimal,
     mock_ws_connection,
 )
+
+
+@pytest.fixture(params=["config", CORE_GA_DOMAIN])
+def core_config_key(
+    request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch
+) -> str:
+    """Exercise both the legacy and 2026.11 core GA config layouts."""
+    monkeypatch.setattr(
+        "homeassistant.components.google_assistant.const.DATA_CONFIG", request.param
+    )
+    return request.param
+
 
 # =============================================================================
 # _project_id
@@ -152,7 +163,9 @@ class TestApplyUpdatedCredentials:
     """Tests for in-place credential changes to the core GA configuration."""
 
     @pytest.mark.asyncio
-    async def test_updates_live_google_config_and_clears_token(self) -> None:
+    async def test_updates_live_google_config_and_clears_token(
+        self, core_config_key: str
+    ) -> None:
         entry = mock_config_entry(project_id="updated-project")
         google_config = FakeGoogleConfig()
         google_config._config = {}  # type: ignore[attr-defined]
@@ -166,6 +179,10 @@ class TestApplyUpdatedCredentials:
 
         await async_apply_updated_credentials(hass, entry)
 
+        config = _build_core_config(entry)
+        assert hass.data[CORE_GA_DOMAIN] == (
+            config if core_config_key == CORE_GA_DOMAIN else {core_config_key: config}
+        )
         assert google_config._config[CONF_PROJECT_ID] == "updated-project"  # type: ignore[attr-defined]
         assert google_config._access_token is None  # type: ignore[attr-defined]
         assert google_config._access_token_renew is None  # type: ignore[attr-defined]
@@ -953,7 +970,9 @@ class TestSetupCoreGa:
     @pytest.mark.parametrize(
         "state", [None, ConfigEntryState.LOADED, ConfigEntryState.SETUP_ERROR]
     )
-    async def test_creates_reuses_or_recovers_core_entry(self, state) -> None:
+    async def test_creates_reuses_or_recovers_core_entry(
+        self, state, core_config_key: str
+    ) -> None:
         """Only a new entry is added; only a failed persisted entry is reloaded."""
         entry = mock_config_entry(options={"enabled": False, CONF_REPORT_STATE: True})
         core = mock_config_entry(entry_id="core-entry")
@@ -990,9 +1009,9 @@ class TestSetupCoreGa:
             hass.config_entries.async_reload.assert_awaited_once_with(core.entry_id)
         else:
             hass.config_entries.async_reload.assert_not_awaited()
-        assert (
-            hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG][CONF_PROJECT_ID]
-            == entry.data[CONF_PROJECT_ID]
+        config = _build_core_config(entry)
+        assert hass.data[CORE_GA_DOMAIN] == (
+            config if core_config_key == CORE_GA_DOMAIN else {core_config_key: config}
         )
         assert entry.runtime_data == {
             "core_entry": core,
@@ -1248,7 +1267,9 @@ def _reconcile_harness(
 class TestReconcileCoreGaEntries:
     """Tests for _reconcile_core_ga_entries (ownership-based pruning)."""
 
-    async def test_seeds_data_config_from_enabled_entry(self) -> None:
+    async def test_seeds_data_config_from_enabled_entry(
+        self, core_config_key: str
+    ) -> None:
         our = mock_config_entry(
             project_id="proj-a", entry_id="our-a", options={"enabled": True}
         )
@@ -1257,9 +1278,9 @@ class TestReconcileCoreGaEntries:
 
         await _reconcile_core_ga_entries(hass)
 
-        assert CORE_GA_DATA_CONFIG in hass.data[CORE_GA_DOMAIN]
-        assert hass.data[CORE_GA_DOMAIN][CORE_GA_DATA_CONFIG][CONF_PROJECT_ID] == (
-            "proj-a"
+        config = _build_core_config(our)
+        assert hass.data[CORE_GA_DOMAIN] == (
+            config if core_config_key == CORE_GA_DOMAIN else {core_config_key: config}
         )
 
     async def test_keeps_owned_entry_with_live_parent(self) -> None:

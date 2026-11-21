@@ -1459,13 +1459,13 @@ function _is2faFetchRecoverable(err: unknown): boolean {
   return _wsErrMatches(err, "internal_error", "not enabled");
 }
 
-function _findOurAssistantRow(root: ShadowRoot): HTMLElement | null {
-  const items = root.querySelectorAll<HTMLElement>("ha-md-list-item");
-  for (let i = 0; i < items.length; i++) {
-    const icon = items[i].querySelector(
+function _findOurAssistantRow(root: ShadowRoot): (HTMLElement & LitLifecycle) | null {
+  const items = root.querySelectorAll<HTMLElement & LitLifecycle>("ha-row-item, ha-md-list-item");
+  for (const item of items) {
+    const icon = item.querySelector<VoiceAssistantBrandIcon>(
       "voice-assistant-brand-icon",
-    ) as VoiceAssistantBrandIcon | null;
-    if (icon && icon.voiceAssistantId === ASSISTANT_ID) return items[i];
+    );
+    if (icon?.voiceAssistantId === ASSISTANT_ID) return item;
   }
   return null;
 }
@@ -1500,6 +1500,7 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
     // Only show for security devices that might require 2FA.
     if (!info || !info.might_2fa) {
       existingAll.forEach((el2) => el2.remove());
+      if (existingAll.length) row.requestUpdate?.();
       return;
     }
     if (existingAll.length > 0) {
@@ -1518,6 +1519,8 @@ function _injectAskPin(el: EntityVoiceSettingsElement): void {
       (hass && hass.localize("ui.dialogs.voice-settings.ask_pin")) || "Ask for PIN";
     cb.addEventListener("change", () => _onAskPinChanged(el, cb));
     row.appendChild(cb);
+    // ha-row-item only renders its supporting-text slot when it has content.
+    row.requestUpdate?.();
   } catch (e) {
     _error("Error injecting ask_pin checkbox: " + _errorMessage(e));
   }
@@ -1844,15 +1847,20 @@ function makeSettingItem(
   headlineFallback: string,
   supportFallback: string,
 ): HTMLElement {
-  const item = document.createElement("ha-md-list-item");
-  item.style.cssText =
-    "--md-list-item-leading-space:0;--md-list-item-trailing-space:0;--md-item-overflow:visible";
+  const useLegacyRow =
+    !customElements.get("ha-row-item") && !!customElements.get("ha-md-list-item");
+  const item = document.createElement(useLegacyRow ? "ha-md-list-item" : "ha-row-item");
+  item.style.cssText = useLegacyRow
+    ? "--md-list-item-leading-space:0;--md-list-item-trailing-space:0;--md-item-overflow:visible"
+    : "--ha-row-item-padding-inline:0";
   const headline = document.createElement("span");
   headline.slot = "headline";
+  headline.style.whiteSpace = "normal";
   headline.textContent = (hass && hass.localize(headlineKey)) || headlineFallback;
   item.appendChild(headline);
   const support = document.createElement("span");
   support.slot = "supporting-text";
+  support.style.whiteSpace = "normal";
   support.textContent = (hass && hass.localize(supportKey)) || supportFallback;
   item.appendChild(support);
   return item;

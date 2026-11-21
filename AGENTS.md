@@ -79,7 +79,7 @@ keep-set).
 **Core GA entry reconciliation**:
 When our integration loads, `_reconcile_core_ga_entries()` runs in `async_setup()`. It
 does NOT remove the managed core entry (that carries device-registry links). Instead it
-(1) seeds `hass.data["google_assistant"][DATA_CONFIG]` from our config entry so HA's
+(1) seeds core GA's config via `_store_core_config()` from our config entry so HA's
 boot-time auto-setup of the persisted core entry doesn't crash with
 `KeyError: 'google_assistant'`, and (2) prunes orphan/duplicate core entries left by
 older versions (keeps one per enabled project). `hass.data["google_assistant"]` is also
@@ -109,7 +109,10 @@ On `async_setup()`:
 
 On `async_setup_entry()`:
 1. Builds config dict from `entry.data` + `entry.options`.
-2. Sets `hass.data["google_assistant"]["config"]`.
+2. Stores config through `_store_core_config()`, using core GA's `DATA_CONFIG`:
+   `hass.data["google_assistant"]` on HA 2026.11+, or the nested
+   `hass.data["google_assistant"]["config"]` on older releases. Startup reconciliation
+   and live credential updates use the same helper.
 3. Reuses the existing core GA entry (`_find_core_entry`) if present, setting it up only if not already loaded, otherwise registers a fresh one via `hass.config_entries.async_add()` (which also sets it up). Never calls core GA's `async_setup_entry` directly (that would double-set-up).
 4. Stores `GoogleConfig` reference (from `core_entry.runtime_data`) in `entry.runtime_data`.
 5. Monkey-patches `GoogleConfig.should_report_state` and `.secure_devices_pin` to read from `entry.options`, and `GoogleConfig.should_2fa` to read the per-entity `disable_2fa` option from the registry (core GA hard-codes `should_2fa` to `True`; cloud reads the option, this powers the "Ask for PIN" toggle).
@@ -157,9 +160,9 @@ Four patching mechanisms applied at `init()`:
       <ha-switch> (global toggle → enable/disable WS)
   <div.card-content>
     <p> (description text)
-    <ha-md-list-item> "Expose new entities" + <ha-switch>
-    <ha-md-list-item> "Enable state reporting" + <ha-switch>
-    <ha-md-list-item> "Security devices" (info text)
+    <ha-row-item> "Expose new entities" + <ha-switch>
+    <ha-row-item> "Enable state reporting" + <ha-switch>
+    <ha-row-item> "Security devices" (info text)
     <ha-input> (PIN input for security devices, debounced 500ms)
   <div.card-actions>
     <a> → "Exposed entities" <ha-button> (with live count)
@@ -212,7 +215,7 @@ User adds integration via UI:
     HomeGraph token endpoint before the entry is created.
     → ConfigEntry created for domain "hass_ga_manual_ui"
       → async_setup_entry() fires:
-        1. Populates hass.data["google_assistant"]["config"]
+        1. Stores config using _store_core_config() (flat on HA 2026.11+, nested before)
         2. Reuses existing core GA entry (_find_core_entry) or registers a fresh
            one via async_add(), which also sets it up (no manual second setup)
         3. Reads GoogleConfig from core_entry.runtime_data
@@ -462,7 +465,7 @@ Unit tests use Vitest and pytest; E2E tests use Playwright with a real HA fixtur
 - Requires Node.js 22+, Linux, and a running Docker daemon. After `npm ci`, run
   `npx playwright install --with-deps chromium`, then `npm test` (all suites) or
   `npm run test:e2e` (E2E only).
-- Uses HA 2026.10.0 / frontend 20260930.2 with a virtual switch. Only outbound
+- Uses HA 2026.11.2 / frontend 20261028.6 with a virtual switch and template lock. Only outbound
   Google HomeGraph calls are mocked; integration setup, core GA, the native UI,
   WebSocket commands, and exposure storage remain real. No devices or Google
   account are needed.
@@ -470,7 +473,9 @@ Unit tests use Vitest and pytest; E2E tests use Playwright with a real HA fixtur
   reloads, WebSocket suspension/reconnect with an unchanged entity registry,
   native master/per-assistant toggles and dialog refresh, Cloud hiding, assistant
   card controls/idempotency across SPA navigation and enable/disable, and native
-  options-dialog YAML download/import (including cancellation and alias updates).
+  options-dialog YAML download/import (including cancellation and alias updates),
+  core GA's sync button, registered native card rows, and the lock's Ask for PIN
+  checkbox with persisted per-entity 2FA settings.
   Reconnect is simulated rather than waiting through a 24-hour soak.
 - Builds a cached Docker image and starts HA on `127.0.0.1:18096` (keep that port
   free). Playwright stops the container and removes its temporary HA config.

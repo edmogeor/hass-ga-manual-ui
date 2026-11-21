@@ -74,6 +74,25 @@ async def serve(port: int, state_file: Path, config_dir: Path) -> None:
         "analytics": {},
         "recorder": {},
         "input_boolean": {"e2e_switch": {"name": "E2E test switch"}},
+        "template": [
+            {
+                "lock": [
+                    {
+                        "name": "E2E test lock",
+                        "unique_id": "e2e-test-lock",
+                        "state": "{{ is_state('input_boolean.e2e_switch', 'on') }}",
+                        "lock": {
+                            "action": "input_boolean.turn_on",
+                            "target": {"entity_id": "input_boolean.e2e_switch"},
+                        },
+                        "unlock": {
+                            "action": "input_boolean.turn_off",
+                            "target": {"entity_id": "input_boolean.e2e_switch"},
+                        },
+                    }
+                ]
+            }
+        ],
     }
     # Only Google's outbound HomeGraph boundary is mocked. Core GA setup,
     # GoogleConfig, entity traits, HA's exposure handlers, and storage stay real.

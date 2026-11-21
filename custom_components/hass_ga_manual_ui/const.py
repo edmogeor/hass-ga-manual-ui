@@ -29,10 +29,9 @@ OPT_HIDE_CLOUD = "hide_home_assistant_cloud"
 PREF_DISABLE_2FA = "disable_2fa"
 
 CORE_GA_DOMAIN = "google_assistant"
-CORE_GA_DATA_CONFIG = "config"
 
 # Ownership markers written into the shadow `google_assistant` config entry's
 # data, so we only ever prune entries we created. Inert to core GA, which reads
-# its config from CORE_GA_DATA_CONFIG, not the shadow entry's data.
+# its config from hass.data, then merges the shadow entry's data.
 CORE_GA_CREATED_BY = "created_by_hass_ga_manual_ui"
 CORE_GA_PARENT_ENTRY_ID = "hass_ga_manual_ui_parent_entry_id"
